@@ -50,7 +50,7 @@
   "containerEnv": {
     // Force Claude to write .claude.json inside the volume.
     //   see: https://code.claude.com/docs/en/devcontainer#persist-authentication-and-settings-across-rebuilds
-    "CLAUDE_CONFIG_DIR": "/home/node/.claude"
+    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
   }
   // Features to add to the dev container. More info: https://containers.dev/features.
   // "features": {},
