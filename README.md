@@ -123,9 +123,9 @@ To track your AI expenses accurately, this framework is designed to run with gra
 
 We provide plug-and-play configurations for the most popular AI-driven IDEs. Choose your editor guide below to set up your local workspace in seconds:
 
-- [Visual Studio Code Configuration Guide](.ai/docs/ide/vscode.md)
-- [Cursor Configuration Guide](.ai/docs/ide/cursor.md) _(Coming Soon)_
-- [Windsurf Configuration Guide](.ai/docs/ide/windsurf.md) _(Coming Soon)_
+- [Visual Studio Code Configuration Guide](docs/ide/vscode.md)
+- Cursor Configuration Guide _(Coming Soon)_
+- Windsurf Configuration Guide _(Coming Soon)_
 
 > ⚠️ **Note on Local FinOps Responsibility:** Unlike the cloud pipeline which auto-routes your tasks using Gemini, **you are the router in your local IDE**. To protect your wallet, you should manually split your workload: for example in vscode, use the `Continue.dev` side-panel with low-cost cloud models (DeepSeek-V3/R1) for small to mid-sized tasks, and invoke `Claude Code` in your terminal only for heavy, multi-file structural changes to leverage your fixed subscription.
 
