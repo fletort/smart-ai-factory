@@ -2,9 +2,9 @@
 
 # Smart-AI-Factory 🚀 (v1.0.0)
 
-**Smart-AI-Factory** is an open-source, agnostic AI-DevOps framework designed to automate and self-regulate your entire software development lifecycle—from Roadmap to Pull Request—while slashing your AI API costs by up to 80%. 
+**Smart-AI-Factory** is an open-source, agnostic AI-DevOps framework designed to automate and self-regulate your entire software development lifecycle—from Roadmap to Pull Request—while slashing your AI API costs by up to 80%.
 
-Instead of using a single, expensive LLM for every task, **Smart-AI-Factory** acts as a **smart routing engine**. It evaluates task complexity upfront and delegates both the development and the code review to the most optimal, cost-efficient twin-model setup available on the market. 
+Instead of using a single, expensive LLM for every task, **Smart-AI-Factory** acts as a **smart routing engine**. It evaluates task complexity upfront and delegates both the development and the code review to the most optimal, cost-efficient twin-model setup available on the market.
 
 ## 🔄 End-to-End Workflow Architecture
 
@@ -69,7 +69,7 @@ One of the core features of **Smart-AI-Factory** is its **State & Code-Presence 
 
 ## 📁 Repository Structure
 
-The framework is highly modular and entirely driven by simple Markdown and YAML files stored in the .ai/ directory: 
+The framework is highly modular and entirely driven by simple Markdown and YAML files stored in the .ai/ directory:
 
 ```text
 
@@ -93,29 +93,29 @@ The framework is highly modular and entirely driven by simple Markdown and YAML 
 
 ## 🎛️ Governance & Routing Matrix
 
-Through .ai/config.yml, you can toggle **Human-in-the-Loop (HITL)** gates independently for each task size. This allows a team to run fully automated for small adjustments while enforcing strict human oversight for large architectural changes. 
+Through .ai/config.yml, you can toggle **Human-in-the-Loop (HITL)** gates independently for each task size. This allows a team to run fully automated for small adjustments while enforcing strict human oversight for large architectural changes.
 
 | Level          | Dev Agent           | Review Agent     | Tech Stack (Default)              | Target Task                                                                                                                                        | HITL Gates (Configurable)      | Cost Profile                     |
 | -------------- | ------------------- | ---------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | -------------------------------- |
 | **Triage**     | `Gemini Flash PO`   | _N/A_            | Google AI Studio                  | **Backlog Generation**: Automatically triggered on `roadmap.md` changes. Parses goals, checks architectural alignment, and creates labeled issues. | **No** (Fully Automated)       | **Free Tier** (Google AI Studio) |
 | **Brainstorm** | `claude-3-5-sonnet` | _N/A_            | Claude Code                       | **Ambiguous .Specifications**: Pipeline halts; Claude refines the design and updates architecture docs first.                                      | **Mandatory**                  | _Subscription_                   |
 | **XS**         | `xs_coder`          | `fast_reviewer`  | OpenCode + Gemini Flash Lite      | **Intern**: Typo fixes, variable renaming, simple label updates.                                                                                   | `dev: false` / `review: false` | **Free**                         |
-| **S**          | `s_coder `          | `fast_reviewer`  | OpenCode + DeepSeek-V3            | **Junior Dev**: Simple conditional statements, isolated micro-components.                                                                          | `dev: false` / `review: false` | **~$0.01**                       |
-| **M**          | `m_coder `          | `tech_reviewer`  | OpenCode + DeepSeek-R1            | **Mid Dev**: Standard business logic, mandatory unit test authoring.                                                                               | `dev: true` / `review: false`  | **~$0.05**                       |
-| **L**          | `l_coder `          | `tech_reviewer`  | Claude Code (`claude-3-5-haiku`)  | **Senior Dev**: Local refactoring, standard full feature building.                                                                                 | `dev: true` / `review: false`  | _Subscription_                   |
+| **S**          | `s_coder`           | `fast_reviewer`  | OpenCode + DeepSeek-V3            | **Junior Dev**: Simple conditional statements, isolated micro-components.                                                                          | `dev: false` / `review: false` | **~$0.01**                       |
+| **M**          | `m_coder`           | `tech_reviewer`  | OpenCode + DeepSeek-R1            | **Mid Dev**: Standard business logic, mandatory unit test authoring.                                                                               | `dev: true` / `review: false`  | **~$0.05**                       |
+| **L**          | `l_coder`           | `tech_reviewer`  | Claude Code (`claude-3-5-haiku`)  | **Senior Dev**: Local refactoring, standard full feature building.                                                                                 | `dev: true` / `review: false`  | _Subscription_                   |
 | **XL**         | `xl_coder`          | `archi_reviewer` | Claude Code (`claude-3-5-sonnet`) | **Tech Lead**: Large module development, new API integrations.                                                                                     | `dev: true` / `review: true`   | _Subscription_                   |
 | **XXL**        | `xxl_coder`         | `archi_reviewer` | Claude Code (`claude-3-5-sonnet`) | **Principal Eng**: Core system overhauls + mandatory `architecture.md` updates.                                                                    | `dev: true` / `review: true`   | _Subscription_                   |
 
 ## 🚀 Quick Start
 
 1. Clone this repository or copy the .ai/ and .github/ directories to the root of your project.
-2. Set up your GitHub Repository Secrets (Settings > Secrets and variables > Actions): 
+2. Set up your GitHub Repository Secrets (Settings > Secrets and variables > Actions):
 
 - OPENROUTER_API_KEY: For your pay-as-you-go models (DeepSeek, Gemini).
 - CLAUDE_OAUTH_TOKEN: To authenticate Claude Code headless sessions inside your CI/CD using your active subscription.
 
-3. Configure your coding standards, tech stack, and build scripts inside CLAUDE.md.
-4. Define your product goals in roadmap.md and trigger the triage pipeline!
+1. Configure your coding standards, tech stack, and build scripts inside CLAUDE.md.
+2. Define your product goals in roadmap.md and trigger the triage pipeline!
 
 ## 💻 Local IDE Integration (FinOps Setup)
 
@@ -127,14 +127,14 @@ We provide plug-and-play configurations for the most popular AI-driven IDEs. Cho
 - Cursor Configuration Guide _(Coming Soon)_
 - Windsurf Configuration Guide _(Coming Soon)_
 
-> ⚠️ **Note on Local FinOps Responsibility:** Unlike the cloud pipeline which auto-routes your tasks using Gemini, **you are the router in your local IDE**. To protect your wallet, you should manually split your workload: for example in vscode, use the `Continue.dev` side-panel with low-cost cloud models (DeepSeek-V3/R1) for small to mid-sized tasks, and invoke `Claude Code` in your terminal only for heavy, multi-file structural changes to leverage your fixed subscription.
+> ⚠️ **Note on Local FinOps Responsibility:** Unlike the cloud pipeline which auto-routes your tasks using a model, **you are the router in your local IDE**. To protect your wallet, you should manually split your workload: for example, in Vscode, use the `Continue.dev` side-panel with low-cost cloud models (DeepSeek-V3/R1) for small to mid-sized tasks, and invoke `Claude Code` in your terminal only for heavy, multi-file structural changes to leverage your fixed subscription.
 
 ## 🧠 Framework Philosophy
 
-The engineering landscape has evolved. A developer's core value is no longer about writing repetitive boilerplate code, nor is it about blindly exhausting monthly AI commercial credits on trivial tasks. 
+The engineering landscape has evolved. A developer's core value is no longer about writing repetitive boilerplate code, nor is it about blindly exhausting monthly AI commercial credits on trivial tasks.
 
-True expertise lies in **orchestrating smart systems, engineering contextual loops, and optimizing computational run-time infrastructure.** 
+True expertise lies in **orchestrating smart systems, engineering contextual loops, and optimizing computational run-time infrastructure.**
 
-**Smart-AI-Factory** provides the governance layer that lets tech organizations scale up their output safely—keeping engineering teams fully in control of the codebase, the architecture, and the budget. 
+**Smart-AI-Factory** provides the governance layer that lets tech organizations scale up their output safely—keeping engineering teams fully in control of the codebase, the architecture, and the budget.
 
 _Framework designed and maintained by [fletort], AI-DevOps Architect & Lead Tech._
