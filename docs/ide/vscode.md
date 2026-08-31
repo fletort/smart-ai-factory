@@ -28,7 +28,7 @@ When working locally, you have access to two distinct AI interfaces. **You act a
 
 Use this interface for day-to-day coding assistance, quick questions, and code generation inside your current file.
 
-- **For Autocomplete (Ghost text):** Just type normally! `Codestral` via OpenRouter (or `Gemini Flash` if toggled) runs silently in the background, costing fractions of a cent per session.
+- **For Autocomplete (Ghost text):** Just type normally! `Codestral` via OpenRouter runs silently in the background, costing fractions of a cent per session.
 - **For XS / S Tasks (Quick edits, debugging, explaining code):** Open the **Continue** side-panel, select `DeepSeek-V3` in the model dropdown, and chat. It is near-instant and ultra-economic.
 - **For M / L Tasks (Complex algorithms, writing full unit test suites):** Switch the **Continue** model dropdown to `DeepSeek-R1`. Let its reasoning chain think through the logic before generating the code.
 
@@ -48,5 +48,6 @@ To ensure a seamless local-first experience, the container workspace automatical
 
 - `anthropic.claude-code`: Native panel and environment integration for Anthropic's autonomous coding agent.
 - `yzhang.markdown-all-in-one` & `bierner.markdown-mermaid`: Provides real-time, high-fidelity rendering of your `roadmap.md` and architecture charts directly inside the IDE.
-- `redhat.vscode-yaml`: Injects YAML schema validation and autocompletion for our `.ai/config.yaml` file.
-- `esbenp.prettier-vscode`: Enforces strict code and document linting. **Format-on-save** is enabled by default to keep your configuration files clean before any Git commit.
+- `DavidAnson.vscode-markdownlint`: Lint markdown file. **Lint-on-save** is enabled for this kind of file.
+- `redhat.vscode-yaml`: Injects YAML schema validation and autocompletion for YAML files.
+- `esbenp.prettier-vscode`: Enforces strict code and document formatting. **Format-on-save** is enabled by default to keep your configuration files clean before any Git commit.

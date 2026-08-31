@@ -17,7 +17,8 @@
         "yzhang.markdown-all-in-one",
         "bierner.markdown-mermaid",
         "esbenp.prettier-vscode",
-        "redhat.vscode-yaml"
+        "redhat.vscode-yaml",
+        "DavidAnson.vscode-markdownlint"
       ],
       "settings": {
         "remote.extensionKind": {
@@ -25,7 +26,10 @@
         },
         "editor.formatOnSave": true,
         "[markdown]": {
-          "editor.defaultFormatter": "esbenp.prettier-vscode"
+          "editor.defaultFormatter": "esbenp.prettier-vscode",
+          "editor.codeActionsOnSave": {
+            "source.fixAll.markdownlint": "explicit"
+          }
         },
         "[yaml]": {
           "editor.defaultFormatter": "esbenp.prettier-vscode"
@@ -42,7 +46,7 @@
   "mounts": [
     // persist authentication and settings across rebuilds
     //   see: https://code.claude.com/docs/en/devcontainer#persist-authentication-and-settings-across-rebuilds
-    "source=claude-code-config-smart-ai,target=/home/vscode/.claude,type=volume"
+    "source=claude-code-config-${devcontainerId},target=/home/vscode/.claude,type=volume"
   ],
   "containerEnv": {
     // Force Claude to write .claude.json inside the volume.
