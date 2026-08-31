@@ -114,8 +114,8 @@ Through .ai/config.yml, you can toggle **Human-in-the-Loop (HITL)** gates indepe
 - OPENROUTER_API_KEY: For your pay-as-you-go models (DeepSeek, Gemini).
 - CLAUDE_OAUTH_TOKEN: To authenticate Claude Code headless sessions inside your CI/CD using your active subscription.
 
-1. Configure your coding standards, tech stack, and build scripts inside CLAUDE.md.
-2. Define your product goals in roadmap.md and trigger the triage pipeline!
+3. Configure your coding standards, tech stack, and build scripts inside CLAUDE.md.
+4. Define your product goals in roadmap.md and trigger the triage pipeline!
 
 ## 💻 Local IDE Integration (FinOps Setup)
 
@@ -123,11 +123,11 @@ To track your AI expenses accurately, this framework is designed to run with gra
 
 We provide plug-and-play configurations for the most popular AI-driven IDEs. Choose your editor guide below to set up your local workspace in seconds:
 
-- [Visual Studio Code Configuration Guide](docs/ide/vscode.md)
+- [VS Code Configuration Guide](docs/ide/vscode.md)
 - Cursor Configuration Guide _(Coming Soon)_
 - Windsurf Configuration Guide _(Coming Soon)_
 
-> ⚠️ **Note on Local FinOps Responsibility:** Unlike the cloud pipeline which auto-routes your tasks using a model, **you are the router in your local IDE**. To protect your wallet, you should manually split your workload: for example, in Vscode, use the `Continue.dev` side-panel with low-cost cloud models (DeepSeek-V3/R1) for small to mid-sized tasks, and invoke `Claude Code` in your terminal only for heavy, multi-file structural changes to leverage your fixed subscription.
+> ⚠️ **Note on Local FinOps Responsibility:** Unlike the cloud pipeline which auto-routes your tasks using a model, **you are the router in your local IDE**. To protect your wallet, you should manually split your workload: for example, in VS Code, use the `Continue.dev` side-panel with low-cost cloud models (DeepSeek-V3/R1) for small to mid-sized tasks, and invoke `Claude Code` in your terminal only for heavy, multi-file structural changes to leverage your fixed subscription.
 
 ## 🧠 Framework Philosophy
 
