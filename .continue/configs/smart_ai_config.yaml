@@ -1,0 +1,55 @@
+name: Smart AI Models
+version: 1.0.0
+schema: v1
+
+models:
+  - name: DeepSeek-V3 (OpenRouter - Standard Chat & Triage)
+    provider: openrouter
+    model: deepseek/deepseek-chat
+    apiKey: ${{ secrets.CHAT_OPENROUTER_API_KEY }}
+    roles:
+      - chat
+
+  - name: Gemini 2.5 Flash (Google AI Studio - Free Triage & Chat Alternative)
+    provider: gemini
+    model: gemini-2.5-flash
+    apiKey: ${{ secrets.CHAT_GEMINI_API_KEY }}
+    roles:
+      - chat
+    # Note: Google AI Studio provides a free tier with rate limits.
+    # On the free tier, your prompts and responses are used to improve Google’s products.
+    # If you want more privacy, you can also use this model through
+    # OpenRouter with a small fee instead of the direct Google Free Tier.
+
+  - name: DeepSeek-R1 (OpenRouter - Deep Reasoning Chat)
+    provider: openrouter
+    model: deepseek/deepseek-r1
+    apiKey: ${{ secrets.CHAT_OPENROUTER_API_KEY }}
+    roles:
+      - chat
+
+  # Use official Claude Code Extension with a valid subscription - it's cheaper!
+  # - name: Claude 3.5 Sonnet (Anthropic - Ultimate Code & Archi)
+  #   provider: anthropic
+  #   model: claude-3-5-sonnet
+  #   apiKey: ${{ secrets.ANTHROPIC_API_KEY }}
+  #   roles:
+  #     - chat
+
+  - name: Codestral (OpenRouter - Smart Autocomplete)
+    provider: openrouter
+    model: mistralai/codestral-2508
+    apiKey: ${{ secrets.AUTOCOMPLETE_OPENROUTER_API_KEY }}
+    roles:
+      - autocomplete
+
+  - name: Gemini Flash (Google AI Studio - Ultra-Fast Autocomplete)
+    provider: gemini
+    model: gemini-2.5-flash
+    apiKey: ${{ secrets.AUTOCOMPLETE_GEMINI_API_KEY }}
+    roles:
+      - autocomplete
+    # Note: Google AI Studio provides a free tier with rate limits.
+    # On the free tier, your prompts and responses are used to improve Google’s products.
+    # If you want more privacy, you can also use this model through
+    # OpenRouter with a small fee instead of the direct Google Free Tier.

@@ -117,6 +117,18 @@ Through .ai/config.yml, you can toggle **Human-in-the-Loop (HITL)** gates indepe
 3. Configure your coding standards, tech stack, and build scripts inside CLAUDE.md.
 4. Define your product goals in roadmap.md and trigger the triage pipeline!
 
+## 💻 Local IDE Integration (FinOps Setup)
+
+To track your AI expenses accurately, this framework is designed to run with granular API keys (e.g., separate keys for Chat, Autocomplete, and CI/CD).
+
+We provide plug-and-play configurations for the most popular AI-driven IDEs. Choose your editor guide below to set up your local workspace in seconds:
+
+- [Visual Studio Code Configuration Guide](.ai/docs/ide/vscode.md)
+- [Cursor Configuration Guide](.ai/docs/ide/cursor.md) _(Coming Soon)_
+- [Windsurf Configuration Guide](.ai/docs/ide/windsurf.md) _(Coming Soon)_
+
+> ⚠️ **Note on Local FinOps Responsibility:** Unlike the cloud pipeline which auto-routes your tasks using Gemini, **you are the router in your local IDE**. To protect your wallet, you should manually split your workload: for example in vscode, use the `Continue.dev` side-panel with low-cost cloud models (DeepSeek-V3/R1) for small to mid-sized tasks, and invoke `Claude Code` in your terminal only for heavy, multi-file structural changes to leverage your fixed subscription.
+
 ## 🧠 Framework Philosophy
 
 The engineering landscape has evolved. A developer's core value is no longer about writing repetitive boilerplate code, nor is it about blindly exhausting monthly AI commercial credits on trivial tasks. 
