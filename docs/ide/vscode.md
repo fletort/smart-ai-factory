@@ -44,8 +44,6 @@ claude
 
 ## 📦 4. Included Toolkit
 
-To ensure a seamless local-first experience, the container workspace automatically provisions these essential tools:
-
 To ensure a seamless local-first experience, the container workspace automatically provisions these essential extensions and tools:
 
 - `anthropic.claude-code`: Native panel and environment integration for Anthropic's autonomous coding agent.
