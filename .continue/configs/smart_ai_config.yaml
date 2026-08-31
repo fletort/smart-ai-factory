@@ -42,14 +42,3 @@ models:
     apiKey: ${{ secrets.AUTOCOMPLETE_OPENROUTER_API_KEY }}
     roles:
       - autocomplete
-
-  - name: Gemini Flash (Google AI Studio - Ultra-Fast Autocomplete)
-    provider: gemini
-    model: gemini-2.5-flash
-    apiKey: ${{ secrets.AUTOCOMPLETE_GEMINI_API_KEY }}
-    roles:
-      - autocomplete
-    # Note: Google AI Studio provides a free tier with rate limits.
-    # On the free tier, your prompts and responses are used to improve Google’s products.
-    # If you want more privacy, you can also use this model through
-    # OpenRouter with a small fee instead of the direct Google Free Tier.
