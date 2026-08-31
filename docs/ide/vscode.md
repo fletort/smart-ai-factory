@@ -7,6 +7,7 @@ This framework leverages **Dev Containers**, **Continue.dev** and **Claude Code*
 To track costs accurately, you will need to prepare the following API keys for the initialization step:
 
 - `CHAT_OPENROUTER_API_KEY` (For DeepSeek-R1 / V3 Chat and Skills)
+- `CHAT_GEMINI_API_KEY` (For Gemini 2.5 Flash chat)
 - `AUTOCOMPLETE_OPENROUTER_API_KEY` (For Codestral smart autocomplete)
 - `AUTOCOMPLETE_GEMINI_API_KEY` (For Gemini 2.5 Flash fast free autocomplete)
 
