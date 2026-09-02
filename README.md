@@ -35,7 +35,7 @@ graph TD
         XL_DEV -->|Open Pull Request| REV
         XXL_DEV -->|Open Pull Request| REV
 
-        REV -->|XS & S Tiers| REV_FAST[Tiwn Fast Reviewer Agent]
+        REV -->|XS & S Tiers| REV_FAST[Twin Fast Reviewer Agent]
         REV -->|M & L Tiers| REV_TECH[Twin Technical Reviewer Agent]
         REV -->|XL & XXL Tiers| REV_ARCHI[Twin Expert Reviewer Agent]
 
