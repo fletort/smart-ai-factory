@@ -78,8 +78,8 @@ To prevent this, **Smart-AI-Factory** treats the GitHub Issue body as a cached m
 2. It stringifies this data into a compact JSON object and injects it as an invisible HTML comment inside the issue description:
 
    ```html
-   ### 🛑 Technical Specifications Gaps Claude Code needs more inputs to clear
-   this ticket. Please answer the questions below.
+   ### 🛑 Technical specification gaps — Claude Code needs more inputs to clear this ticket.
+   Please answer the questions below.
 
    <!-- FACTORY_CONTEXT {"roadmap_line": "- [ ] Setup Auth", "detected_gap": "Missing provider info", "schema_version": "1.0.0"} -->
    ```
