@@ -15,7 +15,6 @@
       "extensions": [
         "Continue.continue",
         "yzhang.markdown-all-in-one",
-        "bierner.markdown-mermaid",
         "esbenp.prettier-vscode",
         "redhat.vscode-yaml",
         "DavidAnson.vscode-markdownlint"

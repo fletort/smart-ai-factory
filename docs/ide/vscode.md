@@ -47,7 +47,7 @@ claude
 To ensure a seamless local-first experience, the container workspace automatically provisions these essential extensions and tools:
 
 - `anthropic.claude-code`: Native panel and environment integration for Anthropic's autonomous coding agent.
-- `yzhang.markdown-all-in-one` & `bierner.markdown-mermaid`: Provide real-time, high-fidelity rendering of your `roadmap.md` and architecture charts directly inside the IDE.
+- `yzhang.markdown-all-in-one`: Provides real-time, high-fidelity rendering of your `roadmap.md` and architecture charts directly inside the IDE.
 - `DavidAnson.vscode-markdownlint`: Lints Markdown files. **Lint-on-save** is enabled for these files.
 - `redhat.vscode-yaml`: Injects YAML schema validation and autocompletion for YAML files.
 - `esbenp.prettier-vscode`: Enforces strict code and document formatting. **Format-on-save** is enabled by default to keep your configuration files clean before any Git commit.
