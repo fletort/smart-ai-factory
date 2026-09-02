@@ -1,6 +1,6 @@
 # Local Triage & Interactive Brainstorming Loops 💻
 
-**State**: _Proposed specification (named file does'nt exist yet)_
+**State**: _Proposed specification (The specified files may not exist yet.)_
 
 This document details the architecture, terminal workflows, and Human-in-the-Loop (HITL) mechanics of the **Smart-AI-Factory** when executed locally inside your development workspace.
 

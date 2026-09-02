@@ -1,6 +1,6 @@
 # Cloud Triage, Stateless CI/CD & Token Optimization ☁️
 
-**State**: _Proposed specification_
+**State**: _Proposed specification (The specified files may not exist yet.)_
 
 This document details the automation architecture, event-driven pipelines, and token-saving memory persistence mechanisms of the **Smart-AI-Factory** when running on GitHub Actions.
 
