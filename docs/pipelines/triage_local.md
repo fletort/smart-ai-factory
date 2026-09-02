@@ -1,5 +1,7 @@
 # Local Triage & Interactive Brainstorming Loops 💻
 
+**State**: _Proposed specification_
+
 This document details the architecture, terminal workflows, and Human-in-the-Loop (HITL) mechanics of the **Smart-AI-Factory** when executed locally inside your development workspace.
 
 ---
@@ -27,7 +29,7 @@ graph TD
         BS -->|Option A: Manual Input| Prompt[Terminal Interface: Ask User for Specs]
         Prompt -->|Developer provides details| LLM
 
-        BS -->|Option B: Auto-Brainstorm| Claude[Invoke Advanced LLM: avanced_brainstorm_model]
+        BS -->|Option B: Auto-Brainstorm| Claude[Invoke Advanced LLM: advanced_brainstorm_model]
         Claude -->|Generates full context specs| JSON
     end
 
@@ -49,7 +51,7 @@ graph TD
 
 Instead of manually loading abstract prompt markdown files into your LLM prompt history, the framework abstracts the operations inside a single unified command palette visible by your local AI assistant (`skills/smart_ai.md`).
 
-When you invoke `@smart_ai.md /triage` inside `Continue.dev` or `OpenCode`:
+When you invoke `/smart_ai triage` inside `Continue.dev` or `OpenCode`:
 
 1. The AI reads the semantic capabilities of the factory.
 2. It triggers the background execution of `npm run factory:triage` (aliased to `node .ai/core/triage.js --local`).

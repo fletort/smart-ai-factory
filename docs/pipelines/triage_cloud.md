@@ -1,5 +1,7 @@
 # Cloud Triage, Stateless CI/CD & Token Optimization ☁️
 
+**State**: _Proposed specification_
+
 This document details the automation architecture, event-driven pipelines, and token-saving memory persistence mechanisms of the **Smart-AI-Factory** when running on GitHub Actions.
 
 ---
@@ -29,7 +31,7 @@ graph TD
         CloudStop -->|6. Create Tracking Issue| GH_BS[gh issue create --label brainstorming]
         CloudStop -->|7. Post Questions| NativeComment[Inject LLM1 native questions into Issue body]
 
-        %% OPTION B : Full Auto Brainstorm -> PR Directe
+        %% OPTION B : Full Auto Brainstorm -> PR Direct
         CheckConfig -->|"true (Option B)"| CloudAuto[🤖 Auto Brainstorm Mode]
         CloudAuto -->|6. Invoke LLM| LLM2[Invoke Advanced LLM: avanced_brainstorm_model]
         LLM2 -->|7. Resolve ambiguity autonomously| Fix[Update docs/architecture.md]
@@ -83,7 +85,7 @@ To prevent this, **Smart-AI-Factory** treats the GitHub Issue body as a cached m
    ```
 
 3. When you write a comment on the web, the brainstorm script uses the GitHub CLI to download **only** the issue text and the comments thread.
-4. The script strips the invisible `FACTORY_CONTEXT` out of the text and supplies it as the sole reference frame to the `advanced-brainstorming-llm-model`. **The codebase is never read during this phase.**
+4. The script strips the invisible `FACTORY_CONTEXT` out of the text and supplies it as the sole reference frame to the `advanced_brainstorm_model`. **The codebase is never read during this phase.**
 
 **Token Saving Result:** Prompt data payload drops from ~45,000 tokens (full project scanning) to less than ~1,500 tokens per discussion turn.
 
@@ -94,4 +96,4 @@ To prevent this, **Smart-AI-Factory** treats the GitHub Issue body as a cached m
 Because no terminal input buffer is available during cloud execution, the system translates your **HITL** requirements into native GitHub workflow authorizations:
 
 - **Configuring `auto_brainstorm: false` (Cas A - Manual Refinement):** If the Triage LLM discovers an ambiguous task, the pipeline stops automated execution immediately. The script automatically provisions a GitHub Issue containing the model's native clarifying questions inside the issue body, freezing the backlog until a human engineer provides the missing technical inputs in the comments.
-- **Configuring `hitl_during_triage: true` (Backlog Protection):** When a specification is flagged as `ready_to_dev` by the cloud engine, it creates the issue with a `pending-approval` state. The task remains unassigned to coding agents until an engineer removes the label or adds a 👍 emoji to the ticket description, ensuring no rogue automated code generation can occur on your repository.
+- **Configuring `hitl_during_triage: true` (Backlog Protection):** When a specification is flagged as `ready_to_dev` by the cloud engine, it creates the issue with a `pending-approval` state. In this way, the task remains unassigned to coding agents. Detailled documentation of this next phase (coding phase) will be added soon.
