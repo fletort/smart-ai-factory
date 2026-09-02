@@ -73,7 +73,7 @@ To keep this manifesto clean and actionable, the framework's detailed technical 
 
 ## 🚀 Quick Start
 
-1. Clone this repository or copy the `.ai/`, `skills/`, `.claude/`, and `.github/` directories to the root of your project.
+1. Clone this repository or copy the `.ai/`, `skills/`, and `.github/` directories to the root of your project.
 2. Set up your local environment file by copying `.continue/.env.template` to `.continue/.env` and adding your API keys.
 3. Open your project using **Dev Containers** for a zero-friction, pre-configured workspace.
 4. Define your product objectives inside `roadmap.md` and trigger the factory!

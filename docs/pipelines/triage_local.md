@@ -1,6 +1,6 @@
 # Local Triage & Interactive Brainstorming Loops 💻
 
-**State**: _Proposed specification_
+**State**: _Proposed specification (named file does'nt exist yet)_
 
 This document details the architecture, terminal workflows, and Human-in-the-Loop (HITL) mechanics of the **Smart-AI-Factory** when executed locally inside your development workspace.
 
@@ -8,7 +8,7 @@ This document details the architecture, terminal workflows, and Human-in-the-Loo
 
 ## 🔄 Local Execution Workflow
 
-In your local IDE, the system operates in a **synchronous, state-present mode**. The execution is driven by the central orchestration script (`.ai/core/triage.js`) combined with the UI layer of your chat assistant (`skills/smart_ai.md`).
+In your local IDE, the system operates in a **synchronous, state-present mode**. The execution is driven by the central orchestration script (triage) combined with the UI layer of your chat assistant (`skills/smart_ai.md`).
 
 ```mermaid
 graph TD
@@ -54,7 +54,7 @@ Instead of manually loading abstract prompt markdown files into your LLM prompt 
 When you invoke `/smart_ai triage` inside `Continue.dev` or `OpenCode`:
 
 1. The AI reads the semantic capabilities of the factory.
-2. It triggers the background execution of `npm run factory:triage` (aliased to `node .ai/core/triage.js --local`).
+2. It triggers the background execution of the Triage script.
 3. The script handles data manipulation, configuration mapping, and interactive prompting directly within your integrated terminal.
 
 ---
@@ -67,7 +67,7 @@ The local script intercepts this status, pauses the pipeline, and prints an inte
 
 ```text
 🛑 [Brainstorm] The task "Implement checkout system" is too ambiguous.
-👉 Missing parameters: Payment Gateway Provider, Error Handing State, Webhook Strategy.
+👉 Missing parameters: Payment Gateway Provider, Error Handling State, Webhook Strategy.
 
 How do you want to proceed?
   1) Provide missing technical specifications manually

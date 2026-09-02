@@ -33,7 +33,7 @@ graph TD
 
         %% OPTION B : Full Auto Brainstorm -> PR Direct
         CheckConfig -->|"true (Option B)"| CloudAuto[🤖 Auto Brainstorm Mode]
-        CloudAuto -->|6. Invoke LLM| LLM2[Invoke Advanced LLM: avanced_brainstorm_model]
+        CloudAuto -->|6. Invoke LLM| LLM2[Invoke Advanced LLM: advanced_brainstorm_model]
         LLM2 -->|7. Resolve ambiguity autonomously| Fix[Update docs/architecture.md]
         Fix -->|8. Push Solution| PR[Open Pull Request with complete specs]
     end
@@ -95,5 +95,5 @@ To prevent this, **Smart-AI-Factory** treats the GitHub Issue body as a cached m
 
 Because no terminal input buffer is available during cloud execution, the system translates your **HITL** requirements into native GitHub workflow authorizations:
 
-- **Configuring `auto_brainstorm: false` (Cas A - Manual Refinement):** If the Triage LLM discovers an ambiguous task, the pipeline stops automated execution immediately. The script automatically provisions a GitHub Issue containing the model's native clarifying questions inside the issue body, freezing the backlog until a human engineer provides the missing technical inputs in the comments.
-- **Configuring `hitl_during_triage: true` (Backlog Protection):** When a specification is flagged as `ready_to_dev` by the cloud engine, it creates the issue with a `pending-approval` state. In this way, the task remains unassigned to coding agents. Detailled documentation of this next phase (coding phase) will be added soon.
+- **Configuring `auto_brainstorm: false` (Case A - Manual Refinement):** If the Triage LLM discovers an ambiguous task, the pipeline stops automated execution immediately. The script automatically provisions a GitHub Issue containing the model's native clarifying questions inside the issue body, freezing the backlog until a human engineer provides the missing technical inputs in the comments.
+- **Configuring `hitl_during_triage: true` (Backlog Protection):** When a specification is flagged as `ready_to_dev` by the cloud engine, it creates the issue with a `pending-approval` state. In this way, the task remains unassigned to coding agents. Detailed documentation of this next phase (coding phase) will be added soon.
