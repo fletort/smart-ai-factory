@@ -68,8 +68,8 @@ To keep this manifesto clean and actionable, the framework's detailed technical 
    _Learn how to spin up your local multi-key Dev Container and how to manage your manual local FinOps choices._
 - **🔄 Interactive Workspace Loops:** [Local Triage & Live Brainstorming Documentation](docs/pipelines/triage_local.md)  
    _Deep-dive into the interactive CLI terminal menus, live human approval mechanics, and local Claude Code bypass loops._
-- **☁️ Cloud Native Production Workflows:** [Asynchronous CI/CD, Automated Dev & Twin-Review Rules](docs/pipelines/triage_cloud.md)  
-   _Understand how GitHub Actions pipelines execute the automated coding agents, handle stateless events, and trigger cross-model re-evaluations during Pull Requests._
+- **☁️ Cloud-Native Triage Workflows:** [Asynchronous CI/CD & Cloud Triage Rules](docs/pipelines/triage_cloud.md)  
+   _Understand how GitHub Actions perform stateless triage, persist brainstorming context, and apply asynchronous human gates._
 
 ## 🚀 Quick Start
 
