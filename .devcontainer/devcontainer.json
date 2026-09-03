@@ -22,7 +22,8 @@
         "yzhang.markdown-all-in-one",
         "esbenp.prettier-vscode",
         "redhat.vscode-yaml",
-        "DavidAnson.vscode-markdownlint"
+        "DavidAnson.vscode-markdownlint",
+        "arahata.linter-actionlint"
       ],
       "settings": {
         "remote.extensionKind": {

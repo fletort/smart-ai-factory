@@ -52,6 +52,7 @@ To ensure a seamless local-first experience, the container workspace automatical
 - `charliermarsh.ruff`: Python linter and formatter with import organization. **Format-on-save** is enabled for Python files.
 - `redhat.vscode-yaml`: Injects YAML schema validation and autocompletion for YAML files.
 - `esbenp.prettier-vscode`: Enforces strict code and document formatting for non-Python files. **Format-on-save** is enabled by default to keep your configuration files clean before any Git commit.
+- `arahata.linter-actionlint`: Lints GitHub Actions workflow files for syntax errors. **Lint-on-save** is enabled for YAML files in `.github/workflows/`.
 
 ## 🧹 5. Linting & Formatting Pipeline
 
@@ -67,6 +68,13 @@ When you commit changes, Lefthook automatically formats and checks your code:
 - **GitHub Actions workflows**: `zizmor` scans for security issues
 
 If any issues are found and cannot be automatically fixed (e.g., security vulnerabilities), the commit will be blocked and you'll see an explicit error message.
+
+### IDE Integration (On-Save Linting)
+VS Code extensions provide real-time feedback as you work:
+
+- **Python files**: `ruff` formatter with import organization on save
+- **Markdown files**: `markdownlint` linting on save
+- **GitHub Actions workflows**: `actionlint` linting on save for YAML files in `.github/workflows/`
 
 ### CI/CD Verification (lint-all Group)
 GitHub Actions runs the complete linting suite in check-only mode:
