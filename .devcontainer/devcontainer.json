@@ -8,12 +8,16 @@
     // node is required by claude-code feature
     "ghcr.io/devcontainers/features/node:2.1.0": {},
     // See: https://code.claude.com/docs/en/devcontainer
-    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {},
+    // Installs Poetry in an isolated environment (via pipx).
+    "ghcr.io/devcontainers-extra/features/poetry:2": {}
   },
   "customizations": {
     "vscode": {
       "extensions": [
         "Continue.continue",
+        "ms-python.python",
+        "zeshuaro.vscode-python-poetry",
         "yzhang.markdown-all-in-one",
         "esbenp.prettier-vscode",
         "redhat.vscode-yaml",
@@ -51,15 +55,13 @@
     // Force Claude to write .claude.json inside the volume.
     //   see: https://code.claude.com/docs/en/devcontainer#persist-authentication-and-settings-across-rebuilds
     "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
-  }
-  // Features to add to the dev container. More info: https://containers.dev/features.
-  // "features": {},
+  },
+  // Pre-install project dependencies (Poetry itself is installed by the poetry feature).
+  "postCreateCommand": "poetry install --sync --no-interaction --no-ansi",
+  // Keep dependencies in sync whenever the container (re)starts.
+  "postStartCommand": "poetry install --sync --no-interaction --no-ansi"
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [],
-  // Use 'postCreateCommand' to run commands after the container is created.
-  // "postCreateCommand": "pip3 install --user -r requirements.txt",
-  // Configure tool-specific properties.
-  // "customizations": {},
   // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
   // "remoteUser": "root"
 }

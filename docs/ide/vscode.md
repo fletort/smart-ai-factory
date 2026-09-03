@@ -51,3 +51,11 @@ To ensure a seamless local-first experience, the container workspace automatical
 - `DavidAnson.vscode-markdownlint`: Lints Markdown files. **Lint-on-save** is enabled for these files.
 - `redhat.vscode-yaml`: Injects YAML schema validation and autocompletion for YAML files.
 - `esbenp.prettier-vscode`: Enforces strict code and document formatting. **Format-on-save** is enabled by default to keep your configuration files clean before any Git commit.
+
+## 🐍 5. Poetry (Python Dependency Management)
+
+The Dev Container automatically installs [Poetry](https://python-poetry.org/) via the `ghcr.io/devcontainers-extra/features/poetry:2` Dev Container feature (isolated install via `pipx`, no system `pip`) and runs `poetry install --sync` right after the container is created and every time it starts. It also installs the VS Code extensions `ms-python.python` and `zeshuaro.vscode-python-poetry` by default.
+
+- Poetry is configured with `in-project = true`, so the virtual environment is always created at `.venv/` in the project root. This lets VS Code and extensions (Python, Ruff, ...) auto-detect the interpreter with no manual path configuration.
+- Open a terminal inside VS Code and dependencies are already installed: just run `poetry run <command>` or `poetry shell` to get started.
+- `.venv/` is git-ignored; commit only `pyproject.toml` and `poetry.lock` when adding dependencies with `poetry add <package>`.

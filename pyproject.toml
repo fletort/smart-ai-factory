@@ -1,0 +1,15 @@
+[project]
+name = "smart-ai-factory"
+version = "0.1.0"
+description = "Agnostic AI-DevOps framework that automates and self-regulates the software development lifecycle."
+authors = [{ name = "fletort" }]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.11"
+
+[tool.poetry]
+package-mode = false
+
+[build-system]
+requires = ["poetry-core>=2.0"]
+build-backend = "poetry.core.masonry.api"
