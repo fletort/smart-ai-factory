@@ -34,7 +34,7 @@ pre-commit:
     json-tool:
       glob: "*.json"
       description: "Format JSON files with python json.tool"
-      run: python -c "import json, sys; [open(f, 'w').write(json.dumps(json.load(open(f)), indent=2) + '\n') for f in sys.argv[1:]]" {staged_files}
+      run: python -c "import json, sys; [exec(f\"import json; d=json.load(open({repr(f)})); open({repr(f)},\\\"w\\\").write(json.dumps(d,indent=2)+\\\"\\\\n\\\")\") for f in sys.argv[1:]]" {staged_files}
       stage_fixed: true
     zizmor:
       glob: ".github/workflows/*.{yaml,yml}"
