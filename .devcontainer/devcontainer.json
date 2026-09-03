@@ -57,9 +57,9 @@
     "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
   },
   // Pre-install project dependencies (Poetry itself is installed by the poetry feature).
-  "postCreateCommand": "poetry install --sync",
+  "postCreateCommand": "poetry install --sync --no-interaction --no-ansi",
   // Keep dependencies in sync whenever the container (re)starts.
-  "postStartCommand": "poetry install --sync"
+  "postStartCommand": "poetry install --sync --no-interaction --no-ansi"
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [],
   // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
