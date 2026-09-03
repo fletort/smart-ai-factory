@@ -27,29 +27,6 @@
       "settings": {
         "remote.extensionKind": {
           "Continue.continue": ["workspace"]
-        },
-        "editor.formatOnSave": true,
-        "[python]": {
-          "editor.defaultFormatter": "charliermarsh.ruff",
-          "editor.formatOnSave": true,
-          "editor.codeActionsOnSave": {
-            "source.organizeImports.ruff": "explicit"
-          }
-        },
-        "[markdown]": {
-          "editor.defaultFormatter": "esbenp.prettier-vscode",
-          "editor.codeActionsOnSave": {
-            "source.fixAll.markdownlint": "explicit"
-          }
-        },
-        "[yaml]": {
-          "editor.defaultFormatter": "esbenp.prettier-vscode"
-        },
-        "[json]": {
-          "editor.defaultFormatter": "esbenp.prettier-vscode"
-        },
-        "[jsonc]": {
-          "editor.defaultFormatter": "esbenp.prettier-vscode"
         }
       }
     }
@@ -65,7 +42,8 @@
     "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
   },
   // Pre-install project dependencies (Poetry itself is installed by the poetry feature).
-  "postCreateCommand": "poetry install --sync --no-interaction --no-ansi",
+  // Also install actionlint for GitHub Actions workflow linting.
+  "postCreateCommand": "apt-get update && apt-get install -y actionlint && poetry install --sync --no-interaction --no-ansi",
   // Keep dependencies in sync whenever the container (re)starts.
   "postStartCommand": "poetry install --sync --no-interaction --no-ansi"
   // Use 'forwardPorts' to make a list of ports inside the container available locally.

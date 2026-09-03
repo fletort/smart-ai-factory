@@ -26,16 +26,21 @@ pre-commit:
       description: "Format Markdown files with mdformat"
       run: mdformat {staged_files}
       stage_fixed: true
-    prettier-yaml:
+    yamlfmt:
       glob: "*.{yaml,yml}"
-      description: "Format YAML files with prettier"
-      run: npx prettier --write {staged_files}
+      description: "Format YAML files with yamlfmt"
+      run: yamlfmt --in-place {staged_files}
       stage_fixed: true
-    prettier-json:
+    json-tool:
       glob: "*.json"
-      description: "Format JSON files with prettier"
-      run: npx prettier --write {staged_files}
+      description: "Format JSON files with python json.tool"
+      run: python -c "import json, sys; [open(f, 'w').write(json.dumps(json.load(open(f)), indent=2) + '\n') for f in sys.argv[1:]]" {staged_files}
       stage_fixed: true
+    zizmor:
+      glob: ".github/workflows/*.{yaml,yml}"
+      description: "Scan GitHub Actions workflows for security issues with zizmor"
+      run: zizmor {staged_files}
+      stage_fixed: false
 
 # Lint-all group - check mode
 # Used for CI and manual audits, runs in check-only mode
@@ -54,19 +59,20 @@ lint-all:
       glob: "*.md"
       description: "Check Markdown format with mdformat"
       run: mdformat --check {files}
-    prettier-yaml-check:
+    yamlfmt-check:
       glob: "*.{yaml,yml}"
-      description: "Check YAML format with prettier"
-      run: npx prettier --check {files}
-    prettier-json-check:
+      description: "Check YAML format with yamlfmt"
+      run: yamlfmt {files}
+    json-tool-check:
       glob: "*.json"
-      description: "Check JSON format with prettier"
-      run: npx prettier --check {files}
+      description: "Check JSON format with python json.tool"
+      run: python -c "import sys, json; [json.load(open(f)) for f in sys.argv[1:]]" {files}
     actionlint:
       glob: ".github/workflows/*.{yaml,yml}"
       description: "Lint GitHub Actions workflows with actionlint"
       run: actionlint {files}
-    zizmor:
+    zizmor-check:
       glob: ".github/workflows/*.{yaml,yml}"
       description: "Scan GitHub Actions workflows for security issues with zizmor"
       run: zizmor {files}
+

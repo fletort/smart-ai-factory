@@ -49,10 +49,45 @@ To ensure a seamless local-first experience, the container workspace automatical
 - `anthropic.claude-code`: Native panel and environment integration for Anthropic's autonomous coding agent.
 - `yzhang.markdown-all-in-one`: Provides real-time, high-fidelity rendering of your `roadmap.md` and architecture charts directly inside the IDE.
 - `DavidAnson.vscode-markdownlint`: Lints Markdown files. **Lint-on-save** is enabled for these files.
+- `charliermarsh.ruff`: Python linter and formatter with import organization. **Format-on-save** is enabled for Python files.
 - `redhat.vscode-yaml`: Injects YAML schema validation and autocompletion for YAML files.
-- `esbenp.prettier-vscode`: Enforces strict code and document formatting. **Format-on-save** is enabled by default to keep your configuration files clean before any Git commit.
+- `esbenp.prettier-vscode`: Enforces strict code and document formatting for non-Python files. **Format-on-save** is enabled by default to keep your configuration files clean before any Git commit.
 
-## 🐍 5. Poetry (Python Dependency Management)
+## 🧹 5. Linting & Formatting Pipeline
+
+The project includes an automated linting and formatting pipeline managed by **Lefthook**. It runs in two modes:
+
+### Local Development (Pre-commit Hooks)
+When you commit changes, Lefthook automatically formats and checks your code:
+
+- **Python**: `ruff` formats and lints your Python files
+- **Markdown**: `mdformat` with GitHub Flavored Markdown support
+- **YAML**: `yamlfmt` formats configuration files
+- **JSON**: Python's built-in `json.tool` for formatting
+- **GitHub Actions workflows**: `zizmor` scans for security issues
+
+If any issues are found and cannot be automatically fixed (e.g., security vulnerabilities), the commit will be blocked and you'll see an explicit error message.
+
+### CI/CD Verification (lint-all Group)
+GitHub Actions runs the complete linting suite in check-only mode:
+
+- All formatting/linting checks above
+- `actionlint` for GitHub Actions workflow syntax validation
+- No files are modified in CI; it's purely verification
+
+### Running Linting Manually
+
+To run the linting checks manually in your terminal:
+
+```bash
+# Format and check everything (pre-commit mode)
+poetry run lefthook run pre-commit
+
+# Full audit without modifications (lint-all mode, used by CI)
+poetry run lefthook run lint-all
+```
+
+## 🐍 6. Poetry (Python Dependency Management)
 
 The Dev Container automatically installs [Poetry](https://python-poetry.org/) via the `ghcr.io/devcontainers-extra/features/poetry:2` Dev Container feature (isolated install via `pipx`, no system `pip`) and runs `poetry install --sync` right after the container is created and every time it starts. It also installs the VS Code extensions `ms-python.python` and `zeshuaro.vscode-python-poetry` by default.
 

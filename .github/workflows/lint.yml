@@ -39,7 +39,7 @@ jobs:
         with:
           path: |
             .venv
-            ~/.cache/pip
+            ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-
@@ -47,19 +47,10 @@ jobs:
       - name: Install dependencies
         run: poetry install --sync --no-interaction --with dev
 
-      - name: Set up Node.js for formatting tools
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
       - name: Install actionlint
         run: |
           sudo apt-get update
           sudo apt-get install -y actionlint
-
-      - name: Install zizmor
-        run: |
-          pip install zizmor
 
       - name: Run Lefthook lint-all
         run: |
