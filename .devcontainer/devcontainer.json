@@ -16,6 +16,8 @@
     "vscode": {
       "extensions": [
         "Continue.continue",
+        "ms-python.python",
+        "zeshuaro.vscode-python-poetry",
         "yzhang.markdown-all-in-one",
         "esbenp.prettier-vscode",
         "redhat.vscode-yaml",
@@ -55,9 +57,9 @@
     "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
   },
   // Pre-install project dependencies (Poetry itself is installed by the poetry feature).
-  "postCreateCommand": "poetry install",
+  "postCreateCommand": "poetry install --sync",
   // Keep dependencies in sync whenever the container (re)starts.
-  "postStartCommand": "poetry install"
+  "postStartCommand": "poetry install --sync"
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [],
   // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
