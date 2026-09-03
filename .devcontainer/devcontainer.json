@@ -51,15 +51,17 @@
     // Force Claude to write .claude.json inside the volume.
     //   see: https://code.claude.com/docs/en/devcontainer#persist-authentication-and-settings-across-rebuilds
     "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
-  }
-  // Features to add to the dev container. More info: https://containers.dev/features.
-  // "features": {},
+  },
+  "remoteEnv": {
+    // Official Poetry installer places the binary here.
+    "PATH": "${containerEnv:PATH}:/home/vscode/.local/bin"
+  },
+  // Install Poetry (isolated, official installer) and pre-install project dependencies.
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  // Keep dependencies in sync whenever the container (re)starts.
+  "postStartCommand": "poetry install"
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [],
-  // Use 'postCreateCommand' to run commands after the container is created.
-  // "postCreateCommand": "pip3 install --user -r requirements.txt",
-  // Configure tool-specific properties.
-  // "customizations": {},
   // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
   // "remoteUser": "root"
 }
