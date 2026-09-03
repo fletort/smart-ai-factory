@@ -54,7 +54,7 @@ To ensure a seamless local-first experience, the container workspace automatical
 
 ## 🐍 5. Poetry (Python Dependency Management)
 
-The Dev Container automatically installs [Poetry](https://python-poetry.org/) via its official installer (isolated from the system `pip`) and runs `poetry install` right after the container is created and every time it starts.
+The Dev Container automatically installs [Poetry](https://python-poetry.org/) via the `ghcr.io/devcontainers-extra/features/poetry:2` Dev Container feature (isolated install via `pipx`, no system `pip`) and runs `poetry install` right after the container is created and every time it starts.
 
 - Poetry is configured with `virtualenvs.in-project true`, so the virtual environment is always created at `.venv/` in the project root. This lets VS Code and extensions (Python, Ruff, ...) auto-detect the interpreter with no manual path configuration.
 - Open a terminal inside VS Code and dependencies are already installed: just run `poetry run <command>` or `poetry shell` to get started.

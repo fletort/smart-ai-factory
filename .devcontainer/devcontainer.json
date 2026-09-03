@@ -8,7 +8,9 @@
     // node is required by claude-code feature
     "ghcr.io/devcontainers/features/node:2.1.0": {},
     // See: https://code.claude.com/docs/en/devcontainer
-    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {},
+    // Installs Poetry in an isolated environment (via pipx).
+    "ghcr.io/devcontainers-extra/features/poetry:2": {}
   },
   "customizations": {
     "vscode": {
@@ -52,12 +54,8 @@
     //   see: https://code.claude.com/docs/en/devcontainer#persist-authentication-and-settings-across-rebuilds
     "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
   },
-  "remoteEnv": {
-    // Official Poetry installer places the binary here.
-    "PATH": "${containerEnv:PATH}:/home/vscode/.local/bin"
-  },
-  // Install Poetry (isolated, official installer) and pre-install project dependencies.
-  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  // Pre-install project dependencies (Poetry itself is installed by the poetry feature).
+  "postCreateCommand": "poetry install",
   // Keep dependencies in sync whenever the container (re)starts.
   "postStartCommand": "poetry install"
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
