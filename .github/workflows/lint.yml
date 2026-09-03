@@ -1,0 +1,66 @@
+name: Lint All
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: Run linting checks
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-in-project: true
+
+      - name: Cache Poetry dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            .venv
+            ~/.cache/pip
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-
+
+      - name: Install dependencies
+        run: poetry install --sync --no-interaction --with dev
+
+      - name: Set up Node.js for formatting tools
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install actionlint
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y actionlint
+
+      - name: Install zizmor
+        run: |
+          pip install zizmor
+
+      - name: Run Lefthook lint-all
+        run: |
+          poetry run lefthook run lint-all

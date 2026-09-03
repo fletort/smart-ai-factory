@@ -1,0 +1,72 @@
+# Lefthook configuration for linting and formatting
+# https://github.com/evilmartians/lefthook
+
+# Global settings
+fail: pipe
+parallel: true
+verbose: false
+
+# Pre-commit hook group - auto-fix mode
+# Runs locally before commits, modifies files in-place and re-stages them
+pre-commit:
+  parallel: true
+  commands:
+    ruff-format:
+      glob: "*.py"
+      description: "Format Python files with ruff"
+      run: ruff format --line-length 88 {staged_files}
+      stage_fixed: true
+    ruff-lint:
+      glob: "*.py"
+      description: "Lint Python files with ruff"
+      run: ruff check --fix {staged_files}
+      stage_fixed: true
+    mdformat:
+      glob: "*.md"
+      description: "Format Markdown files with mdformat"
+      run: mdformat {staged_files}
+      stage_fixed: true
+    prettier-yaml:
+      glob: "*.{yaml,yml}"
+      description: "Format YAML files with prettier"
+      run: npx prettier --write {staged_files}
+      stage_fixed: true
+    prettier-json:
+      glob: "*.json"
+      description: "Format JSON files with prettier"
+      run: npx prettier --write {staged_files}
+      stage_fixed: true
+
+# Lint-all group - check mode
+# Used for CI and manual audits, runs in check-only mode
+lint-all:
+  parallel: true
+  commands:
+    ruff-format-check:
+      glob: "*.py"
+      description: "Check Python format with ruff"
+      run: ruff format --check --line-length 88 {files}
+    ruff-lint-check:
+      glob: "*.py"
+      description: "Check Python linting with ruff"
+      run: ruff check {files}
+    mdformat-check:
+      glob: "*.md"
+      description: "Check Markdown format with mdformat"
+      run: mdformat --check {files}
+    prettier-yaml-check:
+      glob: "*.{yaml,yml}"
+      description: "Check YAML format with prettier"
+      run: npx prettier --check {files}
+    prettier-json-check:
+      glob: "*.json"
+      description: "Check JSON format with prettier"
+      run: npx prettier --check {files}
+    actionlint:
+      glob: ".github/workflows/*.{yaml,yml}"
+      description: "Lint GitHub Actions workflows with actionlint"
+      run: actionlint {files}
+    zizmor:
+      glob: ".github/workflows/*.{yaml,yml}"
+      description: "Scan GitHub Actions workflows for security issues with zizmor"
+      run: zizmor {files}

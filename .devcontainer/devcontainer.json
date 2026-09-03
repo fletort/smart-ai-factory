@@ -17,6 +17,7 @@
       "extensions": [
         "Continue.continue",
         "ms-python.python",
+        "charliermarsh.ruff",
         "zeshuaro.vscode-python-poetry",
         "yzhang.markdown-all-in-one",
         "esbenp.prettier-vscode",
@@ -28,6 +29,13 @@
           "Continue.continue": ["workspace"]
         },
         "editor.formatOnSave": true,
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.organizeImports.ruff": "explicit"
+          }
+        },
         "[markdown]": {
           "editor.defaultFormatter": "esbenp.prettier-vscode",
           "editor.codeActionsOnSave": {
