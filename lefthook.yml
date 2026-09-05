@@ -37,7 +37,7 @@ pre-commit:
                     jobs:
                       - name: Lint Markdown files
                         glob: '*.md'
-                        run: markdownlint --fix {staged_files}
+                        run: npx markdownlint-cli2 --fix {staged_files}
                       - name: Lint GitHub Actions workflows with actionlint
                         glob: '.github/workflows/*.{yaml,yml}'
                         run: actionlint {files}
@@ -71,7 +71,7 @@ lint-all:
       stage_fixed: true
     markdownlint: # Check Markdown files linting
       glob: '*.md'
-      run: npx markdownlint {files}
+      run: npx markdownlint-cli2 {files}
     actionlint: # Lint GitHub Actions workflows with actionlint
       glob: '.github/workflows/*.{yaml,yml}'
       run: actionlint {files}
