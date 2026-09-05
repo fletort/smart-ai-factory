@@ -52,7 +52,8 @@ jobs:
       - name: Install actionlint
         run: |
           sudo apt-get update
-          sudo apt-get install -y actionlint
+          sudo apt-get install -y snapd
+          sudo snap install actionlint
 
       - name: Run Lefthook lint-all
         run: |
