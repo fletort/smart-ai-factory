@@ -1,78 +1,82 @@
 # Lefthook configuration for linting and formatting
 # https://github.com/evilmartians/lefthook
 
-# Global settings
-fail: pipe
-parallel: true
-verbose: false
-
 # Pre-commit hook group - auto-fix mode
 # Runs locally before commits, modifies files in-place and re-stages them
 pre-commit:
-  parallel: true
-  commands:
-    ruff-format:
-      glob: "*.py"
-      description: "Format Python files with ruff"
-      run: ruff format --line-length 88 {staged_files}
-      stage_fixed: true
-    ruff-lint:
-      glob: "*.py"
-      description: "Lint Python files with ruff"
-      run: ruff check --fix {staged_files}
-      stage_fixed: true
-    mdformat:
-      glob: "*.md"
-      description: "Format Markdown files with mdformat"
-      run: mdformat {staged_files}
-      stage_fixed: true
-    yamlfmt:
-      glob: "*.{yaml,yml}"
-      description: "Format YAML files with yamlfmt"
-      run: yamlfmt --in-place {staged_files}
-      stage_fixed: true
-    json-tool:
-      glob: "*.json"
-      description: "Format JSON files with python json.tool"
-      run: python -c "import json, sys; [exec(f\"import json; d=json.load(open({repr(f)})); open({repr(f)},\\\"w\\\").write(json.dumps(d,indent=2)+\\\"\\\\n\\\")\") for f in sys.argv[1:]]" {staged_files}
-      stage_fixed: true
-    zizmor:
-      glob: ".github/workflows/*.{yaml,yml}"
-      description: "Scan GitHub Actions workflows for security issues with zizmor"
-      run: zizmor {staged_files}
-      stage_fixed: false
+  parallel: false # run all root job sequentially
+  piped: false
+  jobs:
+    - name: 1. Lint & Format
+      group:
+        parallel: true # run all commands concurrently
+        jobs:
+          - name: 1.1 Python linting and formatting
+            group:
+              parallel: false
+              jobs:
+                - name: 1.1.1 Format Python files with ruff
+                  glob: '*.py'
+                  run: ruff format {staged_files}
+                  stage_fixed: true
+                - name: 1.1.2 Lint Python files with ruff
+                  glob: '*.py'
+                  run: ruff check --fix {staged_files}
+                  stage_fixed: true
+          - name: 1.2 JS, Markdown, YAML, JSON linting and formatting
+            group:
+              parallel: false
+              jobs:
+                - name: 1.2.1 Format JS, Markdown, YAML and JSON files with prettier
+                  glob: '*.{md,yml,yaml,js,json}'
+                  run: npx prettier --write {staged_files}
+                  stage_fixed: true
+                - name: 1.2.2 Lint JS, Markdown, YAML and JSON files
+                  group:
+                    parallel: true
+                    jobs:
+                      - name: Lint Markdown files
+                        glob: '*.md'
+                        run: markdownlint --fix {staged_files}
+                      - name: Lint GitHub Actions workflows with actionlint
+                        glob: '.github/workflows/*.{yaml,yml}'
+                        run: actionlint {files}
+                      - name: Scan GitHub Actions workflows for security issues with zizmor
+                        glob: '.github/workflows/*.{yaml,yml}'
+                        run: zizmor --gh-token $(gh auth token) --fix=safe {staged_files}
+                        stage_fixed: true
+                        fail_text:
+                          'To fix interactively unsafe problems, use: zizmor --gh-token $(gh auth
+                          token) --fix=all .'
+    - name: 2. Check for misspellings in text files
+      run: codespell {staged_files}
+      fail_text: 'To interactive fix, use: codespell -w --interactive 3'
 
 # Lint-all group - check mode
 # Used for CI and manual audits, runs in check-only mode
 lint-all:
-  parallel: true
+  parallel: true # run all commands concurrently
+  piped: false
+  files: git ls-files
   commands:
-    ruff-format-check:
-      glob: "*.py"
-      description: "Check Python format with ruff"
-      run: ruff format --check --line-length 88 {files}
-    ruff-lint-check:
-      glob: "*.py"
-      description: "Check Python linting with ruff"
+    ruff-format-check: # Check Python format with ruff
+      glob: '*.py'
+      run: ruff format --check {files}
+    ruff-lint-check: # Check Python linting with ruff
+      glob: '*.py'
       run: ruff check {files}
-    mdformat-check:
-      glob: "*.md"
-      description: "Check Markdown format with mdformat"
-      run: mdformat --check {files}
-    yamlfmt-check:
-      glob: "*.{yaml,yml}"
-      description: "Check YAML format with yamlfmt"
-      run: yamlfmt {files}
-    json-tool-check:
-      glob: "*.json"
-      description: "Check JSON format with python json.tool"
-      run: python -c "import sys, json; [json.load(open(f)) for f in sys.argv[1:]]" {files}
-    actionlint:
-      glob: ".github/workflows/*.{yaml,yml}"
-      description: "Lint GitHub Actions workflows with actionlint"
+    prettier-check: # Check JS, Markdown, YAML and JSON files format with prettier
+      glob: '*.{md,yml,yaml,js,json}'
+      run: npx prettier --check {files}
+      stage_fixed: true
+    markdownlint: # Check Markdown files linting
+      glob: '*.md'
+      run: npx markdownlint {files}
+    actionlint: # Lint GitHub Actions workflows with actionlint
+      glob: '.github/workflows/*.{yaml,yml}'
       run: actionlint {files}
-    zizmor-check:
-      glob: ".github/workflows/*.{yaml,yml}"
-      description: "Scan GitHub Actions workflows for security issues with zizmor"
-      run: zizmor {files}
-
+    zizmor-check: # Scan GitHub Actions workflows for security issues with zizmor
+      glob: '.github/workflows/*.{yaml,yml}'
+      run: zizmor --gh-token $(gh auth token) --fix=safe {files}
+    codespell: # Check for misspellings in text files
+      run: codespell {staged_files}
