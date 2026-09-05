@@ -1,0 +1,82 @@
+# Lefthook configuration for linting and formatting
+# https://github.com/evilmartians/lefthook
+
+# Pre-commit hook group - auto-fix mode
+# Runs locally before commits, modifies files in-place and re-stages them
+pre-commit:
+  parallel: false # run all root job sequentially
+  piped: false
+  jobs:
+    - name: 1. Lint & Format
+      group:
+        parallel: true # run all commands concurrently
+        jobs:
+          - name: 1.1 Python linting and formatting
+            group:
+              parallel: false
+              jobs:
+                - name: 1.1.1 Format Python files with ruff
+                  glob: '*.py'
+                  run: ruff format {staged_files}
+                  stage_fixed: true
+                - name: 1.1.2 Lint Python files with ruff
+                  glob: '*.py'
+                  run: ruff check --fix {staged_files}
+                  stage_fixed: true
+          - name: 1.2 JS, Markdown, YAML, JSON linting and formatting
+            group:
+              parallel: false
+              jobs:
+                - name: 1.2.1 Format JS, Markdown, YAML and JSON files with prettier
+                  glob: '*.{md,yml,yaml,js,json}'
+                  run: npx prettier --write {staged_files}
+                  stage_fixed: true
+                - name: 1.2.2 Lint JS, Markdown, YAML and JSON files
+                  group:
+                    parallel: true
+                    jobs:
+                      - name: Lint Markdown files
+                        glob: '*.md'
+                        run: npx markdownlint-cli2 --fix {staged_files}
+                      - name: Lint GitHub Actions workflows with actionlint
+                        glob: '.github/workflows/*.{yaml,yml}'
+                        run: actionlint {files}
+                      - name: Scan GitHub Actions workflows for security issues with zizmor
+                        glob: '.github/workflows/*.{yaml,yml}'
+                        run: zizmor --gh-token $(gh auth token) --fix=safe {staged_files}
+                        stage_fixed: true
+                        fail_text:
+                          'To fix interactively unsafe problems, use: zizmor --gh-token $(gh auth
+                          token) --fix=all .'
+    - name: 2. Check for misspellings in text files
+      run: codespell {staged_files}
+      fail_text: 'To interactive fix, use: codespell -w --interactive 3'
+
+# Lint-all group - check mode
+# Used for CI and manual audits, runs in check-only mode
+lint-all:
+  parallel: true # run all commands concurrently
+  piped: false
+  files: git ls-files
+  commands:
+    ruff-format-check: # Check Python format with ruff
+      glob: '*.py'
+      run: ruff format --check {files}
+    ruff-lint-check: # Check Python linting with ruff
+      glob: '*.py'
+      run: ruff check {files}
+    prettier-check: # Check JS, Markdown, YAML and JSON files format with prettier
+      glob: '*.{md,yml,yaml,js,json}'
+      run: npx prettier --check {files}
+      stage_fixed: true
+    markdownlint: # Check Markdown files linting
+      glob: '*.md'
+      run: npx markdownlint-cli2 {files}
+    actionlint: # Lint GitHub Actions workflows with actionlint
+      glob: '.github/workflows/*.{yaml,yml}'
+      run: actionlint {files}
+    zizmor-check: # Scan GitHub Actions workflows for security issues with zizmor
+      glob: '.github/workflows/*.{yaml,yml}'
+      run: zizmor --gh-token $(gh auth token) --fix=safe {files}
+    codespell: # Check for misspellings in text files
+      run: codespell {staged_files}

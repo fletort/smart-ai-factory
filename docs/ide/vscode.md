@@ -1,10 +1,12 @@
 # Visual Studio Code Setup
 
-This framework leverages **Dev Containers**, **Continue.dev** and **Claude Code** to provide a pre-configured local environment with multi-key FinOps tracking.
+This framework leverages **Dev Containers**, **Continue.dev** and **Claude Code** to provide a
+pre-configured local environment with multi-key FinOps tracking.
 
 ## 🔐 1. Prepare your Continue.dev API Keys
 
-To track costs accurately, you will need to prepare the following API keys for the initialization step:
+To track costs accurately, you will need to prepare the following API keys for the initialization
+step:
 
 - `CHAT_OPENROUTER_API_KEY` (For DeepSeek-R1 / V3 Chat and Skills)
 - `CHAT_GEMINI_API_KEY` (For Gemini 2.5 Flash chat)
@@ -14,48 +16,127 @@ To track costs accurately, you will need to prepare the following API keys for t
 
 1. Open this project directory in VS Code.
 2. Ensure the **Dev Containers** extension is installed.
-3. Open the Command Palette (`Cmd/Ctrl + Shift + P`) and select `Dev Containers: Reopen in Container` (or click the green pop-up helper if it appears).
-4. Create your local context file: copy `.continue/.env.template` to a new `.continue/.env` file and paste your API keys.
-5. Click the **Spark icon** in the Editor Toolbar (top-right corner of the editor) to sign in and authenticate **Claude Code** using your commercial subscription.
+3. Open the Command Palette (`Cmd/Ctrl + Shift + P`) and select
+   `Dev Containers: Reopen in Container` (or click the green pop-up helper if it appears).
+4. Create your local context file: copy `.continue/.env.template` to a new `.continue/.env` file and
+   paste your API keys.
+5. Click the **Spark icon** in the Editor Toolbar (top-right corner of the editor) to sign in and
+   authenticate **Claude Code** using your commercial subscription.
 
-_Note: The Dev Container is pre-configured with a named Docker volume mapped to `~/.claude`. This ensures your Claude Code authentication token, session history, and trust settings persist across container rebuilds._
+_Note: The Dev Container is pre-configured with a named Docker volume mapped to `~/.claude`. This
+ensures your Claude Code authentication token, session history, and trust settings persist across
+container rebuilds._
 
 ## 🎛️ 3. How to Use Locally
 
-When working locally, you have access to two distinct AI interfaces. **You act as the manual router**: to respect your budget and optimize performance, align your interface and model selection with the task complexity.
+When working locally, you have access to two distinct AI interfaces. **You act as the manual
+router**: to respect your budget and optimize performance, align your interface and model selection
+with the task complexity.
 
 ### 🧩 Interface 1: Continue.dev (Side-Panel Chat & Autocomplete)
 
-Use this interface for day-to-day coding assistance, quick questions, and code generation inside your current file.
+Use this interface for day-to-day coding assistance, quick questions, and code generation inside
+your current file.
 
-- **For Autocomplete (Ghost text):** Just type normally! `Codestral` via OpenRouter runs silently in the background, costing fractions of a cent per session.
-- **For XS / S Tasks (Quick edits, debugging, explaining code):** Open the **Continue** side-panel, select `DeepSeek-V3` in the model dropdown, and chat. It is near-instant and ultra-economic.
-- **For M / L Tasks (Complex algorithms, writing full unit test suites):** Switch the **Continue** model dropdown to `DeepSeek-R1`. Let its reasoning chain think through the logic before generating the code.
+- **For Autocomplete (Ghost text):** Just type normally! `Codestral` via OpenRouter runs silently in
+  the background, costing fractions of a cent per session.
+- **For XS / S Tasks (Quick edits, debugging, explaining code):** Open the **Continue** side-panel,
+  select `DeepSeek-V3` in the model dropdown, and chat. It is near-instant and ultra-economic.
+- **For M / L Tasks (Complex algorithms, writing full unit test suites):** Switch the **Continue**
+  model dropdown to `DeepSeek-R1`. Let its reasoning chain think through the logic before generating
+  the code.
 
 ### 🤖 Interface 2: Claude Code (Integrated Terminal CLI)
 
-Use this interface for autonomous agent execution. Do not use the chat panel here; instead, open your integrated terminal and simply type:
+Use this interface for autonomous agent execution. Do not use the chat panel here; instead, open
+your integrated terminal and simply type:
 
 ```bash
 claude
 ```
 
-- **For XL / XXL Tasks (Heavy refactoring, multi-file changes, architecture loops):** Let **Claude Code (Sonnet)** leverage your fixed monthly subscription credits to safely orchestrate complex, multi-file structural changes without blowing up your pay-as-you-go API wallets.
+- **For XL / XXL Tasks (Heavy refactoring, multi-file changes, architecture loops):** Let **Claude
+  Code (Sonnet)** leverage your fixed monthly subscription credits to safely orchestrate complex,
+  multi-file structural changes without blowing up your pay-as-you-go API wallets.
 
 ## 📦 4. Included Toolkit
 
-To ensure a seamless local-first experience, the container workspace automatically provisions these essential extensions and tools:
+To ensure a seamless local-first experience, the container workspace automatically provisions these
+essential extensions and tools:
 
-- `anthropic.claude-code`: Native panel and environment integration for Anthropic's autonomous coding agent.
-- `yzhang.markdown-all-in-one`: Provides real-time, high-fidelity rendering of your `roadmap.md` and architecture charts directly inside the IDE.
-- `DavidAnson.vscode-markdownlint`: Lints Markdown files. **Lint-on-save** is enabled for these files.
+- `anthropic.claude-code`: Native panel and environment integration for Anthropic's autonomous
+  coding agent.
+- `yzhang.markdown-all-in-one`: Provides real-time, high-fidelity rendering of your `roadmap.md` and
+  architecture charts directly inside the IDE.
+- `DavidAnson.vscode-markdownlint`: Lints Markdown files. **Lint-on-save** is enabled for these
+  files.
+- `charliermarsh.ruff`: Python linter and formatter with import organization. **Format-on-save** is
+  enabled for Python files.
 - `redhat.vscode-yaml`: Injects YAML schema validation and autocompletion for YAML files.
-- `esbenp.prettier-vscode`: Enforces strict code and document formatting. **Format-on-save** is enabled by default to keep your configuration files clean before any Git commit.
+- `esbenp.prettier-vscode`: Enforces strict code and document formatting for non-Python files.
+  **Format-on-save** is enabled by default to keep your configuration files clean before any Git
+  commit.
+- `arahata.linter-actionlint`: Lints GitHub Actions workflow files for syntax errors.
+  **Lint-on-save** is enabled for YAML files in `.github/workflows/`.
 
-## 🐍 5. Poetry (Python Dependency Management)
+## 🧹 5. Linting & Formatting Pipeline
 
-The Dev Container automatically installs [Poetry](https://python-poetry.org/) via the `ghcr.io/devcontainers-extra/features/poetry:2` Dev Container feature (isolated install via `pipx`, no system `pip`) and runs `poetry install --sync` right after the container is created and every time it starts. It also installs the VS Code extensions `ms-python.python` and `zeshuaro.vscode-python-poetry` by default.
+The project includes an automated linting and formatting pipeline managed by **Lefthook**. It runs
+in two modes:
 
-- Poetry is configured with `in-project = true`, so the virtual environment is always created at `.venv/` in the project root. This lets VS Code and extensions (Python, Ruff, ...) auto-detect the interpreter with no manual path configuration.
-- Open a terminal inside VS Code and dependencies are already installed: just run `poetry run <command>` or `poetry shell` to get started.
-- `.venv/` is git-ignored; commit only `pyproject.toml` and `poetry.lock` when adding dependencies with `poetry add <package>`.
+### Local Development (Pre-commit Hooks)
+
+When you commit changes, Lefthook automatically formats and checks your code:
+
+- **Python**: `ruff` formats and lints your Python files
+- **Markdown**: `mdformat` with GitHub Flavored Markdown support
+- **YAML**: `yamlfmt` formats configuration files
+- **JSON**: Python's built-in `json.tool` for formatting
+- **GitHub Actions workflows**: `zizmor` scans for security issues
+
+If any issues are found and cannot be automatically fixed (e.g., security vulnerabilities), the
+commit will be blocked and you'll see an explicit error message.
+
+### IDE Integration (On-Save Linting)
+
+VS Code extensions provide real-time feedback as you work:
+
+- **Python files**: `ruff` formatter with import organization on save
+- **Markdown files**: `markdownlint` linting on save
+- **GitHub Actions workflows**: `actionlint` linting on save for YAML files in `.github/workflows/`
+
+### CI/CD Verification (lint-all Group)
+
+GitHub Actions runs the complete linting suite in check-only mode:
+
+- All formatting/linting checks above
+- `actionlint` for GitHub Actions workflow syntax validation
+- No files are modified in CI; it's purely verification
+
+### Running Linting Manually
+
+To run the linting checks manually in your terminal:
+
+```bash
+# Format and check everything (pre-commit mode)
+poetry run lefthook run pre-commit
+
+# Full audit without modifications (lint-all mode, used by CI)
+poetry run lefthook run lint-all
+```
+
+## 🐍 6. Poetry (Python Dependency Management)
+
+The Dev Container automatically installs [Poetry](https://python-poetry.org/) via the
+`ghcr.io/devcontainers-extra/features/poetry:2` Dev Container feature (isolated install via `pipx`,
+no system `pip`) and runs `poetry install --sync` right after the container is created and every
+time it starts. It also installs the VS Code extensions `ms-python.python` and
+`zeshuaro.vscode-python-poetry` by default.
+
+- Poetry is configured with `in-project = true`, so the virtual environment is always created at
+  `.venv/` in the project root. This lets VS Code and extensions (Python, Ruff, ...) auto-detect the
+  interpreter with no manual path configuration.
+- Open a terminal inside VS Code and dependencies are already installed: just run
+  `poetry run <command>` or `poetry shell` to get started.
+- `.venv/` is git-ignored; commit only `pyproject.toml` and `poetry.lock` when adding dependencies
+  with `poetry add <package>`.

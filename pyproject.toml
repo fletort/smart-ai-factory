@@ -6,10 +6,29 @@ authors = [{ name = "fletort" }]
 license = { text = "MIT" }
 readme = "README.md"
 requires-python = ">=3.11"
+dependencies = []
 
 [tool.poetry]
 package-mode = false
 
+[tool.poetry.group.dev.dependencies]
+ruff = ">=0.6.0"
+lefthook = ">=1.5.0"
+zizmor = ">=1.30.0"
+codespell = "^2.4.3"
+
 [build-system]
 requires = ["poetry-core>=2.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "C4", "UP", "ARG", "SIM"]
+ignore = ["E501"]  # Line too long is handled by formatter
+
+[tool.mdformat]
+number = false
+wrap = 88

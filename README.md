@@ -1,12 +1,19 @@
 # Smart-AI-Factory 🚀 (WORK IN PROGRESS)
 
-**Smart-AI-Factory** is an open-source, agnostic AI-DevOps framework designed to automate and self-regulate your entire software development lifecycle—from Roadmap to Pull Request—while slashing your AI API costs.
+**Smart-AI-Factory** is an open-source, agnostic AI-DevOps framework designed to automate and
+self-regulate your entire software development lifecycle—from Roadmap to Pull Request—while slashing
+your AI API costs.
 
-Instead of blindly exhausting monthly commercial credits or using a single expensive LLM for every task, **Smart-AI-Factory** acts as a **centralized Semantic CLI & dynamic routing engine**. It evaluates task complexity upfront and orchestrates the most cost-efficient setup for **Triage**, **Automated Development**, and **Autonomous Code Review**.
+Instead of blindly exhausting monthly commercial credits or using a single expensive LLM for every
+task, **Smart-AI-Factory** acts as a **centralized Semantic CLI & dynamic routing engine**. It
+evaluates task complexity upfront and orchestrates the most cost-efficient setup for **Triage**,
+**Automated Development**, and **Autonomous Code Review**.
 
 ## 💡 The Vision: End-to-End FinOps Autonomous DevOps Pipeline
 
-Smart-AI-Factory decouples the **User Interface (Local Chat)** from the **Execution Engine (Core Scripts)**. A single configuration matrix governs the three core phases of your engineering loop, ensuring continuous alignment between your budget constraints and task complexity.
+Smart-AI-Factory decouples the **User Interface (Local Chat)** from the **Execution Engine (Core
+Scripts)**. A single configuration matrix governs the three core phases of your engineering loop,
+ensuring continuous alignment between your budget constraints and task complexity.
 
 ```mermaid
 graph TD
@@ -47,7 +54,9 @@ graph TD
 
 ## 🎛️ Governance & Routing Matrix
 
-Through `.ai/config.yaml`, you can toggle **Human-in-the-Loop (HITL)** gates independently for each task size. This enables teams to run fully automated production pipelines for small adjustments while enforcing strict human verification and high-tier models for development and code review.
+Through `.ai/config.yaml`, you can toggle **Human-in-the-Loop (HITL)** gates independently for each
+task size. This enables teams to run fully automated production pipelines for small adjustments
+while enforcing strict human verification and high-tier models for development and code review.
 
 | Level          | Dev Agent           | Review Agent     | Tech Stack (Default)              | Target Task                                                                                                                                        | HITL Gates (Configurable)      | Cost Profile                     |
 | -------------- | ------------------- | ---------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | -------------------------------- |
@@ -62,29 +71,43 @@ Through `.ai/config.yaml`, you can toggle **Human-in-the-Loop (HITL)** gates ind
 
 ## 📖 Deep-Dive Documentation
 
-To keep this manifesto clean and actionable, the framework's detailed technical operations and configuration requirements are split into specialized manuals:
+To keep this manifesto clean and actionable, the framework's detailed technical operations and
+configuration requirements are split into specialized manuals:
 
-- **💻 Local Workspace Integration:** [Visual Studio Code & Continue.dev Configuration Guide](docs/ide/vscode.md)  
-   _Learn how to spin up your local multi-key Dev Container and how to manage your manual local FinOps choices._
-- **🔄 Interactive Workspace Loops:** [Local Triage & Live Brainstorming Documentation](docs/pipelines/triage_local.md)  
-   _Deep-dive into the interactive CLI terminal menus, live human approval mechanics, and local Claude Code bypass loops._
-- **☁️ Cloud-Native Triage Workflows:** [Asynchronous CI/CD & Cloud Triage Rules](docs/pipelines/triage_cloud.md)  
-   _Understand how GitHub Actions perform stateless triage, persist brainstorming context, and apply asynchronous human gates._
+- **💻 Local Workspace Integration:**
+  [Visual Studio Code & Continue.dev Configuration Guide](docs/ide/vscode.md)  
+  _Learn how to spin up your local multi-key Dev Container and how to manage your manual local
+  FinOps choices._
+- **🔄 Interactive Workspace Loops:**
+  [Local Triage & Live Brainstorming Documentation](docs/pipelines/triage_local.md)  
+  _Deep-dive into the interactive CLI terminal menus, live human approval mechanics, and local
+  Claude Code bypass loops._
+- **☁️ Cloud-Native Triage Workflows:**
+  [Asynchronous CI/CD & Cloud Triage Rules](docs/pipelines/triage_cloud.md)  
+  _Understand how GitHub Actions perform stateless triage, persist brainstorming context, and apply
+  asynchronous human gates._
 
 ## 🚀 Quick Start
 
-1. Clone this repository or copy the `.ai/`, `skills/`, and `.github/` directories to the root of your project.
-2. Set up your local environment file by copying `.continue/.env.template` to `.continue/.env` and adding your API keys.
+1. Clone this repository or copy the `.ai/`, `skills/`, and `.github/` directories to the root of
+   your project.
+2. Set up your local environment file by copying `.continue/.env.template` to `.continue/.env` and
+   adding your API keys.
 3. Open your project using **Dev Containers** for a zero-friction, pre-configured workspace.
 4. Define your product objectives inside `roadmap.md` and trigger the factory!
 
 ## 🧠 Framework Philosophy
 
-The engineering landscape has evolved. A developer's core value is no longer about writing repetitive boilerplate code, nor is it about blindly exhausting monthly AI commercial credits on trivial tasks.
+The engineering landscape has evolved. A developer's core value is no longer about writing
+repetitive boilerplate code, nor is it about blindly exhausting monthly AI commercial credits on
+trivial tasks.
 
-True expertise lies in **orchestrating smart systems, engineering contextual loops, and optimizing computational run-time infrastructure.**
+True expertise lies in **orchestrating smart systems, engineering contextual loops, and optimizing
+computational run-time infrastructure.**
 
-**Smart-AI-Factory** provides the governance layer that lets tech organizations scale up their output safely—keeping engineering teams fully in control of the codebase, the architecture, and the budget.
+**Smart-AI-Factory** provides the governance layer that lets tech organizations scale up their
+output safely—keeping engineering teams fully in control of the codebase, the architecture, and the
+budget.
 
 ---
 
