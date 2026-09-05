@@ -39,6 +39,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry sync --no-interaction --no-ansi
+          npm install
 
       - name: Install actionlint
         run: |

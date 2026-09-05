@@ -29,7 +29,8 @@
         "redhat.vscode-yaml",
         "DavidAnson.vscode-markdownlint",
         "arahata.linter-actionlint",
-        "zizmor.zizmor-vscode"
+        "zizmor.zizmor-vscode",
+        "GitHub.vscode-github-actions"
       ],
       "settings": {
         "remote.extensionKind": {
@@ -48,11 +49,8 @@
     //   see: https://code.claude.com/docs/en/devcontainer#persist-authentication-and-settings-across-rebuilds
     "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
   },
-  // Pre-install project dependencies (Poetry itself is installed by the poetry feature).
-  // Also install actionlint for GitHub Actions workflow linting.
-  "postCreateCommand": "poetry sync --no-interaction --no-ansi",
   // Keep dependencies in sync whenever the container (re)starts.
-  "postStartCommand": "poetry sync --no-interaction --no-ansi"
+  "postStartCommand": "poetry sync --no-interaction --no-ansi && npm install"
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [],
   // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
