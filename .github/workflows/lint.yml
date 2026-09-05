@@ -39,7 +39,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry sync --no-interaction --no-ansi
-          source $(poetry env info --path)/bin/activate
+          eval $(poetry env activate)
 
       - name: Install actionlint
         run: |
