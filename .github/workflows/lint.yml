@@ -36,18 +36,8 @@ jobs:
           version: latest
           virtualenvs-in-project: true
 
-      - name: Cache Poetry dependencies
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
-        with:
-          path: |
-            .venv
-            ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-
       - name: Install dependencies
-        run: poetry install --sync --no-interaction --with dev
+        run: poetry sync --no-interaction --no-ansi
 
       - name: Install actionlint
         run: |
