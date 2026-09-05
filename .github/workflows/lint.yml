@@ -37,7 +37,9 @@ jobs:
           virtualenvs-in-project: true
 
       - name: Install dependencies
-        run: poetry sync --no-interaction --no-ansi
+        run: |
+          poetry sync --no-interaction --no-ansi
+          source $(poetry env info --path)/bin/activate
 
       - name: Install actionlint
         run: |
