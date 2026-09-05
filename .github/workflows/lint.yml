@@ -39,7 +39,6 @@ jobs:
       - name: Install dependencies
         run: |
           poetry sync --no-interaction --no-ansi
-          eval $(poetry env activate)
 
       - name: Install actionlint
         run: |
@@ -49,4 +48,5 @@ jobs:
 
       - name: Run Lefthook lint-all
         run: |
+          eval $(poetry env activate)
           .github/scripts/lefthook-summary.sh >> $GITHUB_STEP_SUMMARY
