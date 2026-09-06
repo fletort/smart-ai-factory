@@ -55,7 +55,7 @@ jobs:
 
       - name: Run Lefthook lint-all
         run: |
-          eval $(poetry env activate)
-          .github/scripts/lefthook-summary.sh >> $GITHUB_STEP_SUMMARY
+          eval "$(poetry env activate)"
+          .github/scripts/lefthook-summary.sh >> "$GITHUB_STEP_SUMMARY"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
