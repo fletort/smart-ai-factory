@@ -12,7 +12,9 @@
     // Installs Poetry in an isolated environment (via pipx).
     "ghcr.io/devcontainers-extra/features/poetry:2": {},
     // Install actionlint
-    "ghcr.io/devcontainers-extra/features/actionlint:1": {},
+    // "ghcr.io/devcontainers-extra/features/actionlint:1": {},
+    // The extension is too old, so not syncable with the one used in gihub action, use go instead
+    "ghcr.io/devcontainers/features/go:1": {},
     // Install github-cli (needed to give token to zizmor)
     "ghcr.io/devcontainers/features/github-cli:1.1.2": {}
   },
@@ -49,6 +51,8 @@
     //   see: https://code.claude.com/docs/en/devcontainer#persist-authentication-and-settings-across-rebuilds
     "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
   },
+  // Install actionlint with go as his feature is too old (see upper)
+  "postCreateCommand": "go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12",
   // Keep dependencies in sync whenever the container (re)starts.
   "postStartCommand": "poetry sync --no-interaction --no-ansi && npm install"
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
