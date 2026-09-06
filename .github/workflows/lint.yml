@@ -13,7 +13,7 @@ on:
 
 permissions:
   contents: read
-
+  actions: read
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -49,7 +49,7 @@ jobs:
 
       - name: Install actionlint
         run: |
-          curl -SL -o download-actionlint.sh  https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash 
+          curl -SL -o download-actionlint.sh https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash
           sudo bash download-actionlint.sh 1.7.12 /usr/bin
           rm download-actionlint.sh
 

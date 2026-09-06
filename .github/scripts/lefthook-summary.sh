@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Exit immediately if a command fails or if an uninitialized variable is used
+# Fail on unset variables and on errors in pipelines; Lefthook failures are handled via PIPESTATUS below
 set -uo pipefail
 
 LOG_FILE="lefthook_output.log"

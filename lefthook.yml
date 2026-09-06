@@ -43,7 +43,7 @@ pre-commit:
                         run: actionlint {files}
                       - name: Scan GitHub Actions workflows for security issues with zizmor
                         glob: '.github/workflows/*.{yaml,yml}'
-                        run: zizmor --gh-token $(gh auth token) --fix=safe {staged_files}
+                        run: zizmor --gh-token "${GH_TOKEN:-$(gh auth token)}" --fix=safe {staged_files}
                         stage_fixed: true
                         fail_text:
                           'To fix interactively unsafe problems, use: zizmor --gh-token $(gh auth
@@ -77,6 +77,6 @@ lint-all:
       run: actionlint {files}
     zizmor-check: # Scan GitHub Actions workflows for security issues with zizmor
       glob: '.github/workflows/*.{yaml,yml}'
-      run: zizmor --gh-token $(gh auth token) --fix=safe {files}
+      run: zizmor --gh-token "${GH_TOKEN}" {files}
     codespell: # Check for misspellings in text files
-      run: codespell {staged_files}
+      run: codespell {files}

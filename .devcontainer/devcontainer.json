@@ -53,7 +53,7 @@
   },
   // Install actionlint from binary as its feature is too old (see upper)
   // Install also shellcheck as in github ubuntu image to have shellcheck error support (TODO: next to sync version in future)
-  "postCreateCommand": "curl -SL -o download-actionlint.sh  https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash && sudo bash download-actionlint.sh 1.7.12 /usr/bin && rm download-actionlint.sh && sudo apt install shellcheck",
+  "postCreateCommand": "curl -SL -o download-actionlint.sh https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash && sudo bash download-actionlint.sh 1.7.12 /usr/bin && rm download-actionlint.sh && sudo apt-get update && sudo apt-get install -y shellcheck",
   // Keep dependencies in sync whenever the container (re)starts.
   "postStartCommand": "poetry sync --no-interaction --no-ansi && npm install"
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
