@@ -28,7 +28,3 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "C4", "UP", "ARG", "SIM"]
 ignore = ["E501"]  # Line too long is handled by formatter
-
-[tool.mdformat]
-number = false
-wrap = 88

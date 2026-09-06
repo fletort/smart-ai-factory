@@ -81,7 +81,8 @@ essential extensions and tools:
 
 ## 🧹 5. Linting & Formatting Pipeline
 
-The project includes an automated linting and formatting pipeline managed by **Lefthook**. It runs in two modes:
+The project includes an automated linting and formatting pipeline managed by **Lefthook**. It runs
+in two modes:
 
 ### Local Development (Pre-commit Hooks)
 
@@ -95,13 +96,15 @@ When you commit changes, Lefthook automatically formats and checks your code:
 - **All files**: `codespell` checks for spelling errors
 
 The pipeline is organized hierarchically:
+
 1. Python linting and formatting (ruff format, ruff check --fix)
 2. Markdown, YAML, and JSON formatting (prettier)
 3. Markdown linting (markdownlint)
 4. GitHub Actions workflow validation (actionlint + zizmor)
 5. Spelling checks (codespell)
 
-Fixable issues are automatically corrected and re-staged. If unfixable issues are found (e.g., zizmor security findings), the commit will be blocked with an explicit error message.
+Fixable issues are automatically corrected and re-staged. If unfixable issues are found (e.g.,
+zizmor security findings), the commit will be blocked with an explicit error message.
 
 ### IDE Integration (On-Save Linting & Formatting)
 

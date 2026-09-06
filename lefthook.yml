@@ -43,7 +43,9 @@ pre-commit:
                         run: actionlint {files}
                       - name: Scan GitHub Actions workflows for security issues with zizmor
                         glob: '.github/workflows/*.{yaml,yml}'
-                        run: zizmor --gh-token "${GH_TOKEN:-$(gh auth token)}" --fix=safe {staged_files}
+                        run:
+                          zizmor --gh-token "${GH_TOKEN:-$(gh auth token)}" --fix=safe
+                          {staged_files}
                         stage_fixed: true
                         fail_text:
                           'To fix interactively unsafe problems, use: zizmor --gh-token $(gh auth

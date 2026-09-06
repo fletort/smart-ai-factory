@@ -1,10 +1,12 @@
 # Linting & Formatting Pipeline - Developer Guide
 
-This document provides detailed information about the project's linting and formatting pipeline for developers who need to understand or modify the setup.
+This document provides detailed information about the project's linting and formatting pipeline for
+developers who need to understand or modify the setup.
 
 ## Architecture Overview
 
-The pipeline is organized around **Lefthook**, a Git hooks framework that orchestrates all linting and formatting tasks. It operates in two distinct modes:
+The pipeline is organized around **Lefthook**, a Git hooks framework that orchestrates all linting
+and formatting tasks. It operates in two distinct modes:
 
 1. **Pre-commit mode** (local development): Auto-fix/format mode
 2. **Lint-all mode** (CI/CD and manual audits): Check-only mode
@@ -12,33 +14,39 @@ The pipeline is organized around **Lefthook**, a Git hooks framework that orches
 ## Tool Selection & Rationale
 
 ### Python
+
 - **Tool**: `ruff` (format + lint)
 - **Why**: Fast, Python-native, comprehensive rule set, includes import sorting
 - **Configuration**: `pyproject.toml` → `[tool.ruff]`
 
 ### Markdown, YAML, JSON, JavaScript
+
 - **Tool**: `prettier`
-- **Why**: Consistent opinionated formatting across multiple file types, widely adopted in the ecosystem
+- **Why**: Consistent opinionated formatting across multiple file types, widely adopted in the
+  ecosystem
 - **Configuration**: `.prettierrc` at project root
 - **Installation**: `npm install` (Node.js required)
 
 ### Markdown Linting
+
 - **Tool**: `markdownlint-cli2`
 - **Why**: Enforces Markdown best practices (line length, list formatting, etc.)
 - **Installation**: `npm install`
 - **On-save**: Enabled via VS Code extension
 
 ### GitHub Actions Workflows
+
 - **Syntax Validation**: `actionlint`
 - **Security Scanning**: `zizmor`
-- **Why**: 
+- **Why**:
   - actionlint: Only dedicated tool for GitHub Actions YAML syntax
   - zizmor: Detects security issues specific to GitHub Actions (e.g., dangerous patterns)
-- **Installation**: 
+- **Installation**:
   - actionlint: `apt-get install actionlint` (already in devcontainer)
   - zizmor: `poetry add --group dev zizmor` (managed via Poetry)
 
 ### Spelling
+
 - **Tool**: `codespell`
 - **Why**: Catches common misspellings in comments, docstrings, and documentation
 - **Installation**: `poetry add --group dev codespell`
@@ -46,6 +54,7 @@ The pipeline is organized around **Lefthook**, a Git hooks framework that orches
 ## Dependency Management
 
 ### Python Dependencies
+
 All Python-based linting tools are managed via Poetry:
 
 ```bash
@@ -53,11 +62,13 @@ poetry add --group dev ruff lefthook zizmor codespell
 ```
 
 View current dev dependencies:
+
 ```bash
 poetry show --only dev
 ```
 
 ### Node.js Dependencies
+
 JavaScript tools are managed via npm and stored in `package.json`:
 
 ```bash
@@ -65,34 +76,38 @@ npm install --save-dev prettier markdownlint-cli2
 ```
 
 ### Native Binaries
+
 - `actionlint`: Installed in devcontainer via `apt-get install -y actionlint`
 - GitHub: `gh` CLI tool (part of devcontainer environment)
 
 ## Lefthook Configuration
 
 ### File Location
+
 `lefthook.yml` at project root
 
 ### Structure
 
 #### Pre-commit Group
+
 Runs automatically before git commits in local development:
 
 ```yaml
 pre-commit:
-  parallel: false          # Sequential execution at top level
+  parallel: false # Sequential execution at top level
   piped: false
   jobs:
     - name: 1. Lint & Format
       group:
-        parallel: true     # Parallel execution within this group
+        parallel: true # Parallel execution within this group
         jobs:
-          - ...            # Individual linting/formatting commands
+          - ... # Individual linting/formatting commands
     - name: 2. Check for misspellings
-      run: codespell ...   # Spelling check (sequential after formatting)
+      run: codespell ... # Spelling check (sequential after formatting)
 ```
 
 **Key characteristics:**
+
 - Top-level jobs run sequentially (linting → spelling)
 - Linting/formatting jobs run in parallel for speed
 - All changes are auto-fixed where possible
@@ -100,13 +115,14 @@ pre-commit:
 - Errors block commit and display `fail_text` messages
 
 #### Lint-all Group
+
 Runs in CI/CD and manual audits:
 
 ```yaml
 lint-all:
-  parallel: true           # All checks run in parallel
+  parallel: true # All checks run in parallel
   piped: false
-  files: git ls-files      # Check all tracked files
+  files: git ls-files # Check all tracked files
   commands:
     ruff-format-check: ... # Check-only mode (--check flag)
     prettier-check: ...
@@ -114,6 +130,7 @@ lint-all:
 ```
 
 **Key characteristics:**
+
 - All commands use check-only flags (--check, no --fix)
 - Runs against all git-tracked files
 - No files are modified
@@ -124,14 +141,14 @@ lint-all:
 
 ### Extensions
 
-| Tool | Extension | Purpose |
-|------|-----------|---------|
-| Ruff | `charliermarsh.ruff` | Python linting/formatting |
-| Prettier | `esbenp.prettier-vscode` | Multi-format formatting |
-| Markdownlint | `DavidAnson.vscode-markdownlint` | Markdown linting |
-| Actionlint | `arahata.linter-actionlint` | GitHub Actions syntax |
-| Zizmor | `zizmor.zizmor-vscode` | GitHub Actions security |
-| GitHub Actions | `GitHub.vscode-github-actions` | Actions workflow editor support |
+| Tool           | Extension                        | Purpose                         |
+| -------------- | -------------------------------- | ------------------------------- |
+| Ruff           | `charliermarsh.ruff`             | Python linting/formatting       |
+| Prettier       | `esbenp.prettier-vscode`         | Multi-format formatting         |
+| Markdownlint   | `DavidAnson.vscode-markdownlint` | Markdown linting                |
+| Actionlint     | `arahata.linter-actionlint`      | GitHub Actions syntax           |
+| Zizmor         | `zizmor.zizmor-vscode`           | GitHub Actions security         |
+| GitHub Actions | `GitHub.vscode-github-actions`   | Actions workflow editor support |
 
 ### Settings Configuration
 
@@ -179,6 +196,7 @@ All `[language]` blocks enable `editor.formatOnSave: true` where applicable:
 **File**: `.github/workflows/lint.yml`
 
 The workflow:
+
 1. Sets up Python 3.11
 2. Installs Poetry
 3. Caches Poetry dependencies and `.venv/`
@@ -189,6 +207,7 @@ The workflow:
 ### Environment Requirements
 
 For `zizmor` security scanning to work fully:
+
 - `gh` CLI must be installed
 - `GH_TOKEN` environment variable set (usually `${{ secrets.GITHUB_TOKEN }}` in Actions)
 - The token needs `actions:read` permission on the repository
@@ -239,6 +258,7 @@ codespell .
 ### Fixing Specific Issues
 
 **Unsafe GitHub Actions security issues:**
+
 ```bash
 # Zizmor flags some issues as unsafe that require manual review
 # To fix them interactively:
@@ -247,6 +267,7 @@ zizmor --gh-token $GH_TOKEN --fix=all .github/workflows/
 ```
 
 **Staged files only (before commit):**
+
 ```bash
 # Most Lefthook commands automatically target staged files
 # For manual runs, use git diff-index to get staged files:
@@ -257,6 +278,7 @@ ruff format $STAGED
 ## Adding New Linting Tools
 
 ### Python Tool
+
 ```bash
 # Add to Poetry
 poetry add --group dev <tool-name>
@@ -270,6 +292,7 @@ poetry add --group dev <tool-name>
 ```
 
 ### JavaScript Tool
+
 ```bash
 # Add via npm
 npm install --save-dev <tool-name>
@@ -279,6 +302,7 @@ run: npx <tool-name> {staged_files}
 ```
 
 ### Native Binary
+
 ```bash
 # Add installation to devcontainer.json postCreateCommand
 # Update lefthook.yml with the tool invocation
@@ -289,16 +313,19 @@ run: npx <tool-name> {staged_files}
 ### "Command not found" errors
 
 **Prettier/Markdownlint**: Ensure Node.js packages are installed
+
 ```bash
 npm install
 ```
 
 **Ruff/Zizmor**: Ensure Poetry packages are installed
+
 ```bash
 poetry install --sync
 ```
 
 **Actionlint**: Ensure devcontainer was rebuilt or installed locally
+
 ```bash
 # Local install (macOS)
 brew install actionlint
@@ -309,6 +336,7 @@ apt-get install actionlint  # Linux
 ### Zizmor "auth token" errors
 
 Zizmor needs GitHub authentication for full security scanning:
+
 ```bash
 gh auth login
 export GH_TOKEN=$(gh auth token)
@@ -318,6 +346,7 @@ poetry run lefthook run lint-all
 ### Prettier conflicts with editor
 
 If prettier on-save conflicts with other formatters:
+
 1. Ensure only one formatter is set as `editor.defaultFormatter` per language
 2. Check `.prettierrc` for any conflicting settings
 3. Clear VS Code cache and reload window
@@ -325,16 +354,17 @@ If prettier on-save conflicts with other formatters:
 ### Lefthook doesn't run on commit
 
 Install lefthook hooks in your repository:
+
 ```bash
 poetry run lefthook install
 ```
 
 ## References
 
-- **Lefthook**: https://github.com/evilmartians/lefthook
-- **Ruff**: https://github.com/astral-sh/ruff
-- **Prettier**: https://prettier.io/
-- **Markdownlint**: https://github.com/igorshubovych/markdownlint-cli2
-- **Actionlint**: https://github.com/rhysd/actionlint
-- **Zizmor**: https://github.com/naugtur/zizmor
-- **Codespell**: https://github.com/codespell-project/codespell
+- **Lefthook**: <https://github.com/evilmartians/lefthook>
+- **Ruff**: <https://github.com/astral-sh/ruff>
+- **Prettier**: <https://prettier.io/>
+- **Markdownlint**: <https://github.com/igorshubovych/markdownlint-cli2>
+- **Actionlint**: <https://github.com/rhysd/actionlint>
+- **Zizmor**: <https://github.com/naugtur/zizmor>
+- **Codespell**: <https://github.com/codespell-project/codespell>

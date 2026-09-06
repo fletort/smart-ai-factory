@@ -13,7 +13,7 @@
     "ghcr.io/devcontainers-extra/features/poetry:2": {},
     // Install actionlint
     // "ghcr.io/devcontainers-extra/features/actionlint:1": {},
-    // The extension is too old, so not syncable with the one used in gihub action, use go instead
+    // The extension is too old, so not syncable with the one used in gihub action, use script instead
     //"ghcr.io/devcontainers/features/go:1": {},
     // Install github-cli (needed to give token to zizmor)
     "ghcr.io/devcontainers/features/github-cli:1.1.2": {}
