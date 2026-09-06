@@ -81,36 +81,44 @@ essential extensions and tools:
 
 ## 🧹 5. Linting & Formatting Pipeline
 
-The project includes an automated linting and formatting pipeline managed by **Lefthook**. It runs
-in two modes:
+The project includes an automated linting and formatting pipeline managed by **Lefthook**. It runs in two modes:
 
 ### Local Development (Pre-commit Hooks)
 
 When you commit changes, Lefthook automatically formats and checks your code:
 
 - **Python**: `ruff` formats and lints your Python files
-- **Markdown**: `mdformat` with GitHub Flavored Markdown support
-- **YAML**: `yamlfmt` formats configuration files
-- **JSON**: Python's built-in `json.tool` for formatting
-- **GitHub Actions workflows**: `zizmor` scans for security issues
+- **Markdown**: `prettier` formats your Markdown files
+- **YAML**: `prettier` formats configuration files
+- **JSON**: `prettier` formats JSON files
+- **GitHub Actions workflows**: `actionlint` checks syntax and `zizmor` scans for security issues
+- **All files**: `codespell` checks for spelling errors
 
-If any issues are found and cannot be automatically fixed (e.g., security vulnerabilities), the
-commit will be blocked and you'll see an explicit error message.
+The pipeline is organized hierarchically:
+1. Python linting and formatting (ruff format, ruff check --fix)
+2. Markdown, YAML, and JSON formatting (prettier)
+3. Markdown linting (markdownlint)
+4. GitHub Actions workflow validation (actionlint + zizmor)
+5. Spelling checks (codespell)
 
-### IDE Integration (On-Save Linting)
+Fixable issues are automatically corrected and re-staged. If unfixable issues are found (e.g., zizmor security findings), the commit will be blocked with an explicit error message.
 
-VS Code extensions provide real-time feedback as you work:
+### IDE Integration (On-Save Linting & Formatting)
+
+VS Code extensions provide real-time feedback and automatic formatting as you work:
 
 - **Python files**: `ruff` formatter with import organization on save
-- **Markdown files**: `markdownlint` linting on save
+- **Markdown files**: `prettier` formatter with `markdownlint` lint-on-save
+- **YAML/JSON files**: `prettier` formatter on save
 - **GitHub Actions workflows**: `actionlint` linting on save for YAML files in `.github/workflows/`
+- **All files**: Zizmor extension provides GitHub Actions security scanning insights
 
 ### CI/CD Verification (lint-all Group)
 
 GitHub Actions runs the complete linting suite in check-only mode:
 
-- All formatting/linting checks above
-- `actionlint` for GitHub Actions workflow syntax validation
+- All formatting/linting checks from pre-commit
+- Parallel execution across all checks
 - No files are modified in CI; it's purely verification
 
 ### Running Linting Manually
@@ -123,6 +131,27 @@ poetry run lefthook run pre-commit
 
 # Full audit without modifications (lint-all mode, used by CI)
 poetry run lefthook run lint-all
+```
+
+You can also run individual tools:
+
+```bash
+# Python only
+ruff format .
+ruff check --fix .
+
+# Markdown, YAML, JSON
+npx prettier --write '*.{md,yml,yaml,json,js}'
+
+# Markdown linting
+npx markdownlint-cli2 '*.md'
+
+# GitHub Actions workflows
+actionlint .github/workflows/*.{yaml,yml}
+zizmor --gh-token $(gh auth token) --fix=safe .github/workflows/
+
+# Spelling
+codespell .
 ```
 
 ## 🐍 6. Poetry (Python Dependency Management)
