@@ -14,7 +14,7 @@
     // Install actionlint
     // "ghcr.io/devcontainers-extra/features/actionlint:1": {},
     // The extension is too old, so not syncable with the one used in gihub action, use go instead
-    "ghcr.io/devcontainers/features/go:1": {},
+    //"ghcr.io/devcontainers/features/go:1": {},
     // Install github-cli (needed to give token to zizmor)
     "ghcr.io/devcontainers/features/github-cli:1.1.2": {}
   },
@@ -51,8 +51,8 @@
     //   see: https://code.claude.com/docs/en/devcontainer#persist-authentication-and-settings-across-rebuilds
     "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
   },
-  // Install actionlint with go as his feature is too old (see upper)
-  "postCreateCommand": "go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12",
+  // Install actionlint from binary as its feature is too old (see upper)
+  "postCreateCommand": "curl -SL -o download-actionlint.sh  https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash && sudo bash download-actionlint.sh 1.7.12 /usr/bin && rm download-actionlint.sh",
   // Keep dependencies in sync whenever the container (re)starts.
   "postStartCommand": "poetry sync --no-interaction --no-ansi && npm install"
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
