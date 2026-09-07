@@ -1,0 +1,6 @@
+[codespell]
+
+# Ignore directories and files
+skip = ./node_modules,package-lock.json
+
+check-filename=true

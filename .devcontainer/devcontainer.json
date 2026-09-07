@@ -10,38 +10,33 @@
     // See: https://code.claude.com/docs/en/devcontainer
     "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {},
     // Installs Poetry in an isolated environment (via pipx).
-    "ghcr.io/devcontainers-extra/features/poetry:2": {}
+    "ghcr.io/devcontainers-extra/features/poetry:2": {},
+    // Install actionlint
+    // "ghcr.io/devcontainers-extra/features/actionlint:1": {},
+    // The extension is too old, so not syncable with the one used in GitHub Actions, use script instead
+    //"ghcr.io/devcontainers/features/go:1": {},
+    // Install github-cli (needed to give token to zizmor)
+    "ghcr.io/devcontainers/features/github-cli:1.1.2": {}
   },
   "customizations": {
     "vscode": {
       "extensions": [
         "Continue.continue",
         "ms-python.python",
+        "charliermarsh.ruff",
+        "ms-python.vscode-python-envs",
         "zeshuaro.vscode-python-poetry",
         "yzhang.markdown-all-in-one",
         "esbenp.prettier-vscode",
         "redhat.vscode-yaml",
-        "DavidAnson.vscode-markdownlint"
+        "DavidAnson.vscode-markdownlint",
+        "arahata.linter-actionlint",
+        "zizmor.zizmor-vscode",
+        "GitHub.vscode-github-actions"
       ],
       "settings": {
         "remote.extensionKind": {
           "Continue.continue": ["workspace"]
-        },
-        "editor.formatOnSave": true,
-        "[markdown]": {
-          "editor.defaultFormatter": "esbenp.prettier-vscode",
-          "editor.codeActionsOnSave": {
-            "source.fixAll.markdownlint": "explicit"
-          }
-        },
-        "[yaml]": {
-          "editor.defaultFormatter": "esbenp.prettier-vscode"
-        },
-        "[json]": {
-          "editor.defaultFormatter": "esbenp.prettier-vscode"
-        },
-        "[jsonc]": {
-          "editor.defaultFormatter": "esbenp.prettier-vscode"
         }
       }
     }
@@ -56,10 +51,11 @@
     //   see: https://code.claude.com/docs/en/devcontainer#persist-authentication-and-settings-across-rebuilds
     "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
   },
-  // Pre-install project dependencies (Poetry itself is installed by the poetry feature).
-  "postCreateCommand": "poetry install --sync --no-interaction --no-ansi",
+  // Install actionlint from binary as its feature is too old (see upper)
+  // Install also shellcheck as in github ubuntu image to have shellcheck error support (TODO: next to sync version in future)
+  "postCreateCommand": "curl -SL -o download-actionlint.sh https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash && sudo bash download-actionlint.sh 1.7.12 /usr/bin && rm download-actionlint.sh && sudo apt-get update && sudo apt-get install -y shellcheck",
   // Keep dependencies in sync whenever the container (re)starts.
-  "postStartCommand": "poetry install --sync --no-interaction --no-ansi"
+  "postStartCommand": "poetry sync --no-interaction --no-ansi && npm install"
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [],
   // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
