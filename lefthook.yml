@@ -50,9 +50,17 @@ pre-commit:
                         fail_text:
                           'To fix interactively unsafe problems, use: zizmor --gh-token $(gh auth
                           token) --fix=all .'
+          - name: 1.3 Shell script linting and formatting
+            group:
+              parallel: false
+              jobs:
+                # TODO: if needed add shfmt in future for sh formatting
+                - name: 1.3.2 Check Shell script files linting with shellcheck
+                  glob: '*.sh'
+                  run: shellcheck --enable all {staged_files}
     - name: 2. Check for misspellings in text files
       run: codespell {staged_files}
-      fail_text: 'To interactive fix, use: codespell -w --interactive 3'
+      fail_text: 'To interactively fix, use: codespell -w --interactive 3'
 
 # Lint-all group - check mode
 # Used for CI and manual audits, runs in check-only mode
@@ -70,7 +78,6 @@ lint-all:
     prettier-check: # Check JS, Markdown, YAML and JSON files format with prettier
       glob: '*.{md,yml,yaml,js,json}'
       run: npx prettier --check {files}
-      stage_fixed: true
     markdownlint: # Check Markdown files linting
       glob: '*.md'
       run: npx markdownlint-cli2 {files}
@@ -79,6 +86,9 @@ lint-all:
       run: actionlint {files}
     zizmor-check: # Scan GitHub Actions workflows for security issues with zizmor
       glob: '.github/workflows/*.{yaml,yml}'
-      run: zizmor --gh-token "${GH_TOKEN}" {files}
+      run: zizmor --gh-token "${GH_TOKEN:-$(gh auth token)}" {files}
+    shellchech-check: # Check Shell script files linting with shellcheck
+      glob: '*.sh'
+      run: shellcheck --enable all {files}
     codespell: # Check for misspellings in text files
       run: codespell {files}

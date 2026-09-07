@@ -140,8 +140,8 @@ You can also run individual tools:
 
 ```bash
 # Python only
-ruff format .
-ruff check --fix .
+poetry run ruff format .
+poetry run ruff check --fix .
 
 # Markdown, YAML, JSON
 npx prettier --write '*.{md,yml,yaml,json,js}'
@@ -151,7 +151,7 @@ npx markdownlint-cli2 '*.md'
 
 # GitHub Actions workflows
 actionlint .github/workflows/*.{yaml,yml}
-zizmor --gh-token $(gh auth token) --fix=safe .github/workflows/
+poetry run zizmor --gh-token $(gh auth token) --fix=safe .github/workflows/
 
 # Spelling
 codespell .
