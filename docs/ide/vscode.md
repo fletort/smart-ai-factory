@@ -161,7 +161,7 @@ codespell .
 
 The Dev Container automatically installs [Poetry](https://python-poetry.org/) via the
 `ghcr.io/devcontainers-extra/features/poetry:2` Dev Container feature (isolated install via `pipx`,
-no system `pip`) and runs `poetry install --sync` every time the container starts. time it starts.
+no system `pip`) and runs `poetry sync --no-interaction --no-ansi` every time the container starts.
 It also installs the VS Code extensions `ms-python.python` and `zeshuaro.vscode-python-poetry` by
 default.
 
