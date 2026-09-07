@@ -161,9 +161,9 @@ codespell .
 
 The Dev Container automatically installs [Poetry](https://python-poetry.org/) via the
 `ghcr.io/devcontainers-extra/features/poetry:2` Dev Container feature (isolated install via `pipx`,
-no system `pip`) and runs `poetry install --sync` right after the container is created and every
-time it starts. It also installs the VS Code extensions `ms-python.python` and
-`zeshuaro.vscode-python-poetry` by default.
+no system `pip`) and runs `poetry install --sync` every time the container starts. time it starts.
+It also installs the VS Code extensions `ms-python.python` and `zeshuaro.vscode-python-poetry` by
+default.
 
 - Poetry is configured with `in-project = true`, so the virtual environment is always created at
   `.venv/` in the project root. This lets VS Code and extensions (Python, Ruff, ...) auto-detect the

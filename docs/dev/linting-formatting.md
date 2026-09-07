@@ -42,7 +42,7 @@ and formatting tasks. It operates in two distinct modes:
   - actionlint: Only dedicated tool for GitHub Actions YAML syntax
   - zizmor: Detects security issues specific to GitHub Actions (e.g., dangerous patterns)
 - **Installation**:
-  - actionlint: `apt-get install actionlint` (already in devcontainer)
+  - actionlint: Installed with its upstream download script (already in devcontainer)
   - zizmor: `poetry add --group dev zizmor` (managed via Poetry)
 
 ### Spelling
@@ -200,10 +200,10 @@ The workflow:
 
 1. Sets up Python 3.11
 2. Installs Poetry
-3. Caches Poetry dependencies and `.venv/`
+3. Caches Poetry dependencies
 4. Installs Node.js dependencies
 5. Installs actionlint binary
-6. Runs `poetry run lefthook run lint-all`
+6. Runs `.github/scripts/lefthook-summary.sh`
 
 ### Environment Requirements
 

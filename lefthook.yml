@@ -38,14 +38,18 @@ pre-commit:
                       - name: Lint Markdown files
                         glob: '*.md'
                         run: npx markdownlint-cli2 --fix {staged_files}
+                        stage_fixed: true
                       - name: Lint GitHub Actions workflows with actionlint
                         glob: '.github/workflows/*.{yaml,yml}'
                         run: actionlint {staged_files}
                       - name: Scan GitHub Actions workflows for security issues with zizmor
                         glob: '.github/workflows/*.{yaml,yml}'
-                        run:
-                          zizmor --gh-token "${GH_TOKEN:-$(gh auth token)}" --fix=safe
-                          {staged_files}
+                        run: |
+                          # If GH_TOKEN not given by CI (local usage), define it
+                          if [ -z "$GH_TOKEN" ] && command -v gh &> /dev/null; then
+                            export GH_TOKEN=$(gh auth token 2>/dev/null)
+                          fi
+                          zizmor --gh-token "${GH_TOKEN:-$(gh auth token)}" --fix=safe {staged_files}
                         stage_fixed: true
                         fail_text:
                           'To fix interactively unsafe problems, use: zizmor --gh-token $(gh auth
@@ -86,7 +90,12 @@ lint-all:
       run: actionlint {files}
     zizmor-check: # Scan GitHub Actions workflows for security issues with zizmor
       glob: '.github/workflows/*.{yaml,yml}'
-      run: zizmor --gh-token "${GH_TOKEN:-$(gh auth token)}" {files}
+      run: |
+        # If GH_TOKEN not given by CI (local usage), define it
+        if [ -z "$GH_TOKEN" ] && command -v gh &> /dev/null; then
+          export GH_TOKEN=$(gh auth token 2>/dev/null)
+        fi
+        zizmor --gh-token "${GH_TOKEN}" {files}
     shellcheck-check: # Check Shell script files linting with shellcheck
       glob: '*.sh'
       run: shellcheck --enable all {files}
