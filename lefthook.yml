@@ -40,7 +40,7 @@ pre-commit:
                         run: npx markdownlint-cli2 --fix {staged_files}
                       - name: Lint GitHub Actions workflows with actionlint
                         glob: '.github/workflows/*.{yaml,yml}'
-                        run: actionlint {files}
+                        run: actionlint {staged_files}
                       - name: Scan GitHub Actions workflows for security issues with zizmor
                         glob: '.github/workflows/*.{yaml,yml}'
                         run:

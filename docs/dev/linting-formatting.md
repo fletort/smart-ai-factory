@@ -77,7 +77,7 @@ npm install --save-dev prettier markdownlint-cli2
 
 ### Native Binaries
 
-- `actionlint`: Installed in devcontainer via `apt-get install -y actionlint`
+- `actionlint`: Installed via the upstream download script (see `.devcontainer/devcontainer.json` and `.github/workflows/lint.yml`)
 - GitHub: `gh` CLI tool (part of devcontainer environment)
 
 ## Lefthook Configuration
