@@ -42,11 +42,15 @@ jobs:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
       - name: Install dependencies
         run: |
           poetry sync --no-interaction --no-ansi
-          npm install
-
+          npm ci
       - name: Install actionlint
         run: |
           curl -SL -o download-actionlint.sh https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash
