@@ -49,7 +49,14 @@ pre-commit:
                           if [ -z "$GH_TOKEN" ] && command -v gh &> /dev/null; then
                             export GH_TOKEN=$(gh auth token 2>/dev/null)
                           fi
-                          zizmor --gh-token "${GH_TOKEN:-$(gh auth token)}" --fix=safe {staged_files}
+                          # Explicit check to keep local runs actionable and avoid unclear errors
+                          if [ -z "$GH_TOKEN" ]; then
+                            echo "❌ Error: GH_TOKEN is missing."
+                            echo "👉 In CI: Ensure the GH_TOKEN env variable is mapped to secrets.GITHUB_TOKEN."
+                            echo "👉 Locally: Please run 'gh auth login' or set 'export GH_TOKEN=your_token'."
+                            exit 1
+                          fi
+                          zizmor --gh-token "${GH_TOKEN}" --fix=safe {staged_files}
                         stage_fixed: true
                         fail_text:
                           'To fix interactively unsafe problems, use: zizmor --gh-token $(gh auth
@@ -94,6 +101,13 @@ lint-all:
         # If GH_TOKEN not given by CI (local usage), define it
         if [ -z "$GH_TOKEN" ] && command -v gh &> /dev/null; then
           export GH_TOKEN=$(gh auth token 2>/dev/null)
+        fi
+        # Explicit check to keep local runs actionable and avoid unclear errors
+        if [ -z "$GH_TOKEN" ]; then
+          echo "❌ Error: GH_TOKEN is missing."
+          echo "👉 In CI: Ensure the GH_TOKEN env variable is mapped to secrets.GITHUB_TOKEN."
+          echo "👉 Locally: Please run 'gh auth login' or set 'export GH_TOKEN=your_token'."
+          exit 1
         fi
         zizmor --gh-token "${GH_TOKEN}" {files}
     shellcheck-check: # Check Shell script files linting with shellcheck
