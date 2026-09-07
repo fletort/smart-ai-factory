@@ -87,7 +87,7 @@ lint-all:
     zizmor-check: # Scan GitHub Actions workflows for security issues with zizmor
       glob: '.github/workflows/*.{yaml,yml}'
       run: zizmor --gh-token "${GH_TOKEN:-$(gh auth token)}" {files}
-    shellchech-check: # Check Shell script files linting with shellcheck
+    shellcheck-check: # Check Shell script files linting with shellcheck
       glob: '*.sh'
       run: shellcheck --enable all {files}
     codespell: # Check for misspellings in text files
