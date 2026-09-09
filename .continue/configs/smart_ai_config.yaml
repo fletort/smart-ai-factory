@@ -10,9 +10,9 @@ models:
     roles:
       - chat
 
-  - name: Gemini 2.5 Flash (Google AI Studio - Free Triage & Chat Alternative)
+  - name: Gemini 3.6 Flash (Google AI Studio - Free Triage & Chat Alternative)
     provider: gemini
-    model: gemini-2.5-flash
+    model: gemini-3.6-flash
     apiKey: ${{ secrets.CHAT_GEMINI_API_KEY }}
     roles:
       - chat
@@ -24,6 +24,13 @@ models:
   - name: DeepSeek-R1 (OpenRouter - Deep Reasoning Chat)
     provider: openrouter
     model: deepseek/deepseek-r1
+    apiKey: ${{ secrets.CHAT_OPENROUTER_API_KEY }}
+    roles:
+      - chat
+
+  - name: OpenRouter-Free (for fun)
+    provider: openrouter
+    model: openrouter/free
     apiKey: ${{ secrets.CHAT_OPENROUTER_API_KEY }}
     roles:
       - chat
