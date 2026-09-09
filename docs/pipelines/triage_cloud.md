@@ -22,7 +22,7 @@ graph TD
 
     subgraph box1["🧠 Processing Loop"]
         CI_Triage -->|Invoke| CoreTriage[Launch Triage Script in cloud mode]
-        CoreTriage -->|1. Reads config| Config[.ai/config.yaml]
+        CoreTriage -->|1. Reads config| Config[.smart.ai/config.yml]
         CoreTriage -->|2. Queries| LLM1[Triage LLM: simple_triage_model]
         LLM1 -->|3. Parses next task in roadmap.md| JSON1[Strict JSON Spec Payload]
     end

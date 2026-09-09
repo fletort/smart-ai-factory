@@ -1,0 +1,8 @@
+specification:
+  templates:
+    # Mode UNIFIED (Activez cette ligne pour tester le mode simple)
+    unified: '.smart.ai/examples/templates/unified-spec.md'
+
+    # Mode MODULAR (Décommentez ces lignes pour tester le mode cascade)
+    # functional: ".smart.ai/examples/templates/functional-spec.md"
+    # technical: ".smart.ai/examples/templates/technical-spec.md"
