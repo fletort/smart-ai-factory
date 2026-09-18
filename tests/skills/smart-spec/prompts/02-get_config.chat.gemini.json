@@ -1,0 +1,37 @@
+[
+  {
+    "role": "user",
+    "parts": [
+      {
+        "text": "# SYSTEM INSTRUCTIONS\n{{smart_spec_skill}}\n# ASSOCIATED USER MESSAGE\n{{user_message}}"
+      }
+    ]
+  },
+  {
+    "role": "model",
+    "parts": [
+      {
+        "functionCall": {
+          "id": "call-1",
+          "name": "read_file",
+          "args": { "path": ".smart.ai/config.yml" }
+        },
+        "thoughtSignature": "skip_thought_signature_validator"
+      }
+    ]
+  },
+  {
+    "role": "user",
+    "parts": [
+      {
+        "functionResponse": {
+          "id": "call-1",
+          "name": "read_file",
+          "response": {
+            "result": "{{read_file_config_result}}"
+          }
+        }
+      }
+    ]
+  }
+]

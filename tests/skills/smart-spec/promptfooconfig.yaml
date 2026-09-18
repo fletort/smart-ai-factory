@@ -1,0 +1,244 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+
+# Learn more about building a configuration: https://promptfoo.dev/docs/configuration/guide
+
+description: 'Test Skills'
+
+prompts:
+  - file://prompt.js
+
+providers:
+  - id: 'google:gemini-3.6-flash'
+    label: gemini
+    config:
+      apiKey: '{{ env.TEST_GEMINI_API_KEY }}'
+      tools: &tools
+        - type: function
+          function:
+            name: read_file
+            description: Reads the contents of a local file from a given path.
+            parameters:
+              type: object
+              properties:
+                path:
+                  type: string
+                  description: 'Relative Path of the file to read from the workspace root directory'
+              required: ['path']
+        - type: function
+          function:
+            name: write_file
+            description: Writes the contents of a local file from a given path.
+            parameters:
+              type: object
+              properties:
+                path:
+                  type: string
+                  description:
+                    'Relative Path of the file to write from the workspace root directory'
+                content:
+                  type: string
+                  description: 'Content to write to the specified file'
+              required: ['path', 'content']
+  - id: 'google:gemini-3.6-flash'
+    label: gemini-without-tool
+    config:
+      apiKey: '{{ env.TEST_GEMINI_API_KEY }}'
+      grammar_type: gemini
+  # - id: 'opencode:sdk'
+  - id: openrouter:deepseek/deepseek-v4.1-flash
+    config:
+      apiKey: '{{ env.TEST_OPENROUTER_KEY }}'
+      tools: *tools
+      showThinking: false
+      max_tokens: 8000
+  # - id: openrouter:free
+  #   config:
+  #     apiKey: '{{ env.TEST_OPENROUTER_KEY }}'
+
+defaultTest:
+  vars:
+    smart_spec_skill: file://../../../.agents/skills/smart-spec/SKILL.md
+  options:
+    provider: openrouter:deepseek/deepseek-v4.1-flash
+
+tests:
+  - description: Test Skill reads the config file first
+    vars:
+      user_message: I want a specification for a complex interest-free 3-installment payment system.
+      prompt_path: prompts/01-first_message.txt
+    providers:
+      - gemini
+      - openrouter:*
+    assert:
+      - type: is-json
+      - type: contains
+        value: 'read_file'
+      - type: contains
+        value: '.smart.ai/config.yml'
+
+  - description: Test Skill stops immediately when config file is missing
+    providers:
+      - gemini
+      - openrouter:*
+    vars:
+      user_message: I want a specification for a complex interest-free 3-installment payment system.
+      read_file_config_result: 'cannot access .smart.ai/config.yml: No such file or directory'
+      prompt_path: prompts/02-get_config.chat.json
+    assert:
+      - type: contains
+        value: 'Workspace not configured.'
+      - type: not-contains
+        # If stop is respected, no spec preview muts be available
+        value: 'installment'
+      - type: not-contains
+        value: 'PENDING'
+
+  - description: Test Skill detects small scope and ask for the corresponding next steps
+    providers:
+      - gemini
+      - openrouter:*
+    vars:
+      user_message: I just want to change the text of the landing page title. It takes 10 minutes.
+      read_file_config_result:
+        'specifications:\ntemplates:\n unified:".ai/templates/unified_spec.md'
+      prompt_path: prompts/02-get_config.chat.json
+    assert:
+      - type: contains
+        value: 'SMALL'
+      - type: contains-any
+        value: ['Case 1', 'Case 2', 'Case 3', '/smart-plan', '@xs_coder']
+      - type: llm-rubric
+        value: |
+          The output must explicitly engage in a conversation or guide the user towards an immediate action track for a SMALL scope.
+          It should ask a question or present choices (Case 1, Case 2, Case 3).
+
+  - description: Test Skill does not evaluate scope (or LARGE) and detect UNIFIED template mode
+    providers:
+      - gemini
+      - openrouter:*
+    vars:
+      user_message: I want a specification for a complex interest-free 3-installment payment system.
+      read_file_config_result:
+        'specifications:\ntemplates:\n unified:".ai/templates/unified_spec.md'
+      prompt_path: prompts/02-get_config.chat.json
+    assert:
+      - type: contains
+        value: 'PENDING'
+      - type: contains-all
+        value: ['UNIFIED', 'unified_spec.md']
+      - type: not-contains
+        value: 'MODULAR'
+      - type: contains-any
+        value:
+          - 'Scope of the current specification is not yet evaluated'
+          - LARGE
+      - type: llm-rubric
+        value: |
+          The output must draft a specification for a complex interest-free 3-installment payment system.
+          Some points of the specification MUST be in PENDING state. To help to close these points,
+          maximum of 3 high-impact questions MUST be asked at the end of the prompt.
+
+  - description: Test Skill does not evaluate scope (or LARGE) and detect MODULAR template mode
+    providers:
+      - gemini
+      - openrouter:*
+    vars:
+      user_message: I want a specification for a complex interest-free 3-installment payment system.
+      read_file_config_result:
+        'specifications:\ntemplates:\n functional: .ai/templates/functional_spec.md\ntechnical:
+        .ai/templates/technical_spec.md'
+      prompt_path: prompts/02-get_config.chat.json
+    assert:
+      - type: contains
+        value: 'PENDING'
+      - type: contains-all
+        value: ['MODULAR', 'functional_spec.md', 'technical_spec.md']
+      - type: not-contains
+        value: 'UNIFIED'
+      - type: contains-any
+        value:
+          - 'Scope of the current specification is not yet evaluated'
+          - LARGE
+      - type: llm-rubric
+        value: |
+          The output must draft a specification for a complex interest-free 3-installment payment system.
+          Some points of the specification MUST be in PENDING state. To help to close these points,
+          maximum of 3 high-impact questions MUST be asked at the end of the prompt.
+
+  - description: Test Skill reads the template when spec is ready
+    providers:
+      - gemini
+      - openrouter:*
+    vars:
+      user_message: I want a specification for a complex interest-free 3-installment payment system.
+      read_file_config_result:
+        'specifications:\ntemplates:\n unified:".ai/templates/unified_spec.md'
+      llm_spec_draft_msg: 'Draft ⚠️ [PENDING]. Questions: 1. Gateway? 2. Minimum amount?'
+      user_close_draft_msg:
+        '1. Stripe. 2. 50€. Everything is clear, you can generate the final spec document now.'
+      prompt_path: prompts/03-get_spec.chat.json
+    assert:
+      - type: is-json
+      - type: contains
+        value: 'read_file'
+      - type: contains
+        value: '.ai/templates/unified_spec.md'
+
+  # TODO: Test when template is not available
+
+  - description: Test Skill writes specification and index when spec is validated
+    providers:
+      - gemini
+      - openrouter:*
+    vars:
+      prompt_path: prompts/04.chat.json
+      user_message: I want a specification for a complex interest-free 3-installment payment system.
+      read_file_config_result:
+        'specifications:\ntemplates:\n unified:".ai/templates/unified_spec.md'
+      llm_spec_draft_msg: 'Draft ⚠️ [PENDING]. Questions: 1. Gateway? 2. Minimum amount?'
+      user_close_draft_msg:
+        '1. Stripe. 2. 50€. Everything is clear, you can generate the final spec document now.'
+      template_file: .ai/templates/unified_spec.md
+      read_file_template_file_content: |
+        # # Unified Specifications: [Module/Feature Name]
+        ## 1. Context & Objectives
+        **Global Vision:** [What problem are we solving and why?]
+        ## 2. Functional Specifications (What)
+        ## 3. Technical Specifications (How)
+      index_file: .smart.ai/spec_index.md
+      read_file_index_result: ''
+    assert:
+      - type: is-json
+      - type: tool-call-f1
+        value:
+          - write_file
+      - type: equals
+        value: 'write_file'
+        transform: output[0].function?.name || output[0].functionCall?.name
+      - type: llm-rubric
+        value: |
+          Verify that the specifications document meets the following criteria:
+          1. It uses Stripe for a 3-installment payment plan.
+          2. It enforces a minimum amount of 50€.
+          3. It properly details the rounding logic, ensuring any remainder is added to the first installment.
+        transform: |
+          const first = output[0];
+          if (!first) return '';
+          // google format
+          if (first.functionCall?.args) return first.functionCall.args.content;
+          // OpenAI format : function.arguments can be a string or an object
+          const args = first.function?.arguments;
+          return typeof args === 'string' ? JSON.parse(args).content : args?.content;
+      - type: equals
+        value: 'write_file'
+        transform: output[1]?.function?.name || output[1]?.functionCall?.name
+      - type: equals
+        value: '.smart.ai/spec_index.md'
+        transform: |
+          const second = output[1];
+          if (!second) return '';
+          // google format
+          if (second.functionCall?.args) return second.functionCall.args.path;
+          // OpenAI format
+          const args = second.function?.arguments;
+          return typeof args === 'string' ? JSON.parse(args).path : args?.path;

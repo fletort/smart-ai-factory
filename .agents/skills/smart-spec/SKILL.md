@@ -19,9 +19,28 @@ specification is complete and ready for execution planning.
 
 ## Execution Logic & Cascades
 
-1. Discuss and refine the idea with the user to map functional/technical goals (See Refinement Loop
-   chapter below).
-2. Evaluate the scope:
+1. **CRITICAL PRE-CONDITION (Sequential Execution Only)**: You MUST execute this step strictly in
+   isolation before evaluating any other rule, case, or file path mentioned later in this prompt.
+   - **Step 1.A (File Check)**: Check if `.smart.ai/config.yml` exists.
+   - **Step 1.B (Early Exit)**: IF and ONLY IF `.smart.ai/config.yml` is missing, you MUST halt
+     immediately. Do NOT call any tool for any other file. Output exactly and only:
+     "❌**[smart-spec] Workspace not configured.**"
+   - **Step 1.C (Mode Detection)**: IF present, read it to analyze the `specifications.templates`
+     section ONLY to detect and notify the user of the template mode:
+     - **[UNIFIED] Mode**: Triggered if only a single `unified` template path is provided.
+     - **[MODULAR] Mode**: Triggered if separate `functional` and `technical` template paths are
+       provided.
+
+   The template mode notification is made with this output: "[smart-ai] Mode MODULAR detected (name
+   of template file(s))". At this step **you do NOT read the template file(s) yet**.
+
+2. **Refinement & First Draft**: Discuss and refine the idea with the user.
+   1. Present a first draft based on the user's initial input using your own generic/agile
+      structure. Flag missing information with `⚠️ [PENDING]`.
+   2. Apply **The 3-Question Rule** at the very end.
+   3. Wait for validation.
+
+3. **Scope Evaluation**: Once the discussion is mature, evaluate the scope:
    - If **SMALL/MICRO** (< 4 hours estimated work): Present a choice between:
      - **Case 1** (Run `/smart-plan` to create a standalone GitHub Issue). Use when
        tracking/documentation is needed.
@@ -34,50 +53,30 @@ specification is complete and ready for execution planning.
      dedicated "Specifications" chapter below). Once specs are complete, prompt the user to run
      `/smart-plan` to handle roadmap updates and task scheduling.
 
-### User Interaction Protocol (Refinement Loop)
+   Scope notification: you must always notify your scope evaluation to the user:
+   - "[smart-ai] **SMALL/MICRO** specification estimated" or
+   - "[smart-ai] **LARGE** specification estimated" or
+   - "[smart-ai] Scope of the current specification is not yet evaluated"
 
-Never assume missing details. If a request is broad or implies technical choices, you must engage in
-a conversation:
+### Case 3 Execution (Writing Final Specifications)
 
-1. **Draft & Highlight**: Present a first draft of the specification, but clearly flag missing
-   information or assumptions using a `⚠️ [PENDING]` tag.
-2. **The 3-Question Rule**: At the very end of your response, list a maximum of **3 precise,
-   high-impact questions** to clear up the most critical blind spots.
-3. **Validation**: Wait for the user's feedback. Once they answer, remove the `[PENDING]` tags and
-   finalize the specification text.
+ONLY when Case 3 is activated and you have the user's permission, you MUST now read the content of
+the Markdown files located at the paths detected in Step 1 (e.g.,
+`.ai/templates/functional_spec.md`).
 
-### Specifications (Case 3)
+You must also check if this is a new specification or an update: for this point you MUST stricty
+rely on the workspace index located at `.smart.ai/spec_index.md`:
 
-#### Bootstrapping & Configuration
+1. **For Updates / Increments**: Before creating a new document, search the index table to see if a
+   similar feature or target file already exists.
+2. **Routing**:
+   - If the user request matches an existing Ref (e.g., "Update billing"), identify the exact target
+     file from the table and ask to read _only_ that file.
+   - If it's a completely new feature, announce you will create a new entry in the index.
+3. **Strict Prohibition**: You are strictly forbidden from scanning the whole workspace directories.
+   If the index is insufficient, ask the user.
 
-When Case 3 is activated and you must write specifications, you MUST perform these steps in silence.
-Do NOT execute any terminal commands to find files; rely entirely on your workspace context.
-
-1. Locate and read the file `.smart.ai/config.yml` from the workspace.
-
-<!-- 2. **Fallback Safety**: If you do not find or cannot access it, STOP immediately.
-   Do not guess. You must trigger a command execution or explicitly display it in a code
-   block so the user can initialize the environment in one click:
-
-   ```bash
-   python .agents/scripts/configure_workspace.py
-   ```
-
-   This script auto-detects your workspace structure and generates the required centralized
-   configuration file. Tell the user exactly: "❌ **[smart-spec] Workspace not configured.** Please
-   run the script above directly in your terminal (click the run button in the code block) to
-   initialize your configuration instantly." -->
-
-1. If the file is found, analyze the `specifications.templates` section to detect the documentation
-   architecture:
-   - **[UNIFIED] Mode**: Triggered if only a single `unified` template path is provided.
-   - **[MODULAR] Mode**: Triggered if separate `functional` and `technical` template paths are
-     provided.
-2. Read the content of the Markdown files located at those exact paths. These are your mandatory
-   structural skeletons.
-
-To write the content you MUST identify the user's intent from their message and apply changes
-incrementally according to the detected Mode:
+Apply changes incrementally into those exact structural skeletons according to specification mode:
 
 #### Scenario A: [UNIFIED] Mode Activated
 
@@ -90,9 +89,14 @@ incrementally according to the detected Mode:
 - **Step 1 (Functional)**: Check if the Functional Spec covers the request (User Stories, business
   rules, workflows). Update it first if needed.
 - **Step 2 (Technical)**: Map out the Technical Spec impact (APIs, schemas, constraints) based on
-  those functional changes.er un
+  those functional changes.
 - Explicitly state your progression to the user (e.g., _"[smart-ai] Step 1: Updating Functional
   Specs... Step 2: Mapping Technical Specs..."_).
+
+### Both scenario
+
+Once the specification is ready and accepted by the user, you can ask the permission to
+create/update by yourself the specification file and the index file within the same response.
 
 #### Writing Guidelines
 

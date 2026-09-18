@@ -1,3 +1,4 @@
 .continue/.env
 .venv/
 node_modules/
+.env
