@@ -19,7 +19,7 @@ graph LR
     Refine --> Evaluate{Evaluate Scope}
 
     Evaluate -->|< 4h| Micro["📋 SMALL/MICRO"]
-    Evaluate -->|> 4h| Large["🏗️ LARGE"]
+    Evaluate -->|>= 4h| Large["🏗️ LARGE"]
 
     Micro --> Choice{"Execute?"}
     Choice -->|Case 1| Issue["Create GitHub Issue<br/>/smart-plan"]

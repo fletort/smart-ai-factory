@@ -31,8 +31,8 @@ specification is complete and ready for execution planning.
      - **[MODULAR] Mode**: Triggered if separate `functional` and `technical` template paths are
        provided.
 
-   The template mode notification is made with this output: "[smart-ai] Mode MODULAR detected (name
-   of template file(s))". At this step **you do NOT read the template file(s) yet**.
+   The template mode notification is made with this output: "[smart-ai] Mode <detected mode> detected
+   (name of template file(s))". At this step **you do NOT read the template file(s) yet**.
 
 2. **Refinement & First Draft**: Discuss and refine the idea with the user.
    1. Present a first draft based on the user's initial input using your own generic/agile
@@ -48,7 +48,7 @@ specification is complete and ready for execution planning.
        immediate code injection). Use when the feature is straightforward and implementation can
        start immediately.
      - **Case 3** same as LARGE scope described after.
-   - If **LARGE** (> 4 hours, multiple components, or architectural decisions): Case 3 (Phase/Epic).
+   - If **LARGE** (>= 4 hours, multiple components, or architectural decisions): Case 3 (Phase/Epic).
      Ask permission to write the technical specifications directly into documentations (see
      dedicated "Specifications" chapter below). Once specs are complete, prompt the user to run
      `/smart-plan` to handle roadmap updates and task scheduling.
@@ -64,7 +64,7 @@ ONLY when Case 3 is activated and you have the user's permission, you MUST now r
 the Markdown files located at the paths detected in Step 1 (e.g.,
 `.ai/templates/functional_spec.md`).
 
-You must also check if this is a new specification or an update: for this point you MUST stricty
+You must also check if this is a new specification or an update: for this point you MUST strictly
 rely on the workspace index located at `.smart.ai/spec_index.md`:
 
 1. **For Updates / Increments**: Before creating a new document, search the index table to see if a

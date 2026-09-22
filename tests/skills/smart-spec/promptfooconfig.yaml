@@ -88,7 +88,7 @@ tests:
       - type: contains
         value: 'Workspace not configured.'
       - type: not-contains
-        # If stop is respected, no spec preview muts be available
+        # If stop is respected, no spec preview must be available
         value: 'installment'
       - type: not-contains
         value: 'PENDING'

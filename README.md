@@ -88,7 +88,7 @@ while enforcing strict human verification and high-tier models for development a
 To keep this manifesto clean and actionable, the framework's detailed technical operations and
 configuration requirements are split into specialized manuals:
 
-- **� Specification Refinement:**
+- **📋 Specification Refinement:**
   [Smart-Spec: Refinement & Scope Evaluation](docs/pipelines/smart_spec.md)  
   _Learn how to refine feature ideas, apply the 3-Question Rule, evaluate scope (MICRO vs LARGE),
   and route to execution._
