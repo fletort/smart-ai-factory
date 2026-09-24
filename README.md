@@ -115,11 +115,14 @@ configuration requirements are split into specialized manuals:
 
 1. Copy the `.continue/`, `skills/` and `.github/` directories to the root of your project. Copy the
    content of the `templates/` directory to the root of your project.
-2. Set up your local environment file by copying `.continue/.env.template` to `.continue/.env` and
-   adding your API keys.
+2. Set up your local environment file by:
+   1. copying `.continue/.env.template` to `.continue/.env`, `.env.template` to `.env` and adding
+      your API keys.
+   2. editing `.smart.ai/.config.yml` to define your workspace configuration inside this file
 3. Open your project using **Dev Containers** for a zero-friction, pre-configured workspace.
-4. Start with `/smart-spec` to refine your feature idea, then `/smart-plan` to create tickets, then
-   watch the factory automate the rest!
+4. Start with `/smart-spec` to refine your feature idea
+5. The specification is now complete. Roadmap planning and issue creation will be handled by a
+   future planning workflow
 
 ## 🧠 Framework Philosophy
 

@@ -1,0 +1,7 @@
+specifications:
+  templates:
+    #This template can be used when your template contains functional and technical part in on unique document
+    unified: .smart.ai/templates/unified-spec.md
+    #These two templates can be used when your template contains functional and technical part in separate document
+    functional: .smart.ai/templates/functional-spec.md
+    technical: .smart.ai/templates/technical-spec.md

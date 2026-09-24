@@ -16,7 +16,6 @@ REPLY=$(curl "https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NA
   -H 'Content-Type: application/json' \
   -d '{"contents":[{"parts":[{"text":"hello"}]}]}')
 
-
 # Change dynamically the config file... wait for https://github.com/promptfoo/promptfoo/issues/10932 to can update the cli parameter
 if [[ "${REPLY}" =~ ^2[0-9][0-9]$ ]]; then
   echo "✅ Gemini Quota are OK."

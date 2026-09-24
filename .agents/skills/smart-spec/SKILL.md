@@ -14,7 +14,7 @@ Ticket). If required, you will have to write, expand and/or update project speci
 
 **Scope Boundary**: You NEVER handle detailed task breakdowns (splitting specs into subtasks),
 ticketing (creating issues, assigning tasks), or project scheduling (timelines, dependencies,
-resource allocation). Those responsibilities belong to `/smart-plan`. Your role ends when the
+resource allocation). Those responsibilities belong to other futur skill. Your role ends when the
 specification is complete and ready for execution planning.
 
 ## Execution Logic & Cascades
@@ -31,8 +31,8 @@ specification is complete and ready for execution planning.
      - **[MODULAR] Mode**: Triggered if separate `functional` and `technical` template paths are
        provided.
 
-   The template mode notification is made with this output: "[smart-ai] Mode <detected mode> detected
-   (name of template file(s))". At this step **you do NOT read the template file(s) yet**.
+   The template mode notification is made with this output: "[smart-ai] Mode /detected mode/
+   detected (name of template file(s))". At this step **you do NOT read the template file(s) yet**.
 
 2. **Refinement & First Draft**: Discuss and refine the idea with the user.
    1. Present a first draft based on the user's initial input using your own generic/agile
@@ -42,16 +42,16 @@ specification is complete and ready for execution planning.
 
 3. **Scope Evaluation**: Once the discussion is mature, evaluate the scope:
    - If **SMALL/MICRO** (< 4 hours estimated work): Present a choice between:
-     - **Case 1** (Run `/smart-plan` to create a standalone GitHub Issue). Use when
+     - **Case 1** (Create a standalone GitHub Issue from the specification). Use when
        tracking/documentation is needed.
      - **Case 2** (Instantly activate a local coding agent like `@xs_coder` or `@s_coder` for
        immediate code injection). Use when the feature is straightforward and implementation can
        start immediately.
      - **Case 3** same as LARGE scope described after.
-   - If **LARGE** (>= 4 hours, multiple components, or architectural decisions): Case 3 (Phase/Epic).
-     Ask permission to write the technical specifications directly into documentations (see
-     dedicated "Specifications" chapter below). Once specs are complete, prompt the user to run
-     `/smart-plan` to handle roadmap updates and task scheduling.
+   - If **LARGE** (>= 4 hours, multiple components, or architectural decisions): Case 3
+     (Phase/Epic). Ask permission to write the technical specifications directly into documentations
+     (see dedicated "Specifications" chapter below). Once specs are complete, prompt the user to
+     handle roadmap updates and task scheduling.
 
    Scope notification: you must always notify your scope evaluation to the user:
    - "[smart-ai] **SMALL/MICRO** specification estimated" or
@@ -72,7 +72,9 @@ rely on the workspace index located at `.smart.ai/spec_index.md`:
 2. **Routing**:
    - If the user request matches an existing Ref (e.g., "Update billing"), identify the exact target
      file from the table and ask to read _only_ that file.
-   - If it's a completely new feature, announce you will create a new entry in the index.
+   - If it's a completely new feature, announce you will create a new entry in the index. The
+     specification fill will be created in the same directories that other listed files. If it is
+     the first specification, and nobody tell you the location, use the usual ./docs directory.
 3. **Strict Prohibition**: You are strictly forbidden from scanning the whole workspace directories.
    If the index is insufficient, ask the user.
 
@@ -95,8 +97,9 @@ Apply changes incrementally into those exact structural skeletons according to s
 
 ### Both scenario
 
-Once the specification is ready and accepted by the user, you can ask the permission to
-create/update by yourself the specification file and the index file within the same response.
+Once the specification is ready and accepted by the user, you can create/update by yourself the
+specification file and the index file within the SAME response. Do not ask for permission before
+these writes. Execute the two function call immediately when data is ready in one request.
 
 #### Writing Guidelines
 
