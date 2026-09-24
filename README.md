@@ -110,6 +110,8 @@ configuration requirements are split into specialized manuals:
   [Asynchronous CI/CD & Cloud Triage Rules](docs/pipelines/triage_cloud.md)  
   _Understand how GitHub Actions perform stateless triage, persist brainstorming context, and apply
   asynchronous human gates._
+- **Native LLM Wiki Engine:**
+  [Native LLM Wiki Engine for Smart-AI-Factory specification](docs/specs/native_llm_wiki.md)
 
 ## 🚀 Quick Start
 
