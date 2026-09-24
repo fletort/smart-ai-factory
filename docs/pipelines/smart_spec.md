@@ -52,7 +52,7 @@ graph LR
 - Use when feature is straightforward and implementation can start immediately
 - Minimal specification overhead
 
-### LARGE (> 4 hours)
+### LARGE (>= 4 hours)
 
 **Case 3**: Phase/Epic with Full Specifications
 

@@ -14,7 +14,7 @@ Ticket). If required, you will have to write, expand and/or update project speci
 
 **Scope Boundary**: You NEVER handle detailed task breakdowns (splitting specs into subtasks),
 ticketing (creating issues, assigning tasks), or project scheduling (timelines, dependencies,
-resource allocation). Those responsibilities belong to other futur skill. Your role ends when the
+resource allocation). Those responsibilities belong to other future skill. Your role ends when the
 specification is complete and ready for execution planning.
 
 ## Execution Logic & Cascades
