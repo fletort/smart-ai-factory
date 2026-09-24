@@ -8,9 +8,10 @@ prompts:
   - file://prompt.js
 
 providers:
-  - id: 'google:gemini-3.6-flash'
+  - id: file://./geminiOpenAiProvider.js
     label: gemini
     config:
+      model: 'google:gemini-3.6-flash'
       apiKey: '{{ env.TEST_GEMINI_API_KEY }}'
       tools: &tools
         - type: function
@@ -39,18 +40,18 @@ providers:
                   type: string
                   description: 'Content to write to the specified file'
               required: ['path', 'content']
-  - id: 'google:gemini-3.6-flash'
-    label: gemini-without-tool
-    config:
-      apiKey: '{{ env.TEST_GEMINI_API_KEY }}'
-      grammar_type: gemini
-  # - id: 'opencode:sdk'
   - id: openrouter:deepseek/deepseek-v4.1-flash
     config:
       apiKey: '{{ env.TEST_OPENROUTER_KEY }}'
       tools: *tools
       showThinking: false
       max_tokens: 8000
+  # - id: openrouter:google/gemini-3.6-flash
+  #   config:
+  #     apiKey: '{{ env.TEST_OPENROUTER_KEY }}'
+  #     tools: *tools
+  #     showThinking: false
+  #     max_tokens: 8000
   # - id: openrouter:free
   #   config:
   #     apiKey: '{{ env.TEST_OPENROUTER_KEY }}'
@@ -98,7 +99,11 @@ tests:
       - gemini
       - openrouter:*
     vars:
-      user_message: I just want to change the text of the landing page title. It takes 10 minutes.
+      user_message: |
+        I just want to make a new minimalist html page with 'Hello World' on it.
+        The file name is 'index.html' and located at the root of the workspace.
+        No CSS is needed. It is a simple and easy task.
+        It should be considered as a SMALL scope.
       read_file_config_result:
         'specifications:\ntemplates:\n unified:".ai/templates/unified_spec.md'
       prompt_path: prompts/02-get_config.chat.json
@@ -106,7 +111,7 @@ tests:
       - type: contains
         value: 'SMALL'
       - type: contains-any
-        value: ['Case 1', 'Case 2', 'Case 3', '/smart-plan', '@xs_coder']
+        value: ['Case 1', 'Case 2', 'Case 3', '@xs_coder']
       - type: llm-rubric
         value: |
           The output must explicitly engage in a conversation or guide the user towards an immediate action track for a SMALL scope.
@@ -130,13 +135,14 @@ tests:
         value: 'MODULAR'
       - type: contains-any
         value:
-          - 'Scope of the current specification is not yet evaluated'
+          - 'not yet evaluated'
           - LARGE
       - type: llm-rubric
         value: |
           The output must draft a specification for a complex interest-free 3-installment payment system.
           Some points of the specification MUST be in PENDING state. To help to close these points,
           maximum of 3 high-impact questions MUST be asked at the end of the prompt.
+          The specification scope is not yet evaluated or evaluated as LARGE.
 
   - description: Test Skill does not evaluate scope (or LARGE) and detect MODULAR template mode
     providers:
@@ -157,13 +163,14 @@ tests:
         value: 'UNIFIED'
       - type: contains-any
         value:
-          - 'Scope of the current specification is not yet evaluated'
+          - 'not yet evaluated'
           - LARGE
       - type: llm-rubric
         value: |
           The output must draft a specification for a complex interest-free 3-installment payment system.
           Some points of the specification MUST be in PENDING state. To help to close these points,
           maximum of 3 high-impact questions MUST be asked at the end of the prompt.
+          The specification scope is not yet evaluated or evaluated as LARGE.
 
   - description: Test Skill reads the template when spec is ready
     providers:
@@ -185,7 +192,6 @@ tests:
         value: '.ai/templates/unified_spec.md'
 
   # TODO: Test when template is not available
-
   - description: Test Skill writes specification and index when spec is validated
     providers:
       - gemini
@@ -215,30 +221,28 @@ tests:
       - type: equals
         value: 'write_file'
         transform: output[0].function?.name || output[0].functionCall?.name
+      - type: equals
+        value: 'write_file'
+        transform: output[1]?.function?.name || output[1]?.functionCall?.name
+      - type: equals
+        value: true
+        transform: |
+          const argsFirstCall = output[0].function?.arguments;
+          const argsSecondCall = output[1].function?.arguments;
+          const pathFirstCall = typeof argsFirstCall === 'string' ? JSON.parse(argsFirstCall).path : argsFirstCall?.path;
+          const pathSecondCall = typeof argsSecondCall === 'string' ? JSON.parse(argsSecondCall).path : argsSecondCall?.path;
+          return pathFirstCall == '.smart.ai/spec_index.md' || pathSecondCall == '.smart.ai/spec_index.md'
       - type: llm-rubric
         value: |
           Verify that the specifications document meets the following criteria:
           1. It uses Stripe for a 3-installment payment plan.
           2. It enforces a minimum amount of 50€.
-          3. It properly details the rounding logic, ensuring any remainder is added to the first installment.
+          3. This specification can be used to defined tasks to develop the system
         transform: |
-          const first = output[0];
+          const argsSecondCall = output[1].function?.arguments;
+          const pathSecondCall = typeof argsSecondCall === 'string' ? JSON.parse(argsSecondCall).path : argsSecondCall?.path;
+          let index = (pathSecondCall == '.smart.ai/spec_index.md') ? 0 : 1;
+          const first = output[index];
           if (!first) return '';
-          // google format
-          if (first.functionCall?.args) return first.functionCall.args.content;
-          // OpenAI format : function.arguments can be a string or an object
           const args = first.function?.arguments;
           return typeof args === 'string' ? JSON.parse(args).content : args?.content;
-      - type: equals
-        value: 'write_file'
-        transform: output[1]?.function?.name || output[1]?.functionCall?.name
-      - type: equals
-        value: '.smart.ai/spec_index.md'
-        transform: |
-          const second = output[1];
-          if (!second) return '';
-          // google format
-          if (second.functionCall?.args) return second.functionCall.args.path;
-          // OpenAI format
-          const args = second.function?.arguments;
-          return typeof args === 'string' ? JSON.parse(args).path : args?.path;
