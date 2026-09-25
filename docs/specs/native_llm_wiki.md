@@ -57,7 +57,7 @@ graph TD
 The smart-ai core engine expects, validates, and dynamically compiles a "Double-Mirror" directory
 structure at the root of any automated repository:
 
-### 2.1 The System Router: CLAUDE.md/AGENT.md
+### 2.1 The System Router: CLAUDE.md/AGENTS.md
 
 Located at the root of the project. It must remain strictly under 50 lines to minimize the
 system-prompt injection footprint of any routing script.
@@ -92,8 +92,8 @@ development guidelines, routine commands, and agentic routing rules.
 
 Maps high-level business goals, requirements, and feature definitions. This index is primarily fed
 by /smart-spec (Phase 0) and ingested by the Triage Script (Phase 2).
-[Bootstrap of this documentation](/templates/docs/INDEX.md) is proposed by the installation process
-and can be personalised to your project:
+[Bootstrap of this documentation](../../templates/docs/INDEX.md) is proposed by the installation
+process and can be personalised to your project:
 
 ```markdown
 # 🗺️ Functional Specifications Index (Product Wiki)
@@ -109,8 +109,8 @@ and can be personalised to your project:
 
 Maps technical code boundaries, modules, and standalone Skills. No individual source code files
 (.ts, .py, etc.) are allowed to be tracked in this top-level index.
-[Bootstrap of this documentation](/templates/src/README.md) is proposed by the installation process
-and can be personalised to your project:
+[Bootstrap of this documentation](../../templates/src/README.md) is proposed by the installation
+process and can be personalised to your project:
 
 ```markdown
 # 🏗️ Codebase Architecture Index (Code Wiki)
@@ -124,8 +124,9 @@ and can be personalised to your project:
 ## 3. Local Module Code-Wiki Template
 
 Every subdirectory inside src/ must bundle a localized README.md. It forms an impenetrable semantic
-boundary around that module. [Bootstrap of this documentation](/templates/src/<module>/README.md) is
-proposed by the installation process and can be personalised to your project:
+boundary around that module.
+[Bootstrap of this documentation](../../templates/src/_module_/README.md) is proposed by the
+installation process and can be personalised to your project:
 
 ```markdown
 # 📦 Module Code-Wiki: [MODULE_NAME] (e.g., auth, users, billing)
@@ -170,7 +171,7 @@ proposed by the installation process and can be personalised to your project:
 When the Gemini Flash PO or a local triage routine receives an update on roadmap.md or a feature
 ticket:
 
-1. Tree Lookup: It reads CLAUDE.md/AGENT.md ➡️ docs/INDEX.md ➡️ src/README.md to identify affected
+1. Tree Lookup: It reads CLAUDE.md/AGENTS.md ➡️ docs/INDEX.md ➡️ src/README.md to identify affected
    modules.
 2. Surgical Context Packing: Instead of appending the whole codebase to the prompt, the engine loads
    only the specified file paths from the matching local Code-Wiki's Critical Entrypoints.
