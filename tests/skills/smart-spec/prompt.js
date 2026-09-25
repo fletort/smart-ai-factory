@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 module.exports = function ({ vars, provider }) {
-  const originalPath = path.resolve(vars.prompt_path);
+  const originalPath = path.resolve(__dirname, vars.prompt_path);
   const pathParsed = path.parse(originalPath);
 
   // 1. Define the different levels of fallback names
