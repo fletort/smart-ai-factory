@@ -1,8 +1,9 @@
 #!/bin/bash
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODEL_NAME="gemini-3.6-flash"
 MODEL_LABEL="gemini"
-CONFIG_FILE="smart-spec/promptfooconfig.yaml"
+CONFIG_FILE="${SCRIPT_DIR}/smart-spec/promptfooconfig.yaml"
 
 if [[ "${OSTYPE}" == "darwin"* ]]; then
   SED_CMD=(sed -i '')
