@@ -65,7 +65,7 @@ the Markdown files located at the paths detected in Step 1 (e.g.,
 `.ai/templates/functional_spec.md`).
 
 You must also check if this is a new specification or an update: for this point you MUST strictly
-rely on the workspace index located at `docs/specs/SPEC_INDEX.md`:
+rely on the workspace index located at `docs/INDEX.md`:
 
 1. **For Updates / Increments**: Before creating a new document, search the index table to see if a
    similar feature or target file already exists.
