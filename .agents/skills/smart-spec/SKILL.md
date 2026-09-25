@@ -96,9 +96,10 @@ Apply changes incrementally into those exact structural skeletons according to s
 
 ### Both scenario
 
-Once the specification is ready and accepted by the user, you can create/update by yourself the
-specification file and the index file within the SAME response. Do not ask for permission before
-these writes. Execute the two function call immediately when data is ready in one request.
+Once the specification is ready and accepted by the user, write the specification file(s) and the
+index file within the SAME response. Do not ask for permission before these writes: UNIFIED mode
+requires two calls (specification and index), while MODULAR mode requires three calls (functional
+specification, technical specification, and index).
 
 #### Writing Guidelines
 

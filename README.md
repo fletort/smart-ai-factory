@@ -120,7 +120,7 @@ configuration requirements are split into specialized manuals:
 2. Set up your local environment file by:
    1. copying `.continue/.env.template` to `.continue/.env`, `.env.template` to `.env` and adding
       your API keys.
-   2. editing `.smart.ai/.config.yml` to define your workspace configuration inside this file
+   2. editing `.smart.ai/config.yml` to define your workspace configuration inside this file
 3. Open your project using **Dev Containers** for a zero-friction, pre-configured workspace.
 4. Start with `/smart-spec` to refine your feature idea
 5. The specification is now complete. Roadmap planning and issue creation will be handled by a
