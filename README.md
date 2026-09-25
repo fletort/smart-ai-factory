@@ -115,8 +115,8 @@ configuration requirements are split into specialized manuals:
 
 ## 🚀 Quick Start
 
-1. Copy the `.continue/`, `skills/` and `.github/` directories to the root of your project. Copy the
-   content of the `templates/` directory to the root of your project.
+1. Copy the `.continue/`, `.agents/` and `.github/` directories to the root of your project. Copy
+   the content of the `templates/` directory to the root of your project.
 2. Set up your local environment file by:
    1. copying `.continue/.env.template` to `.continue/.env`, `.env.template` to `.env` and adding
       your API keys.

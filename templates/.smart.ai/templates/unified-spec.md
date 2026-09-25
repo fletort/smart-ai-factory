@@ -31,9 +31,9 @@
 
   ```mermaid
   architecture-beta
-      group client(Frontend)
-      group server(Backend)
-      service db(Database)
+      group client(internet)[Frontend]
+      group server(server)[Backend]
+      service db(database)[Database]
   ```
 
 - **Data Model / API:**
