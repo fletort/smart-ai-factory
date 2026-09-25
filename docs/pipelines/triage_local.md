@@ -22,7 +22,7 @@ graph TD
 
     subgraph "🧠 Processing Loop"
         CLI -->|Executes| Script[Launch Triage Script in local mode]
-        Script -->|1. Reads config| Config[.ai/config.yaml]
+        Script -->|1. Reads config| Config[.smart.ai/config.yml]
         Script -->|2. Invokes| LLM[Triage LLM: simple_triage_model]
         LLM -->|3. Parses next task in roadmap.md| JSON[Strict JSON Spec Payload]
     end

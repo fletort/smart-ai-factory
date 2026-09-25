@@ -29,6 +29,7 @@ pre-commit:
               jobs:
                 - name: 1.2.1 Format JS, Markdown, YAML and JSON files with prettier
                   glob: '*.{md,yml,yaml,js,json}'
+                  file_types: not symlink
                   run: npx prettier --write {staged_files}
                   stage_fixed: true
                 - name: 1.2.2 Lint JS, Markdown, YAML and JSON files
@@ -88,6 +89,7 @@ lint-all:
       run: ruff check {files}
     prettier-check: # Check JS, Markdown, YAML and JSON files format with prettier
       glob: '*.{md,yml,yaml,js,json}'
+      file_types: not symlink
       run: npx prettier --check {files}
     markdownlint: # Check Markdown files linting
       glob: '*.md'

@@ -1,0 +1,1 @@
+../../.agents/skills/smart-spec/SKILL.md

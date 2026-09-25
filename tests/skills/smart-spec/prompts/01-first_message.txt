@@ -1,0 +1,6 @@
+# SYSTEM INSTRUCTIONS
+{{smart_spec_skill}}
+# CONTEXT
+{{context}}
+# ASSOCIATED USER MESSAGE
+{{user_message}}

@@ -6,26 +6,40 @@ your AI API costs.
 
 Instead of blindly exhausting monthly commercial credits or using a single expensive LLM for every
 task, **Smart-AI-Factory** acts as a **centralized Semantic CLI & dynamic routing engine**. It
-evaluates task complexity upfront and orchestrates the most cost-efficient setup for **Triage**,
-**Automated Development**, and **Autonomous Code Review**.
+guides you through **Specification Refinement** and **Roadmap Management**, then orchestrates the
+most cost-efficient setup for **Triage**, **Autonomous Development**, and **Code Review**.
 
 ## 💡 The Vision: End-to-End FinOps Autonomous DevOps Pipeline
 
 Smart-AI-Factory decouples the **User Interface (Local Chat)** from the **Execution Engine (Core
-Scripts)**. A single configuration matrix governs the three core phases of your engineering loop,
+Scripts)**. A single configuration matrix governs the five core phases of your engineering loop,
 ensuring continuous alignment between your budget constraints and task complexity.
 
 ```mermaid
 graph TD
-    subgraph Phase 1: Triage & Gating
-        RM[roadmap.md] -->|git push / CLI| TR[Triage Script]
+    subgraph Phase 0: Spec Refinement
+        IDEA["👤 Feature Idea"] -->|/smart-spec| SR[Specification Refinement]
+        SR -->|Draft & Refine| CHECK{Scope?}
+        CHECK -->|SMALL| CASE12["MICRO: Issue or Code"]
+        CHECK -->|LARGE| CASE3["LARGE: Write Full Spec"]
+    end
+
+    subgraph Phase 1: Roadmap Management
+        CASE12 -->|/smart-plan| PLAN[Planning Script]
+        CASE3 -->|/smart-plan| PLAN
+        PLAN -->|Update Roadmap| RM[roadmap.md]
+    end
+
+    subgraph Phase 2: Triage & Task Creation
+        RM -->|git push / CLI| TR[Triage Script]
         TR -->|Analyze Specs & Architecture| JSON[Structured Technical Ticket]
+        JSON -->|Create & Label Issues| GH[GitHub Issues]
         JSON -->|Ambiguous Specs| BS[🛑 Level: BRAINSTORM]
         BS -->|Specification completion| TR
     end
 
-    subgraph Phase 2: Autonomous Development
-        JSON -->|Valid Ticket / dev-ia Label| DEV[DevRouter Script]
+    subgraph Phase 3: Autonomous Development
+        GH -->|Valid Ticket / dev-ia Label| DEV[DevRouter Script]
         DEV -->|XS Tiers| XS_DEV[Low-Cost Dev XS LLM Model]
         DEV -->|S Tiers| S_DEV[Low-Cost Dev S LLM Model]
         DEV -->|M Tiers| M_DEV[Middle-Cost M Dev LLM Model]
@@ -34,7 +48,7 @@ graph TD
         DEV -->|XXL Tiers| XXL_DEV[Elite Dev XXL LLM Model]
     end
 
-    subgraph Phase 3: Twin-Review & Quality Gates
+    subgraph Phase 4: Twin-Review & Quality Gates
         XS_DEV -->|Open Pull Request| REV[ReviewRouter Script]
         S_DEV -->|Open Pull Request| REV
         M_DEV -->|Open Pull Request| REV
@@ -54,8 +68,8 @@ graph TD
 
 ## 🎛️ Governance & Routing Matrix
 
-Through `.ai/config.yaml`, you can toggle **Human-in-the-Loop (HITL)** gates independently for each
-task size. This enables teams to run fully automated production pipelines for small adjustments
+Through `.smart.ai/config.yml`, you can toggle **Human-in-the-Loop (HITL)** gates independently for
+each task size. This enables teams to run fully automated production pipelines for small adjustments
 while enforcing strict human verification and high-tier models for development and code review.
 
 | Level          | Dev Agent           | Review Agent     | Tech Stack (Default)              | Target Task                                                                                                                                        | HITL Gates (Configurable)      | Cost Profile                     |
@@ -74,6 +88,16 @@ while enforcing strict human verification and high-tier models for development a
 To keep this manifesto clean and actionable, the framework's detailed technical operations and
 configuration requirements are split into specialized manuals:
 
+- **📋 Specification Refinement:**
+  [Smart-Spec: Refinement & Scope Evaluation](docs/pipelines/smart_spec.md)  
+  _Learn how to refine feature ideas, apply the 3-Question Rule, evaluate scope (MICRO vs LARGE),
+  and route to execution._
+
+<!-- - **🎯 Planning & Roadmap Management:**
+  [Smart-Plan: Ticketing & Scheduling](docs/pipelines/smart_plan.md)
+  _Understand how to create GitHub Issues, update roadmaps, and manage task dependencies (coming
+  soon)._ -->
+
 - **💻 Local Workspace Integration:**
   [Visual Studio Code & Continue.dev Configuration Guide](docs/ide/vscode.md)  
   _Learn how to spin up your local multi-key Dev Container and how to manage your manual local
@@ -86,15 +110,21 @@ configuration requirements are split into specialized manuals:
   [Asynchronous CI/CD & Cloud Triage Rules](docs/pipelines/triage_cloud.md)  
   _Understand how GitHub Actions perform stateless triage, persist brainstorming context, and apply
   asynchronous human gates._
+- **Native LLM Wiki Engine:**
+  [Native LLM Wiki Engine for Smart-AI-Factory specification](docs/specs/native_llm_wiki.md)
 
 ## 🚀 Quick Start
 
-1. Copy the `.continue/`, `skills/` and `.github/` directories to the root of your project. Copy the
-   content of the `templates/` directory to the root of your project.
-2. Set up your local environment file by copying `.continue/.env.template` to `.continue/.env` and
-   adding your API keys.
+1. Copy the `.continue/`, `.agents/` and `.github/` directories to the root of your project. Copy
+   the content of the `templates/` directory to the root of your project.
+2. Set up your local environment file by:
+   1. copying `.continue/.env.template` to `.continue/.env`, `.env.template` to `.env` and adding
+      your API keys.
+   2. editing `.smart.ai/config.yml` to define your workspace configuration inside this file
 3. Open your project using **Dev Containers** for a zero-friction, pre-configured workspace.
-4. Define your product objectives inside `roadmap.md` and trigger the factory!
+4. Start with `/smart-spec` to refine your feature idea
+5. The specification is now complete. Roadmap planning and issue creation will be handled by a
+   future planning workflow
 
 ## 🧠 Framework Philosophy
 

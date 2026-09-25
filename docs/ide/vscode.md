@@ -18,8 +18,8 @@ step:
 2. Ensure the **Dev Containers** extension is installed.
 3. Open the Command Palette (`Cmd/Ctrl + Shift + P`) and select
    `Dev Containers: Reopen in Container` (or click the green pop-up helper if it appears).
-4. Create your local context file: copy `.continue/.env.template` to a new `.continue/.env` file and
-   paste your API keys.
+4. Create your local context file: copy `.continue/.env.template` to a new `.continue/.env` file,
+   `.env.template` to `.env` and paste your API keys.
 5. Click the **Spark icon** in the Editor Toolbar (top-right corner of the editor) to sign in and
    authenticate **Claude Code** using your commercial subscription.
 
