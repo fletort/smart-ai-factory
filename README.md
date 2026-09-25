@@ -98,7 +98,7 @@ configuration requirements are split into specialized manuals:
   _Understand how to create GitHub Issues, update roadmaps, and manage task dependencies (coming
   soon)._ -->
 
-- **�💻 Local Workspace Integration:**
+- **💻 Local Workspace Integration:**
   [Visual Studio Code & Continue.dev Configuration Guide](docs/ide/vscode.md)  
   _Learn how to spin up your local multi-key Dev Container and how to manage your manual local
   FinOps choices._

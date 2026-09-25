@@ -104,8 +104,7 @@ tests:
         The file name is 'index.html' and located at the root of the workspace.
         No CSS is needed. It is a simple and easy task.
         It should be considered as a SMALL scope.
-      read_file_config_result:
-        'specifications:\ntemplates:\n unified:".ai/templates/unified_spec.md'
+      read_file_config_result: 'specifications:\ntemplates:\n unified:".templates/unified_spec.md'
       prompt_path: prompts/02-get_config.chat.json
     assert:
       - type: contains
@@ -123,8 +122,7 @@ tests:
       - openrouter:*
     vars:
       user_message: I want a specification for a complex interest-free 3-installment payment system.
-      read_file_config_result:
-        'specifications:\ntemplates:\n unified:".ai/templates/unified_spec.md'
+      read_file_config_result: 'specifications:\ntemplates:\n unified:".templates/unified_spec.md'
       prompt_path: prompts/02-get_config.chat.json
     assert:
       - type: contains
@@ -151,8 +149,8 @@ tests:
     vars:
       user_message: I want a specification for a complex interest-free 3-installment payment system.
       read_file_config_result:
-        'specifications:\ntemplates:\n functional: .ai/templates/functional_spec.md\ntechnical:
-        .ai/templates/technical_spec.md'
+        'specifications:\ntemplates:\n functional: .templates/functional_spec.md\ntechnical:
+        .templates/technical_spec.md'
       prompt_path: prompts/02-get_config.chat.json
     assert:
       - type: contains
@@ -178,8 +176,7 @@ tests:
       - openrouter:*
     vars:
       user_message: I want a specification for a complex interest-free 3-installment payment system.
-      read_file_config_result:
-        'specifications:\ntemplates:\n unified:".ai/templates/unified_spec.md'
+      read_file_config_result: 'specifications:\ntemplates:\n unified:".templates/unified_spec.md'
       llm_spec_draft_msg: 'Draft ⚠️ [PENDING]. Questions: 1. Gateway? 2. Minimum amount?'
       user_close_draft_msg:
         '1. Stripe. 2. 50€. Everything is clear, you can generate the final spec document now.'
@@ -189,7 +186,7 @@ tests:
       - type: contains
         value: 'read_file'
       - type: contains
-        value: '.ai/templates/unified_spec.md'
+        value: '.templates/unified_spec.md'
 
   # TODO: Test when template is not available
   - description: Test Skill writes specification and index when spec is validated
@@ -199,12 +196,11 @@ tests:
     vars:
       prompt_path: prompts/04.chat.json
       user_message: I want a specification for a complex interest-free 3-installment payment system.
-      read_file_config_result:
-        'specifications:\ntemplates:\n unified:".ai/templates/unified_spec.md'
+      read_file_config_result: 'specifications:\ntemplates:\n unified:".templates/unified_spec.md'
       llm_spec_draft_msg: 'Draft ⚠️ [PENDING]. Questions: 1. Gateway? 2. Minimum amount?'
       user_close_draft_msg:
         '1. Stripe. 2. 50€. Everything is clear, you can generate the final spec document now.'
-      template_file: .ai/templates/unified_spec.md
+      template_file: .templates/unified_spec.md
       read_file_template_file_content: |
         # # Unified Specifications: [Module/Feature Name]
         ## 1. Context & Objectives

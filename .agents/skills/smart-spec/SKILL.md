@@ -61,8 +61,7 @@ specification is complete and ready for execution planning.
 ### Case 3 Execution (Writing Final Specifications)
 
 ONLY when Case 3 is activated and you have the user's permission, you MUST now read the content of
-the Markdown files located at the paths detected in Step 1 (e.g.,
-`.ai/templates/functional_spec.md`).
+the Markdown files located at the paths detected in Step 1 (e.g., `.smart.ai/config.yml`).
 
 You must also check if this is a new specification or an update: for this point you MUST strictly
 rely on the workspace index located at `docs/INDEX.md`:
