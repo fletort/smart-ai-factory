@@ -30,7 +30,7 @@
 - **Architecture & Component Interactions:**
 
   ```mermaid
-  architectureBeta
+  architecture-beta
       group client(Frontend)
       group server(Backend)
       service db(Database)
