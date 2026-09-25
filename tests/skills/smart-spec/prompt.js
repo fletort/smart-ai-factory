@@ -13,7 +13,7 @@ module.exports = function ({ vars, provider }) {
   const grammarType = provider.config && provider.config.grammar_type;
 
   // Level 2: Sanitize the provider ID (e.g., 'openai:gpt-4o' -> 'openai-gpt-4o')
-  const providerName = provider.label || provider.id.replace(/:/g, '-');
+  const providerName = provider.label || provider.id.replace(/[:\/]/g, '-');
 
   // 2. Build the prospective file paths for each level
   // Priority 1: e.g., prompts/02-get_config.chat.legacy_json.json
