@@ -89,8 +89,8 @@ configuration requirements are split into specialized manuals:
 
 ## 🚀 Quick Start
 
-1. Clone this repository or copy the `.ai/`, `skills/`, and `.github/` directories to the root of
-   your project.
+1. Copy the `.continue/`, `skills/` and `.github/` directories to the root of your project. Copy the
+   content of the `templates/` directory to the root of your project.
 2. Set up your local environment file by copying `.continue/.env.template` to `.continue/.env` and
    adding your API keys.
 3. Open your project using **Dev Containers** for a zero-friction, pre-configured workspace.
