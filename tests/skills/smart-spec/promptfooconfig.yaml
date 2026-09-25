@@ -211,7 +211,7 @@ tests:
         **Global Vision:** [What problem are we solving and why?]
         ## 2. Functional Specifications (What)
         ## 3. Technical Specifications (How)
-      index_file: .smart.ai/spec_index.md
+      index_file: docs/INDEX.md
       read_file_index_result: ''
     assert:
       - type: is-json
@@ -231,7 +231,7 @@ tests:
           const argsSecondCall = output[1].function?.arguments;
           const pathFirstCall = typeof argsFirstCall === 'string' ? JSON.parse(argsFirstCall).path : argsFirstCall?.path;
           const pathSecondCall = typeof argsSecondCall === 'string' ? JSON.parse(argsSecondCall).path : argsSecondCall?.path;
-          return pathFirstCall == '.smart.ai/spec_index.md' || pathSecondCall == '.smart.ai/spec_index.md'
+          return pathFirstCall == 'docs/INDEX.md' || pathSecondCall == 'docs/INDEX.md'
       - type: llm-rubric
         value: |
           Verify that the specifications document meets the following criteria:
@@ -241,7 +241,7 @@ tests:
         transform: |
           const argsSecondCall = output[1].function?.arguments;
           const pathSecondCall = typeof argsSecondCall === 'string' ? JSON.parse(argsSecondCall).path : argsSecondCall?.path;
-          let index = (pathSecondCall == '.smart.ai/spec_index.md') ? 0 : 1;
+          let index = (pathSecondCall == 'docs/INDEX.md') ? 0 : 1;
           const first = output[index];
           if (!first) return '';
           const args = first.function?.arguments;
