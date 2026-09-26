@@ -28,12 +28,10 @@ graph TD
     Multi --> Process
 
     Process -->|Step 1| Vision["🎯 Extract Global Vision<br/>(2-Sentence Summary)"]
-    Process -->|Step 2| Epics["📊 Map Epics"]
-    Process -->|Step 3| Issues["🎫 Sequence High-Level Issues<br/>(With Short IDs & Deps)"]
+    Vision -->|Step 2| Epics["📊 Map Epics"]
+    Epics -->|Step 3| Issues["🎫 Sequence High-Level Issues<br/>(With Short IDs & Deps)"]
 
-    Vision --> Output["✅ Write To Workspace"]
-    Epics --> Output
-    Issues --> Output
+    Issues --> Output["✅ Write To Workspace"]
 ```
 
 ## Execution Routes
