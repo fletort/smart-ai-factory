@@ -17,14 +17,14 @@ the entire codebase repeatedly.
 ```mermaid
 graph TD
     subgraph "☁️ Trigger Phase"
-        Git[git push roadmap.md] -->|Event: push| CI_Triage[GitHub Actions: Triage Pipeline]
+        Git[git push roadmap files] -->|Event: push| CI_Triage[GitHub Actions: Triage Pipeline]
     end
 
     subgraph box1["🧠 Processing Loop"]
         CI_Triage -->|Invoke| CoreTriage[Launch Triage Script in cloud mode]
         CoreTriage -->|1. Reads config| Config[.smart.ai/config.yml]
         CoreTriage -->|2. Queries| LLM1[Triage LLM: simple_triage_model]
-        LLM1 -->|3. Parses next task in roadmap.md| JSON1[Strict JSON Spec Payload]
+        LLM1 -->|3. Parses next task in roadmap| JSON1[Strict JSON Spec Payload]
     end
 
     subgraph "🛑 Brainstorming"
@@ -45,7 +45,7 @@ graph TD
     subgraph "⚙️ Automation & Traceability"
         JSON1 -->|"Status: ready_to_dev"| DevOpCloud[DevOps Automation]
         DevOpCloud -->|4. Automated Label & Ticket| GH_Issue[gh issue create --label size]
-        DevOpCloud -->|5. Push Roadmap update| GitSync[Update cloud roadmap.md with #issue_num]
+        DevOpCloud -->|5. Push Roadmap update| GitSync[Update cloud roadmap with #issue_num]
     end
 
 ```
@@ -59,8 +59,8 @@ segregate execution scopes and maximize billing efficiency:
 
 ### 1. `ai_triage_pipeline.yml`
 
-- **Trigger:** Triggered exclusively on `push` events affecting the `roadmap.md` file on the main
-  branch.
+- **Trigger:** Triggered exclusively on `push` events affecting one of the `roadmap` files on the
+  main branch.
 - **Action:** Runs the triage script in cloud mode. If the next item is clear, it creates the
   development issue. If it is blocked, it kicks off the Brainstorm environment and stops safely.
 - **Billing footprint:** ~30 seconds of compute time per run.

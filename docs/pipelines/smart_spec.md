@@ -1,9 +1,9 @@
 # Smart-Spec Execution Flow 📋
 
-**State**: _Proposed specification_
+**State**: _Implemented as a skill (only)_
 
 This document visualizes the specification refinement and evaluation workflow of the **smart-spec**
-skill.
+skill (Phase 0).
 
 ## 🔄 Smart-Spec Workflow
 
@@ -22,7 +22,7 @@ graph LR
     Evaluate -->|>= 4h| Large["🏗️ LARGE"]
 
     Micro --> Choice{"Execute?"}
-    Choice -->|Case 1| Issue["Create GitHub Issue<br/>/smart-plan"]
+    Choice -->|Case 1| Issue["Add to Roadmap<br/>/smart-plan"]
     Choice -->|Case 2| Code["Code Injection<br/>@xs_coder / @s_coder"]
 
     Large --> Case3["📄 CASE 3: Write Specs"]
@@ -42,9 +42,10 @@ graph LR
 
 **Case 1**: Run `/smart-plan`
 
-- Creates a standalone GitHub Issue
-- Use when tracking/documentation is needed
-- Single, well-scoped problem statement
+- Appends a high-level issue placeholder directly into `roadmap.md` using the chat context.
+- Use when tracking is needed but local specification documentation is overkill.
+- Avoids creating a boilerplate spec file; the pipeline will automatically triage it into a GitHub
+  Issue downstream.
 
 **Case 2**: Activate Local Coder Agent
 
