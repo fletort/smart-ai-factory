@@ -11,8 +11,8 @@ most cost-efficient setup for **Triage**, **Autonomous Development**, and **Code
 
 ## 💡 The Vision: End-to-End FinOps Autonomous DevOps Pipeline
 
-Smart-AI-Factory decouples the **User Interface (Local Chat)** from the **Execution Engine (Core
-Scripts)**. A single configuration matrix governs the five core phases of your engineering loop,
+Smart-AI-Factory decouples the **User Interface (Local Chat)** from the **Execution Engine (Core**
+**Scripts)**. A single configuration matrix governs the five core phases of your engineering loop,
 ensuring continuous alignment between your budget constraints and task complexity.
 
 ```mermaid
@@ -72,16 +72,18 @@ Through `.smart.ai/config.yml`, you can toggle **Human-in-the-Loop (HITL)** gate
 each task size. This enables teams to run fully automated production pipelines for small adjustments
 while enforcing strict human verification and high-tier models for development and code review.
 
-| Level          | Dev Agent           | Review Agent     | Tech Stack (Default)              | Target Task                                                                                                                                        | HITL Gates (Configurable)      | Cost Profile                     |
-| -------------- | ------------------- | ---------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | -------------------------------- |
-| **Triage**     | `Gemini Flash PO`   | _N/A_            | Google AI Studio                  | **Backlog Generation**: Automatically triggered on `roadmap.md` changes. Parses goals, checks architectural alignment, and creates labeled issues. | **No** (Fully Automated)       | **Free Tier** (Google AI Studio) |
-| **Brainstorm** | `claude-3-5-sonnet` | _N/A_            | Claude Code                       | **Ambiguous .Specifications**: Pipeline halts; Claude refines the design and updates architecture docs first.                                      | **Mandatory**                  | _Subscription_                   |
-| **XS**         | `xs_coder`          | `fast_reviewer`  | OpenCode + Gemini Flash Lite      | **Intern**: Typo fixes, variable renaming, simple label updates.                                                                                   | `dev: false` / `review: false` | **Free**                         |
-| **S**          | `s_coder`           | `fast_reviewer`  | OpenCode + DeepSeek-V3            | **Junior Dev**: Simple conditional statements, isolated micro-components.                                                                          | `dev: false` / `review: false` | **~$0.01**                       |
-| **M**          | `m_coder`           | `tech_reviewer`  | OpenCode + DeepSeek-R1            | **Mid Dev**: Standard business logic, mandatory unit test authoring.                                                                               | `dev: true` / `review: false`  | **~$0.05**                       |
-| **L**          | `l_coder`           | `tech_reviewer`  | Claude Code (`claude-3-5-haiku`)  | **Senior Dev**: Local refactoring, standard full feature building.                                                                                 | `dev: true` / `review: false`  | _Subscription_                   |
-| **XL**         | `xl_coder`          | `archi_reviewer` | Claude Code (`claude-3-5-sonnet`) | **Tech Lead**: Large module development, new API integrations.                                                                                     | `dev: true` / `review: true`   | _Subscription_                   |
-| **XXL**        | `xxl_coder`         | `archi_reviewer` | Claude Code (`claude-3-5-sonnet`) | **Principal Eng**: Core system overhauls + mandatory `architecture.md` updates.                                                                    | `dev: true` / `review: true`   | _Subscription_                   |
+| Level / Phase       | Default Agent               | Target Task                                                                                                                            | HITL Gates (Configurable)      | Cost Profile                     | Why (FinOps & Cognitive Justification)                                                                                                                                  |
+| :------------------ | :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------- | :------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Phase 0: Spec**   | `claude-3-5-sonnet`         | **Specification Refinement**: Surfaces blind spots using the 3-Question Rule. Evaluates scope (MICRO vs LARGE) and writes core specs.  | **Mandatory**                  | _Subscription / Commercial_      | This is the most cognitively demanding phase. It requires an "Elite-level" model to uncover blind spots, draft airtight specs, and avoid downstream development errors. |
+| **Phase 1: Plan**   | `Gemini Flash Architect`    | **Roadmap & Scheduling**: Triggered via `/smart-plan`. Parses specs or chat context to build a macro, parallel-ready roadmap flow.     | **No** (Fully Automated)       | **Free Tier** (Google AI Studio) | High context input but small, macro-level output. A "Flash" model with a massive context window easily processes entire specs for zero cost on the Free Tier.           |
+| **Phase 2: Triage** | `Gemini Flash PO`           | **Backlog Generation**: Automatically triggered on roadmap changes. Parses macro goals against specs to create detailed GitHub Issues. | **No** (Fully Automated)       | **Free Tier** (Google AI Studio) | Requires multiple incremental passes over the documentation to detail tasks. Using a "Flash" model ensures this high-frequency routing loop remains 100% cost-free.     |
+| **Brainstorm**      | `claude-3-5-sonnet`         | **Ambiguous Specifications**: Pipeline halts; Claude refines the design and updates architecture docs first.                           | **Mandatory**                  | _Subscription / Commercial_      | Complex architectural blockers require deep semantic comprehension and interactive dialogue with the human architect to pivot safely.                                   |
+| **XS**              | `xs_coder` (Flash Lite)     | **Intern**: Typo fixes, variable renaming, simple label updates.                                                                       | `dev: false` / `review: false` | **Free Tier**                    | Simple token-matching and string replacements do not require semantic reasoning; keeping it on sub-flash tiers ensures zero cost.                                       |
+| **S**               | `s_coder` (DeepSeek-V3)     | **Junior Dev**: Simple conditional statements, isolated micro-components.                                                              | `dev: false` / `review: false` | **~\$0.01**                      | Basic programming logic and isolated tasks are highly optimized on standard commodity LLMs, yielding speed and cents-level billing.                                     |
+| **M**               | `m_coder` (DeepSeek-R1)     | **Mid Dev**: Standard business logic, mandatory unit test authoring.                                                                   | `dev: true` / `review: false`  | **~\$0.05**                      | Standard features require explicit code reasoning and math verification. An "O1/R1-class" reasoning model guarantees solid logic and test coverage.                     |
+| **L**               | `l_coder` (Claude Haiku)    | **Senior Dev**: Local refactoring, standard full feature building.                                                                     | `dev: true` / `review: false`  | _Subscription / Commercial_      | Multi-file code context manipulation demands high speed and strict adherence to local styles, perfectly fitting a fast, local premium agent.                            |
+| **XL**              | `xl_coder` (Claude Sonnet)  | **Tech Lead**: Large module development, new API integrations.                                                                         | `dev: true` / `review: true`   | _Subscription / Commercial_      | Integrating new systems requires a model that excels at understanding complex, sprawling architectures without introducing regressions.                                 |
+| **XXL**             | `xxl_coder` (Claude Sonnet) | **Principal Eng**: Core system overhauls + mandatory `architecture.md` updates.                                                        | `dev: true` / `review: true`   | _Subscription / Commercial_      | Massive structural overhauls and synchronization with architecture documents require an elite agent capable of executing sweeping, high-risk code changes.              |
 
 ## 📖 Deep-Dive Documentation
 
@@ -92,12 +94,8 @@ configuration requirements are split into specialized manuals:
   [Smart-Spec: Refinement & Scope Evaluation](docs/pipelines/smart_spec.md)  
   _Learn how to refine feature ideas, apply the 3-Question Rule, evaluate scope (MICRO vs LARGE),
   and route to execution._
-
-<!-- - **🎯 Planning & Roadmap Management:**
-  [Smart-Plan: Ticketing & Scheduling](docs/pipelines/smart_plan.md)
-  _Understand how to create GitHub Issues, update roadmaps, and manage task dependencies (coming
-  soon)._ -->
-
+- **🎯 Planning & Roadmap Management:** [Smart-Plan: Scheduling](docs/pipelines/smart_plan.md)
+  _Understand how to create/update roadmaps, and manage task dependencies (coming soon)._
 - **💻 Local Workspace Integration:**
   [Visual Studio Code & Continue.dev Configuration Guide](docs/ide/vscode.md)  
   _Learn how to spin up your local multi-key Dev Container and how to manage your manual local

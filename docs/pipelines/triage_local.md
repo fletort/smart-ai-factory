@@ -24,7 +24,7 @@ graph TD
         CLI -->|Executes| Script[Launch Triage Script in local mode]
         Script -->|1. Reads config| Config[.smart.ai/config.yml]
         Script -->|2. Invokes| LLM[Triage LLM: simple_triage_model]
-        LLM -->|3. Parses next task in roadmap.md| JSON[Strict JSON Spec Payload]
+        LLM -->|3. Parses next task in roadmap| JSON[Strict JSON Spec Payload]
     end
 
     subgraph "🛑 Brainstorming"
@@ -44,7 +44,7 @@ graph TD
 
         HITL -->|Yes| DevOp[DevOps Toolkit]
         DevOp -->|4. Automated Label & Ticket| GH[gh issue create --label size]
-        DevOp -->|5. Local Synchronization| RM[Update local roadmap.md with #issue_num]
+        DevOp -->|5. Local Synchronization| RM[Update local roadmap with #issue_num]
     end
 ```
 
@@ -67,9 +67,14 @@ When you invoke `/smart_ai triage` inside `Continue.dev` or `OpenCode`:
 
 ## 🛑 The Local Brainstorming Loop: Resolving Ambiguities
 
-If the Triage LLM (DeepSeek-V3 or Gemini) parses a line in `roadmap.md` and discovers missing
-constraints, loose requirements, or design pattern violations against your `docs/architecture.md`,
-it flags the JSON payload status as `unclear_specification`.
+If the Triage LLM parses a line in one of the roadmap files and discovers missing constraints, loose
+requirements, or design pattern violations against your `docs/architecture.md`, it flags the JSON
+payload status as `unclear_specification`. The roadmap file use can be:
+
+- in a single-file layout the unique `roadmap.md` file when unversioned or the
+  `roadmap/vX.Y/roadmap.md` when versioned
+- in a multi-file layout, `roadmap/README.md`, `roadmap/epic-X.md` when unversioned, or
+  `roadmap/vX.Y/README.md`, `roadmap/vX.Y/epic-X.md` when versioned.
 
 The local script intercepts this status, pauses the pipeline, and prints an interactive menu in your
 terminal:
@@ -126,7 +131,7 @@ Rules:  - Focus strictly on this scoped task. No future architecture.
 ```
 
 - **`y` (Yes):** The script executes the native GitHub CLI command (`gh issue create`), fetches the
-  new issue number, and surgically rewrites your local `roadmap.md` file (e.g., changing
+  new issue number, and surgically rewrites your local roadmap file (e.g., changing
   `- [ ] Secure API` to `- [ ] Secure API (#42)`).
 - **`n` (No):** The session ends safely without polluting your Git state or GitHub backlog.
 - **`edit`:** The script loops back to the Chat interface, allowing you to feed a prompt adjustment

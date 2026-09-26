@@ -6,3 +6,6 @@ specifications:
     # Alternative modular mode:
     # functional: .smart.ai/templates/functional-spec.md
     # technical: .smart.ai/templates/technical-spec.md
+roadmap:
+  versioned: false # Put to true to generate Versioned Directory<br/>roadmap/vX.Y/...
+  layout: auto # can be single, multi or auto
