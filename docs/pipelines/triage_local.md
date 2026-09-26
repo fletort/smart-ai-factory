@@ -67,9 +67,9 @@ When you invoke `/smart_ai triage` inside `Continue.dev` or `OpenCode`:
 
 ## 🛑 The Local Brainstorming Loop: Resolving Ambiguities
 
-If the Triage LLM (DeepSeek-V3 or Gemini) parses a line in `roadmap.md` and discovers missing
-constraints, loose requirements, or design pattern violations against your `docs/architecture.md`,
-it flags the JSON payload status as `unclear_specification`.
+If the Triage LLM parses a line in one of the `roadmap` files and discovers missing constraints,
+loose requirements, or design pattern violations against your `docs/architecture.md`, it flags the
+JSON payload status as `unclear_specification`.
 
 The local script intercepts this status, pauses the pipeline, and prints an interactive menu in your
 terminal:

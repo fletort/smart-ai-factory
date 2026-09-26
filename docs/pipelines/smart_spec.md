@@ -42,9 +42,10 @@ graph LR
 
 **Case 1**: Run `/smart-plan`
 
-- Creates a standalone GitHub Issue
-- Use when tracking/documentation is needed
-- Single, well-scoped problem statement
+- Appends a high-level issue placeholder directly into `roadmap.md` using the chat context.
+- Use when tracking is needed but local specification documentation is overkill.
+- Avoids creating a boilerplate spec file; the pipeline will automatically triage it into a GitHub
+  Issue downstream.
 
 **Case 2**: Activate Local Coder Agent
 

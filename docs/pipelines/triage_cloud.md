@@ -17,7 +17,7 @@ the entire codebase repeatedly.
 ```mermaid
 graph TD
     subgraph "☁️ Trigger Phase"
-        Git[git push roadmap.md] -->|Event: push| CI_Triage[GitHub Actions: Triage Pipeline]
+        Git[git push roadmap files] -->|Event: push| CI_Triage[GitHub Actions: Triage Pipeline]
     end
 
     subgraph box1["🧠 Processing Loop"]
@@ -59,8 +59,8 @@ segregate execution scopes and maximize billing efficiency:
 
 ### 1. `ai_triage_pipeline.yml`
 
-- **Trigger:** Triggered exclusively on `push` events affecting the `roadmap.md` file on the main
-  branch.
+- **Trigger:** Triggered exclusively on `push` events affecting one of the `roadmap` files on the
+  main branch.
 - **Action:** Runs the triage script in cloud mode. If the next item is clear, it creates the
   development issue. If it is blocked, it kicks off the Brainstorm environment and stops safely.
 - **Billing footprint:** ~30 seconds of compute time per run.

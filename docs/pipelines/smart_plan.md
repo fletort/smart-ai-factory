@@ -15,7 +15,7 @@ definitions into high-level, parallel-ready roadmap files.
 graph TD
     Input["👤 /smart-plan Trigger<br/>(Spec File or Chat Context)"] --> Source["🔍 Detect Context Source"]
 
-    Source -->|File Mode| ReadFile["📄 Read Target Spec<br/>(docs/specs/*.md)"]
+    Source -->|File Mode| ReadFile["📄 Read Given Target Spec"]
     Source -->|Context Mode| ReadChat["💬 Parse Prior Chat History"]
 
     ReadFile --> Strategy{"Detect Config Layout"}
@@ -42,19 +42,22 @@ graph TD
   [Case 3](./smart_spec.md#large--4-hours) or manual user specs). The agent anchors the roadmap to
   some persistents files pointers (docs/specs/).
 - **Context Mode**: Triggered for smaller features or immediate feedback loops (`smart-spec`
-  [Case 1](./smart_spec.md#smallmicro--4-hours)). The agent uses the active LLM conversational
-  memory as the source of truth without generating boilerplate files.
+  [Case 1](./smart_spec.md#smallmicro--4-hours)). The agent appends the high-level issue title
+  directly into the active `roadmap.md` using the current chat context as the source of truth,
+  skipping the creation of a dedicated specification file.
 
 ### Storage & Layout Architecture
 
-- Unique roadmap/versioned Roadmap: Project configuration is used to know if:
-  - the roadmap is unique `roadmap.md` or `./roadmap/epic-X.md`
-  - or by version `./roadmap/v0.1/roadmap.md` or `./roadmap/v0.1/epic-X.md`
-- Single-File Layout: Optimized for small-to-medium project scopes. Generates or updates a
-  standalone `roadmap.md` file at the root or within a versioned subdirectory.
-- Multi-File Layout (Auto-Split): Activated by user configuration or triggered automatically if the
-  project scope exceeds 3 Epics or a high volume of tasks. It outputs a `README.md` index file and
-  individual `epic-X.md` files to prevent output token truncation and maintain readability.
+- Unique roadmap/versioned Roadmap: `roadmap.versioned` configuration is used to know if:
+  - the roadmap is unique `roadmap.md`
+  - or by version `./roadmap/v0.1/roadmap.md`
+- Single or Multi File Layout: `roadmap.layout` configuration is used to know the layout to use:
+  - `single`: Single-File Layout: Optimized for small-to-medium project scopes. Generates or updates
+    a standalone `roadmap.md` file at the root or within a versioned subdirectory.
+  - `multi`: Multi-File Layout (Auto-Split): It outputs a `README.md` index file and individual
+    `epic-X.md` files to prevent output token truncation and maintain readability.
+  - `auto` (or not defined): Chose automatically between the single or multi layaout. ulti-File
+    layout is used if the project scope exceeds 3 Epics or a high volume of tasks.
 
 ## Key Principles
 

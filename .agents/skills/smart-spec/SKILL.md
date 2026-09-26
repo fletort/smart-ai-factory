@@ -42,8 +42,8 @@ specification is complete and ready for execution planning.
 
 3. **Scope Evaluation**: Once the discussion is mature, evaluate the scope:
    - If **SMALL/MICRO** (< 4 hours estimated work): Present a choice between:
-     - **Case 1** (Create a standalone GitHub Issue from the specification). Use when
-       tracking/documentation is needed.
+     - **Case 1** (Appends a high-level issue placeholder directly into `roadmap.md` using the chat
+       context.). Use when tracking is needed but local specification documentation is overkill.
      - **Case 2** (Instantly activate a local coding agent like `@xs_coder` or `@s_coder` for
        immediate code injection). Use when the feature is straightforward and implementation can
        start immediately.
