@@ -61,8 +61,8 @@ segregate execution scopes and maximize billing efficiency:
 
 - **Trigger:** Triggered exclusively on `push` events affecting one of the `roadmap` files on the
   main branch. It can be the unique `roadmap.md` (or `roadmap/vX.Y/roadmap.md`) file in a roadmap
-  single-file layout or one of the `roadmap/(vX.Y)/README.md`, `roadmap/(vX.Y)/epic-X.md` files in a
-  roadmap multi-file layout.
+  single-file layout or one of the `roadmap/vX.Y/README.md`, `roadmap/vX.Y/epic-X.md` files in a
+  roadmap multi-file layout (with or without version).
 - **Action:** Runs the triage script in cloud mode. If the next item is clear, it creates the
   development issue. If it is blocked, it kicks off the Brainstorm environment and stops safely.
 - **Billing footprint:** ~30 seconds of compute time per run.

@@ -71,7 +71,8 @@ If the Triage LLM parses a line in one of the `roadmap` files and discovers miss
 loose requirements, or design pattern violations against your `docs/architecture.md`, it flags the
 JSON payload status as `unclear_specification`. The roadmap file use can be: the unique `roadmap.md`
 (or `roadmap/vX.Y/roadmap.md`) file in a roadmap single-file layout or one of the
-`roadmap/(vX.Y)/README.md`, `roadmap/(vX.Y)/epic-X.md` files in a roadmap multi-file layout.
+`roadmap/vX.Y/README.md`, `roadmap/vX.Y/epic-X.md` files in a roadmap multi-file layout (with or
+without version).
 
 The local script intercepts this status, pauses the pipeline, and prints an interactive menu in your
 terminal:
