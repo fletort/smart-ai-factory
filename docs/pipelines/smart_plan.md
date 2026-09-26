@@ -2,8 +2,7 @@
 
 **State**: _Proposed specification_
 
-This document visualizes the roadmap planning and milestone scheduling workflow of the
-**smart-plan** skill (**Phase 1**).
+This document visualizes the roadmap planning workflow of the **smart-plan** skill (**Phase 1**).
 
 ## 🔄 Smart-Plan Workflow
 
@@ -38,9 +37,9 @@ graph TD
 
 ### Context & Sourcing Modes
 
-- **File Mode**: Triggered when specifications files exist (from `smart-spec`
+- **File Mode**: Triggered when a specification file exists (from `smart-spec`
   [Case 3](./smart_spec.md#large--4-hours) or manual user specs). The agent anchors the roadmap to
-  some persistents files pointers (docs/specs/).
+  persistent file pointers.
 - **Context Mode**: Triggered for smaller features or immediate feedback loops (`smart-spec`
   [Case 1](./smart_spec.md#smallmicro--4-hours)). The agent appends the high-level issue title
   directly into the active `roadmap.md` using the current chat context as the source of truth,
@@ -56,8 +55,8 @@ graph TD
     a standalone `roadmap.md` file at the root or within a versioned subdirectory.
   - `multi`: Multi-File Layout (Auto-Split): It outputs a `README.md` index file and individual
     `epic-X.md` files to prevent output token truncation and maintain readability.
-  - `auto` (or not defined): Chose automatically between the single or multi layaout. ulti-File
-    layout is used if the project scope exceeds 3 Epics or a high volume of tasks.
+  - `auto` (or not defined): Chose automatically between the single or multi layaout. Multi-File
+    layout is used if the project scope exceeds 3 Epics or have more than 50 tasks.
 
 ## Key Principles
 
