@@ -70,8 +70,8 @@ When you invoke `/smart_ai triage` inside `Continue.dev` or `OpenCode`:
 If the Triage LLM parses a line in one of the `roadmap` files and discovers missing constraints,
 loose requirements, or design pattern violations against your `docs/architecture.md`, it flags the
 JSON payload status as `unclear_specification`. The roadmap file use can be: the unique `roadmap.md`
-file in a roadmap single-file layout or one of the `roadmap/README.md`, `roadmap/epic-X.md` files in
-a roadmap multi-file layout.
+(or `roadmap/vX.Y/roadmap.md`) file in a roadmap single-file layout or one of the
+`roadmap/(vX.Y)/README.md`, `roadmap/(vX.Y)/epic-X.md` files in a roadmap multi-file layout.
 
 The local script intercepts this status, pauses the pipeline, and prints an interactive menu in your
 terminal:

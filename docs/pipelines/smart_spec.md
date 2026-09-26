@@ -42,7 +42,8 @@ graph LR
 
 **Case 1**: Run `/smart-plan`
 
-- Appends a high-level issue placeholder to the active/configured roadmap target using the chat context.
+- Appends a high-level issue placeholder to the active/configured roadmap target using the chat
+  context.
 - Use when tracking is needed but local specification documentation is overkill.
 - Avoids creating a boilerplate spec file; the pipeline will automatically triage it into a GitHub
   Issue downstream.
