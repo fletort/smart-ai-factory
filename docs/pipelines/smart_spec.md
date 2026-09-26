@@ -1,9 +1,9 @@
 # Smart-Spec Execution Flow 📋
 
-**State**: _Proposed specification_
+**State**: _Implemented as a skill (only)_
 
 This document visualizes the specification refinement and evaluation workflow of the **smart-spec**
-skill.
+skill (Phase 0).
 
 ## 🔄 Smart-Spec Workflow
 
