@@ -17,14 +17,18 @@ graph TD
     Source -->|File Mode| ReadFile["📄 Read Given Target Spec"]
     Source -->|Context Mode| ReadChat["💬 Parse Prior Chat History"]
 
-    ReadFile --> Strategy{"Detect Config Layout"}
+    ReadFile --> Strategy{"Detect Versioning and Config Layout"}
     ReadChat --> Strategy
 
-    Strategy -->|UNIFIED| Single["📝 Generate Single File<br/>roadmap.md"]
-    Strategy -->|MODULAR / AUTO| Multi["🗂️ Generate Versioned Directory<br/>roadmap/vX.Y/..."]
+    Strategy -->|not versioned and single| Single["📝 Generate Single File<br/>roadmap.md"]
+    Strategy -->|versioned and single| SingleVer["📝 Generate Single Versioned File<br/>roadmap/vX.Y/roadmap.md"]
+    Strategy -->|not versioned and multi| Multi["🗂️ Generate Multi Files Directory<br/>roadmap/..."]
+    Strategy -->|versioned and multi| MultiVer["🗂️ Generate Multi Versioned Files <br/>roadmap/vX.Y/..."]
 
     Single --> Process["🏗️ Build Roadmap Strategy"]
+    SingleVer --> Process
     Multi --> Process
+    MultiVer --> Process
 
     Process -->|Step 1| Vision["🎯 Extract Global Vision<br/>(2-Sentence Summary)"]
     Vision -->|Step 2| Epics["📊 Map Epics"]
@@ -49,13 +53,14 @@ graph TD
 
 - Unique roadmap/versioned Roadmap: `roadmap.versioned` configuration is used to know if:
   - the roadmap is unique `roadmap.md`
-  - or by version `./roadmap/v0.1/roadmap.md`
+  - or by version `./roadmap/v0.1/roadmap.md`. By default the last version available is taken, the
+    skill must ask the user if it is for this last version or a new one that must be given.
 - Single or Multi File Layout: `roadmap.layout` configuration is used to know the layout to use:
   - `single`: Single-File Layout: Optimized for small-to-medium project scopes. Generates or updates
     a standalone `roadmap.md` file at the root or within a versioned subdirectory.
   - `multi`: Multi-File Layout (Auto-Split): It outputs a `README.md` index file and individual
     `epic-X.md` files to prevent output token truncation and maintain readability.
-  - `auto` (or not defined): Chose automatically between the single or multi layaout. Multi-File
+  - `auto` (or not defined): Choose automatically between the single or multi layout. Multi-File
     layout is used if the project scope exceeds 3 Epics or have more than 50 tasks.
 
 ## Key Principles
