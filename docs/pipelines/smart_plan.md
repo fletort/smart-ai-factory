@@ -41,9 +41,9 @@ graph TD
   [Case 3](./smart_spec.md#large--4-hours) or manual user specs). The agent anchors the roadmap to
   persistent file pointers.
 - **Context Mode**: Triggered for smaller features or immediate feedback loops (`smart-spec`
-  [Case 1](./smart_spec.md#smallmicro--4-hours)). The agent appends the high-level issue title
-  directly into the active `roadmap.md` using the current chat context as the source of truth,
-  skipping the creation of a dedicated specification file.
+  [Case 1](./smart_spec.md#smallmicro--4-hours)). The agent appends the high-level issue title to
+  the configured roadmap target using the current chat context as the source of truth, skipping the
+  creation of a dedicated specification file.
 
 ### Storage & Layout Architecture
 

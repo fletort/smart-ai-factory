@@ -24,7 +24,7 @@ graph TD
         CLI -->|Executes| Script[Launch Triage Script in local mode]
         Script -->|1. Reads config| Config[.smart.ai/config.yml]
         Script -->|2. Invokes| LLM[Triage LLM: simple_triage_model]
-        LLM -->|3. Parses next task in roadmap.md| JSON[Strict JSON Spec Payload]
+        LLM -->|3. Parses next task in roadmap| JSON[Strict JSON Spec Payload]
     end
 
     subgraph "🛑 Brainstorming"
@@ -44,7 +44,7 @@ graph TD
 
         HITL -->|Yes| DevOp[DevOps Toolkit]
         DevOp -->|4. Automated Label & Ticket| GH[gh issue create --label size]
-        DevOp -->|5. Local Synchronization| RM[Update local roadmap.md with #issue_num]
+        DevOp -->|5. Local Synchronization| RM[Update local roadmap with #issue_num]
     end
 ```
 
@@ -126,7 +126,7 @@ Rules:  - Focus strictly on this scoped task. No future architecture.
 ```
 
 - **`y` (Yes):** The script executes the native GitHub CLI command (`gh issue create`), fetches the
-  new issue number, and surgically rewrites your local `roadmap.md` file (e.g., changing
+  new issue number, and surgically rewrites your local roadmap file (e.g., changing
   `- [ ] Secure API` to `- [ ] Secure API (#42)`).
 - **`n` (No):** The session ends safely without polluting your Git state or GitHub backlog.
 - **`edit`:** The script loops back to the Chat interface, allowing you to feed a prompt adjustment

@@ -22,7 +22,7 @@ graph LR
     Evaluate -->|>= 4h| Large["🏗️ LARGE"]
 
     Micro --> Choice{"Execute?"}
-    Choice -->|Case 1| Issue["Create GitHub Issue<br/>/smart-plan"]
+    Choice -->|Case 1| Issue["Add to Roadmap<br/>/smart-plan"]
     Choice -->|Case 2| Code["Code Injection<br/>@xs_coder / @s_coder"]
 
     Large --> Case3["📄 CASE 3: Write Specs"]
