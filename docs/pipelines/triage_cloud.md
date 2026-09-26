@@ -59,10 +59,12 @@ segregate execution scopes and maximize billing efficiency:
 
 ### 1. `ai_triage_pipeline.yml`
 
-- **Trigger:** Triggered exclusively on `push` events affecting one of the `roadmap` files on the
-  `roadmap/README.md`, `roadmap/epic-X.md` when unversioned, or
-  `roadmap/vX.Y/README.md`, `roadmap/vX.Y/epic-X.md` when versioned,
-  in a roadmap multi-file layout.
+- **Trigger:** Triggered exclusively on `push` events affecting one of the roadmap files. The
+  roadmap file use can be:
+  - in a single-file layout the unique `roadmap.md` file when unversioned or the
+    `roadmap/vX.Y/roadmap.md` when versioned
+  - in a multi-file layout, `roadmap/README.md`, `roadmap/epic-X.md` when unversioned, or
+    `roadmap/vX.Y/README.md`, `roadmap/vX.Y/epic-X.md` when versioned.
 - **Action:** Runs the triage script in cloud mode. If the next item is clear, it creates the
   development issue. If it is blocked, it kicks off the Brainstorm environment and stops safely.
 - **Billing footprint:** ~30 seconds of compute time per run.

@@ -67,12 +67,14 @@ When you invoke `/smart_ai triage` inside `Continue.dev` or `OpenCode`:
 
 ## 🛑 The Local Brainstorming Loop: Resolving Ambiguities
 
-If the Triage LLM parses a line in one of the `roadmap` files and discovers missing constraints,
-loose requirements, or design pattern violations against your `docs/architecture.md`, it flags the
-JSON payload status as `unclear_specification`. The roadmap file use can be: the unique `roadmap.md`
-  `roadmap/README.md`, `roadmap/epic-X.md` when unversioned, or
-  `roadmap/vX.Y/README.md`, `roadmap/vX.Y/epic-X.md` when versioned,
-  in a roadmap multi-file layout.
+If the Triage LLM parses a line in one of the roadmap files and discovers missing constraints, loose
+requirements, or design pattern violations against your `docs/architecture.md`, it flags the JSON
+payload status as `unclear_specification`. The roadmap file use can be:
+
+- in a single-file layout the unique `roadmap.md` file when unversioned or the
+  `roadmap/vX.Y/roadmap.md` when versioned
+- in a multi-file layout, `roadmap/README.md`, `roadmap/epic-X.md` when unversioned, or
+  `roadmap/vX.Y/README.md`, `roadmap/vX.Y/epic-X.md` when versioned.
 
 The local script intercepts this status, pauses the pipeline, and prints an interactive menu in your
 terminal:
