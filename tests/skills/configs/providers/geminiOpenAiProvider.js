@@ -39,6 +39,7 @@ class GeminiOpenAiProvider {
     const systemInstructionParts = [];
 
     messages.forEach((msg) => {
+      // 1. HANDLE SYSTEM MESSAGE separately
       if (msg.role === 'system') {
         if (typeof msg.content === 'string') {
           if (msg.content) systemInstructionParts.push({ text: msg.content });
@@ -137,11 +138,21 @@ class GeminiOpenAiProvider {
     const cleanedMessages = mappedMessages.map(({ _isToolGroup, ...rest }) => rest);
     if (systemInstructionParts.length === 0) return cleanedMessages;
     if (cleanedMessages.length === 0) {
-      return [{ role: 'user', parts: systemInstructionParts }];
+      // contents tab is manadatory for Gemini API
+      cleanedMessages = [
+        {
+          role: 'user',
+          parts: [
+            {
+              text: '',
+            },
+          ],
+        },
+      ];
     }
     return {
       contents: cleanedMessages,
-      system_instruction: { parts: systemInstructionParts },
+      systemInstruction: { parts: systemInstructionParts },
     };
   }
 
