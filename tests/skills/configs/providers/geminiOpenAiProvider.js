@@ -30,14 +30,30 @@ class GeminiOpenAiProvider {
   /**
    * Maps OpenAI format exchange to Google Gemini API format
    * @param {Array} messages - Array of OpenAI format messages
-   * @returns {Array} Mapped Google Gemini content format
+   * @returns {Array|Object} Mapped Google Gemini prompt format
    */
   _mapOpenAiToGoogle(messages) {
     if (!Array.isArray(messages)) return messages;
 
     const mappedMessages = [];
+    const systemInstructionParts = [];
 
     messages.forEach((msg) => {
+      if (msg.role === 'system') {
+        if (typeof msg.content === 'string') {
+          if (msg.content) systemInstructionParts.push({ text: msg.content });
+        } else if (Array.isArray(msg.content)) {
+          msg.content.forEach((part) => {
+            if (typeof part === 'string') {
+              systemInstructionParts.push({ text: part });
+            } else if (part && part.type === 'text' && typeof part.text === 'string') {
+              systemInstructionParts.push({ text: part.text });
+            }
+          });
+        }
+        return;
+      }
+
       // 1. HANDLE TOOL RESPONSES (role: tool) -> Merge consecutive tool outputs
       if (msg.role === 'tool') {
         let responseContent = msg.content;
@@ -118,7 +134,15 @@ class GeminiOpenAiProvider {
     });
 
     // Clean up the temporary flag before returning the final mapped array
-    return mappedMessages.map(({ _isToolGroup, ...rest }) => rest);
+    const cleanedMessages = mappedMessages.map(({ _isToolGroup, ...rest }) => rest);
+    if (systemInstructionParts.length === 0) return cleanedMessages;
+    if (cleanedMessages.length === 0) {
+      return [{ role: 'user', parts: systemInstructionParts }];
+    }
+    return {
+      contents: cleanedMessages,
+      system_instruction: { parts: systemInstructionParts },
+    };
   }
 
   /**
