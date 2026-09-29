@@ -32,8 +32,11 @@ module.exports = function ({ vars, provider }) {
   // Level 1: Custom grammar/group type from provider config (e.g., 'legacy_json', 'strict_chat')
   const grammarType = provider.config && provider.config.grammar_type;
 
-  // Level 2: Sanitize the provider ID (e.g., 'openai:gpt-4o' -> 'openai-gpt-4o')
-  const providerName = provider.label || provider.id.replace(/[:\/]/g, '-');
+  // Level 2: Optional provider label
+  const providerLabel = provider.label;
+
+  // Level 3: Sanitize the provider ID (e.g., 'openai:gpt-4o' -> 'openai-gpt-4o')
+  const providerId = provider.id.replace(/[:\/]/g, '-');
 
   // 2. Build the prospective file paths for each level
   // Priority 1: e.g., prompts/02-get_config.chat.legacy_json.json
@@ -41,10 +44,15 @@ module.exports = function ({ vars, provider }) {
     ? path.join(pathParsed.dir, `${pathParsed.name}.${grammarType}${pathParsed.ext}`)
     : null;
 
-  // Priority 2: e.g., prompts/02-get_config.chat.openai-gpt-4o.json
-  const pathWithProvider = path.join(
+  // Priority 2: e.g., prompts/02-get_config.chat.<provider-label>.json
+  const pathWithLabel = providerLabel
+    ? path.join(pathParsed.dir, `${pathParsed.name}.${providerLabel}${pathParsed.ext}`)
+    : null;
+
+  // Priority 3: e.g., prompts/02-get_config.chat.openai-gpt-4o.json
+  const pathWithProviderId = path.join(
     pathParsed.dir,
-    `${pathParsed.name}.${providerName}${pathParsed.ext}`,
+    `${pathParsed.name}.${providerId}${pathParsed.ext}`,
   );
 
   // 3. Evaluate the fallbacks sequentially (Highest priority first)
@@ -52,15 +60,18 @@ module.exports = function ({ vars, provider }) {
 
   if (pathWithGrammar && fs.existsSync(pathWithGrammar)) {
     finalPath = pathWithGrammar;
-  } else if (fs.existsSync(pathWithProvider)) {
-    finalPath = pathWithProvider;
+  } else if (pathWithLabel && fs.existsSync(pathWithLabel)) {
+    finalPath = pathWithLabel;
+  } else if (fs.existsSync(pathWithProviderId)) {
+    finalPath = pathWithProviderId;
   } else if (fs.existsSync(originalPath)) {
     finalPath = originalPath;
   } else {
     // Safety guard if none of the files can be resolved on disk
     const grammarMsg = pathWithGrammar ? `'${pathWithGrammar}', ` : '';
+    const labelMsg = pathWithLabel ? `'${pathWithLabel}', ` : '';
     throw new Error(
-      `promptfoo loader error: Could not find any of the requested prompt files. Checked: ${grammarMsg}'${pathWithProvider}', or '${originalPath}'`,
+      `promptfoo loader error: Could not find any of the requested prompt files. Checked: ${grammarMsg}${labelMsg}'${pathWithProviderId}', or '${originalPath}'`,
     );
   }
 
