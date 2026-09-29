@@ -1,0 +1,24 @@
+- description: Test that Skill reads the config file first
+  vars:
+    user_message: .
+    prompt_path: 01-first_message.txt
+  assert:
+    - type: is-json
+    - type: tool-call-f1
+      value:
+        - read_file
+    - type: equals
+      value: '.smart.ai/config.yml'
+      transform: |
+        const args = output[0].function?.arguments;
+        argsJson = typeof args === 'string' ? JSON.parse(args) : args;
+        return argsJson.path
+
+- description: Test Skill stops immediately when config file is missing
+  vars:
+    user_message: .
+    read_file_config_result: 'cannot access .smart.ai/config.yml: No such file or directory'
+    prompt_path: 02-get_config.chat.json
+  assert:
+    - type: contains
+      value: 'Workspace not configured.'

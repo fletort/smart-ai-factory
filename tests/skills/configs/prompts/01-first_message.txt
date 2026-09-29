@@ -1,0 +1,4 @@
+# SYSTEM INSTRUCTIONS
+{{ skill_prompt }}
+# ASSOCIATED USER MESSAGE
+{{ user_message }}

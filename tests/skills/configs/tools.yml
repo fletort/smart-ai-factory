@@ -1,0 +1,36 @@
+- type: function
+  function:
+    name: read_file
+    description: Reads the contents of a local file from a given path.
+    parameters:
+      type: object
+      properties:
+        path:
+          type: string
+          description: 'Relative Path of the file to read from the workspace root directory'
+      required: ['path']
+- type: function
+  function:
+    name: write_file
+    description: Writes the contents of a local file from a given path.
+    parameters:
+      type: object
+      properties:
+        path:
+          type: string
+          description: 'Relative Path of the file to write from the workspace root directory'
+        content:
+          type: string
+          description: 'Content to write to the specified file'
+      required: ['path', 'content']
+- type: function
+  function:
+    name: directory_content
+    description: List the content of a directory
+    parameters:
+      type: object
+      properties:
+        path:
+          type: string
+          description: 'Relative Path of the directory to list from the workspace root directory'
+      required: ['path']
