@@ -20,7 +20,7 @@ const path = require('path');
  * @param {string} context.provider.id - The unique identifier of the provider (e.g., 'openai:gpt-4o').
  * @param {string} [context.provider.label] - The optional label assigned to the provider.
  * @param {Record<string, any>} [context.provider.config] - Specific model configurations passed to the provider.
- * @param {string} [context.provider.config.grammarType] - The optional grammar type assigned to the provider.
+ * @param {string} [context.provider.config.grammar_type] - The optional grammar type assigned to the provider.
  *
  * @returns {Promise<string> | string} The final prompt string to be sent to the LLM.
  */
