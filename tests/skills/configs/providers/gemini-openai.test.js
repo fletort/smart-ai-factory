@@ -58,18 +58,21 @@ describe('GeminiOpenAiProvider', () => {
 
       assert.deepStrictEqual(provider._mapOpenAiToGoogle(openAiInput), {
         contents: [{ role: 'user', parts: [{ text: 'Hello' }] }],
-        system_instruction: {
+        systemInstruction: {
           parts: [{ text: 'Follow these instructions.' }, { text: 'And these too.' }],
         },
       });
     });
 
-    it('should convert system-only prompts to a Gemini user message', () => {
+    it('should convert system-only prompts to a Gemini empty user message', () => {
       const openAiInput = [{ role: 'system', content: 'Be concise.' }];
 
-      assert.deepStrictEqual(provider._mapOpenAiToGoogle(openAiInput), [
-        { role: 'user', parts: [{ text: 'Be concise.' }] },
-      ]);
+      assert.deepStrictEqual(provider._mapOpenAiToGoogle(openAiInput), {
+        contents: [{ role: 'user', parts: [{ text: '' }] }],
+        systemInstruction: {
+          parts: [{ text: 'Be concise.' }],
+        },
+      });
     });
 
     it('should handle complex parallel tool calls and consecutive tool responses', () => {

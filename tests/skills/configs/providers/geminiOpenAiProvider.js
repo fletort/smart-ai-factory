@@ -135,10 +135,10 @@ class GeminiOpenAiProvider {
     });
 
     // Clean up the temporary flag before returning the final mapped array
-    const cleanedMessages = mappedMessages.map(({ _isToolGroup, ...rest }) => rest);
+    let cleanedMessages = mappedMessages.map(({ _isToolGroup, ...rest }) => rest);
     if (systemInstructionParts.length === 0) return cleanedMessages;
     if (cleanedMessages.length === 0) {
-      // contents tab is manadatory for Gemini API
+      // contents tab is mandatory for Gemini API
       cleanedMessages = [
         {
           role: 'user',
