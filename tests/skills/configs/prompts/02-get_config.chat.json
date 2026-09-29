@@ -1,7 +1,7 @@
 [
   {
     "role": "user",
-    "content": "# SYSTEM INSTRUCTIONS\n{{smart_spec_skill}}\n# ASSOCIATED USER MESSAGE\n{{user_message}}"
+    "content": "# SYSTEM INSTRUCTIONS\n{{skill_prompt}}\n# ASSOCIATED USER MESSAGE\n{{user_message}}"
   },
   {
     "role": "assistant",

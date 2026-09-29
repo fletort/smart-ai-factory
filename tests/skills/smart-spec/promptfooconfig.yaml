@@ -5,45 +5,19 @@
 description: 'Test Skills'
 
 prompts:
-  - file://prompt.js
+  - file://../configs/prompts/prompt.js
 
 providers:
-  - id: file://./geminiOpenAiProvider.js
+  - id: file://../configs/providers/geminiOpenAiProvider.js
     label: gemini
     config:
       model: 'google:gemini-3.6-flash'
       apiKey: '{{ env.TEST_GEMINI_API_KEY }}'
-      tools: &tools
-        - type: function
-          function:
-            name: read_file
-            description: Reads the contents of a local file from a given path.
-            parameters:
-              type: object
-              properties:
-                path:
-                  type: string
-                  description: 'Relative Path of the file to read from the workspace root directory'
-              required: ['path']
-        - type: function
-          function:
-            name: write_file
-            description: Writes the contents of a local file from a given path.
-            parameters:
-              type: object
-              properties:
-                path:
-                  type: string
-                  description:
-                    'Relative Path of the file to write from the workspace root directory'
-                content:
-                  type: string
-                  description: 'Content to write to the specified file'
-              required: ['path', 'content']
+      tools: file://../configs/tools.yml
   - id: openrouter:deepseek/deepseek-v4.1-flash
     config:
       apiKey: '{{ env.TEST_OPENROUTER_KEY }}'
-      tools: *tools
+      tools: file://../configs/tools.yml
       showThinking: false
       max_tokens: 8000
   # - id: openrouter:google/gemini-3.6-flash
@@ -58,41 +32,12 @@ providers:
 
 defaultTest:
   vars:
-    smart_spec_skill: file://../../../.agents/skills/smart-spec/SKILL.md
+    skill_prompt: file://../../../.agents/skills/smart-spec/SKILL.md
   options:
     provider: openrouter:deepseek/deepseek-v4.1-flash
 
 tests:
-  - description: Test Skill reads the config file first
-    vars:
-      user_message: I want a specification for a complex interest-free 3-installment payment system.
-      prompt_path: prompts/01-first_message.txt
-    providers:
-      - gemini
-      - openrouter:*
-    assert:
-      - type: is-json
-      - type: contains
-        value: 'read_file'
-      - type: contains
-        value: '.smart.ai/config.yml'
-
-  - description: Test Skill stops immediately when config file is missing
-    providers:
-      - gemini
-      - openrouter:*
-    vars:
-      user_message: I want a specification for a complex interest-free 3-installment payment system.
-      read_file_config_result: 'cannot access .smart.ai/config.yml: No such file or directory'
-      prompt_path: prompts/02-get_config.chat.json
-    assert:
-      - type: contains
-        value: 'Workspace not configured.'
-      - type: not-contains
-        # If stop is respected, no spec preview must be available
-        value: 'installment'
-      - type: not-contains
-        value: 'PENDING'
+  - file://../configs/tests/read_config_first.yml
 
   - description: Test Skill detects small scope and ask for the corresponding next steps
     providers:
@@ -105,7 +50,7 @@ tests:
         No CSS is needed. It is a simple and easy task.
         It should be considered as a SMALL scope.
       read_file_config_result: 'specifications:\ntemplates:\n unified:".templates/unified_spec.md'
-      prompt_path: prompts/02-get_config.chat.json
+      prompt_path: 02-get_config.chat.json
     assert:
       - type: contains
         value: 'SMALL'
@@ -123,7 +68,7 @@ tests:
     vars:
       user_message: I want a specification for a complex interest-free 3-installment payment system.
       read_file_config_result: 'specifications:\ntemplates:\n unified:".templates/unified_spec.md'
-      prompt_path: prompts/02-get_config.chat.json
+      prompt_path: 02-get_config.chat.json
     assert:
       - type: contains
         value: 'PENDING'
@@ -151,7 +96,7 @@ tests:
       read_file_config_result:
         'specifications:\ntemplates:\n functional: .templates/functional_spec.md\ntechnical:
         .templates/technical_spec.md'
-      prompt_path: prompts/02-get_config.chat.json
+      prompt_path: 02-get_config.chat.json
     assert:
       - type: contains
         value: 'PENDING'
@@ -180,7 +125,7 @@ tests:
       llm_spec_draft_msg: 'Draft ⚠️ [PENDING]. Questions: 1. Gateway? 2. Minimum amount?'
       user_close_draft_msg:
         '1. Stripe. 2. 50€. Everything is clear, you can generate the final spec document now.'
-      prompt_path: prompts/03-get_spec.chat.json
+      prompt_path: ../../smart-spec/prompts/03-get_spec.chat.json
     assert:
       - type: is-json
       - type: contains
@@ -194,7 +139,7 @@ tests:
       - gemini
       - openrouter:*
     vars:
-      prompt_path: prompts/04.chat.json
+      prompt_path: ../../smart-spec/prompts/04.chat.json
       user_message: I want a specification for a complex interest-free 3-installment payment system.
       read_file_config_result: 'specifications:\ntemplates:\n unified:".templates/unified_spec.md'
       llm_spec_draft_msg: 'Draft ⚠️ [PENDING]. Questions: 1. Gateway? 2. Minimum amount?'
