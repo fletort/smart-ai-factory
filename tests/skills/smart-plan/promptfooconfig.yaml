@@ -47,8 +47,9 @@ tests:
         Make the roadmap for the given specification: {{ spec_path }}
       spec_path: docs/spec.md
       read_file_config_result: |
-        roadmap.versioned: false
-        roadmap.layout: single
+        roadmap:
+          versioned: false
+          layout: single
     assert:
       - type: is-json
       - type: tool-call-f1
@@ -73,8 +74,9 @@ tests:
         Make the roadmap for the given specification: {{ spec_path }}
       spec_path: docs/spec.md
       read_file_config_result: |
-        roadmap.versioned: false
-        roadmap.layout: single
+        roadmap:
+          versioned: false
+          layout: single
       roadmap_path: roadmap.md
       read_file_roadmap_result: 'cannot access {{ roadmap_path }}: No such file or directory'
       read_file_spec_result: &simple-sec |
@@ -111,8 +113,9 @@ tests:
         Make the roadmap for the given specification: {{ spec_path }}
       spec_path: docs/spec.md
       read_file_config_result: |
-        roadmap.versioned: false
-        roadmap.layout: single
+        roadmap:
+          versioned: false
+          layout: single
       roadmap_path: roadmap.md
       read_file_roadmap_result: 'cannot access {{ roadmap_path }}: No such file or directory'
       read_file_spec_result: *simple-sec
@@ -176,8 +179,9 @@ tests:
         Make the roadmap for the given specification: {{ spec_path }}
       spec_path: docs/spec.md
       read_file_config_result: |
-        roadmap.versioned: false
-        roadmap.layout: single
+        roadmap:
+          versioned: false
+          layout: single
       roadmap_path: roadmap.md
       read_file_roadmap_result: 'cannot access {{ roadmap_path }}: No such file or directory'
       read_file_spec_result: *simple-sec
@@ -208,8 +212,9 @@ tests:
         Make the roadmap for the given specification: {{ spec_path }}
       spec_path: docs/spec.md
       read_file_config_result: |
-        roadmap.versioned: false
-        roadmap.layout: single
+        roadmap:
+          versioned: false
+          layout: single
       roadmap_path: roadmap.md
       read_file_roadmap_result: file://assets/independant_existing_roadmap.md
       read_file_spec_result: *simple-sec
@@ -242,8 +247,9 @@ tests:
         Make the roadmap for the given specification: {{ spec_path }}
       spec_path: docs/spec.md
       read_file_config_result: |
-        roadmap.versioned: false
-        roadmap.layout: single
+        roadmap:
+          versioned: false
+          layout: single
       roadmap_path: roadmap.md
       read_file_roadmap_result: file://assets/existing_roadmap_to_update.md
       read_file_spec_result: *simple-sec
@@ -276,8 +282,9 @@ tests:
       roadmap_path: roadmap.md
       read_file_roadmap_result: 'cannot access {{ roadmap_path }}: No such file or directory'
       read_file_config_result: |
-        roadmap.versioned: false
-        roadmap.layout: auto
+        roadmap:
+          versioned: false
+          layout: auto
       read_file_spec_result: |
         # Corporate ERP Overhaul Specification
         This document outlines the migration plan for the global enterprise infrastructure.
@@ -340,17 +347,18 @@ tests:
         Make the roadmap for the given specification: {{ spec_path }}
       spec_path: docs/spec.md
       read_file_config_result: |
-        roadmap.versioned: true
-        roadmap.layout: single
+        roadmap:
+          versioned: true
+          layout: single
       read_file_spec_result: STUB
       directory_content_path: roadmap
-      directory_content_result:
-        - 0.1
-        - 0.2
+      directory_content_result: |
+        - v0.1
+        - v0.2
     assert:
       - type: llm-rubric
         value: |
-          Verify that the agent is asking if we want to use the current version `0.2` or a next one as `0.3`.
+          Verify that the agent is asking if we want to use the current version `v0.2` or a next one as `v0.3`.
 
 # - description: 'Scenario 2: Context Mode from raw conversation history (< 4h task)'
 #   vars:
