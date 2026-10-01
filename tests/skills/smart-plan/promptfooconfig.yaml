@@ -220,7 +220,7 @@ tests:
           versioned: false
           layout: single
       roadmap_path: roadmap.md
-      read_file_roadmap_result: file://assets/independant_existing_roadmap.md
+      read_file_roadmap_result: file://assets/independent_existing_roadmap.md
       read_file_spec_result: *simple-sec
     assert:
       - type: contains
