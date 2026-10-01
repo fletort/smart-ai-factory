@@ -98,8 +98,8 @@ detected configuration (`versioned` and `layout`) before continuing.
 - **Parallel-Ready Sequencing**: Assign unique epic-qualified IDs ([ISSUE-X.Y]) to each entry and
   explicitly track blockers using a clean Depends on: tag. This leaves the door open for future
   multi-agent parallel orchestration.
-- **Spec Anchors**: Each Epic records a `Source Type` (File or Conversation Context) and a
-  `Pointer` (spec path or `Current Conversation History`); in multi-file layout the root index also
-  lists them.
+- **Spec Anchors**: Each Epic records a `Source Type` (File or Conversation Context) and a `Pointer`
+  (spec path or `Current Conversation History`); in multi-file layout the root index also lists
+  them.
 - **FinOps Preservation**: Keep the output file sizes tight and clean to ensure that the Phase 2
   Triage Script can execute multiple runs without context crowding.
