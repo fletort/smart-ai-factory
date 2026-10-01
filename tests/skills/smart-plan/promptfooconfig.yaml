@@ -63,6 +63,7 @@ tests:
         config:
           value:
             - 'roadmap.md'
+            - 'docs/spec.md'
 
   - description: |
       Discovery & Reconciliation
@@ -315,7 +316,12 @@ tests:
       - type: javascript
         value: file://helpers.js:checkToolParamPaths
         config:
-          value: 'roadmap/README.md'
+          value:
+            - 'roadmap/README.md'
+            - 'roadmap/epic-1.md'
+            - 'roadmap/epic-2.md'
+            - 'roadmap/epic-3.md'
+            - 'roadmap/epic-4.md'
       - type: javascript
         value: file://helpers.js:checkToolFilenameContentContains
         config:
@@ -363,30 +369,3 @@ tests:
       - type: llm-rubric
         value: |
           Verify that the agent is asking if we want to use the current version `v0.2` or a next one as `v0.3`.
-
-# - description: 'Scenario 2: Context Mode from raw conversation history (< 4h task)'
-#   vars:
-#     prompt_path: 02-get_config.chat.json
-#     read_file_config_result: |
-#       roadmap.versioned: false
-#       roadmap.layout: single
-#     user_message: |
-#       [CONVERSATION HISTORY]
-#       User: I just want a quick fix to change the background color of the login button to navy blue (#000080).
-#       Agent: Understood. This is a MICRO task taking less than 4 hours. No specification document will be written. Running /smart-plan.
-# assert:
-#   - type: assert-set
-#     assert: *assert-set-write-single-layout-roadmap
-#   - type: regex
-#     value: '-[\s\*]+Source Type:[\s\*]+Conversation Context'
-#     transform: *get-roadmap-content
-#   - type: regex
-#     value: '-[\s\*]+Pointer:[\s\*]+Current Conversation History'
-#     transform: *get-roadmap-content
-#   - type: contains
-#     value: '[ISSUE-1]'
-#     transform: *get-roadmap-content
-#   - type: not-contains
-#     value: '[ISSUE-2]'
-#     transform: *get-roadmap-content
-
