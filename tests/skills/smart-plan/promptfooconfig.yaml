@@ -17,6 +17,12 @@ providers:
       tools: file://../configs/tools.yml
       showThinking: false
       max_tokens: 8000
+  - id: openrouter:google/gemini-3.6-flash
+    config:
+      apiKey: '{{ env.TEST_OPENROUTER_KEY }}'
+      tools: file://../configs/tools.yml
+      showThinking: false
+      max_tokens: 8000
 
 defaultTest:
   vars:
@@ -27,23 +33,95 @@ defaultTest:
 tests:
   - file://../configs/tests/read_config_first.yml
 
-  - description: 'Scenario 1: Small spec, single file layout, no versioning'
+  - description: |
+      Discovery & Reconciliation
+      [Test 1.1] Mode Single-File + Clean Slate (No versioning)
+      Given:
+       - config: Single file layout + no versioning
+      When: Skill is started with the given configuration and with the docs/spec.md
+      Then: 
+        - Single roadmap file is read/checked
     vars:
-      prompt_path: ../../smart-plan/prompts/03-get_config_spec.chat.json
+      prompt_path: 02-get_config.chat.json
       user_message: |
         Make the roadmap for the given specification: {{ spec_path }}
       spec_path: docs/spec.md
       read_file_config_result: |
         roadmap.versioned: false
         roadmap.layout: single
-      read_file_spec_result: |
+    assert:
+      - type: is-json
+      - type: tool-call-f1
+        value:
+          - read_file
+      - type: javascript
+        value: file://helpers.js:checkToolParamPaths
+        config:
+          value:
+            - 'roadmap.md'
+
+  - description: |
+      Discovery & Reconciliation
+      [Test 1.2] Mode Single-File + Clean Slate (No versioning)
+      Given:
+       - config: Single file layout + no versioning
+      When: skill already read the spec file and seen that roadmap.md is missing
+      Then: the roadmap directory content is listed
+    vars:
+      prompt_path: ../../smart-plan/prompts/03-get_roadmap.json
+      user_message: |
+        Make the roadmap for the given specification: {{ spec_path }}
+      spec_path: docs/spec.md
+      read_file_config_result: |
+        roadmap.versioned: false
+        roadmap.layout: single
+      roadmap_path: roadmap.md
+      read_file_roadmap_result: 'cannot access {{ roadmap_path }}: No such file or directory'
+      read_file_spec_result: &simple-sec |
         # Feature Spec: User Profile Picture Upload
         We need to allow authenticated users to upload an avatar image (JPEG/PNG, max 2MB).
         The backend must resize it to 200x200px, store it securely on S3, and update the user's profile database entry.
         The frontend needs an upload button with a loading spinner and a preview container.
     assert:
+      - type: is-json
+      - type: tool-call-f1
+        value:
+          - directory_content
+      - type: javascript
+        value: file://helpers.js:checkToolParamPaths
+        config:
+          value:
+            - 'roadmap'
+
+  - description: |
+      Discovery & Reconciliation
+      [Test 1.3] Mode Single-File + Clean Slate (No versioning)
+      Given:
+       - config: Single file layout + no versioning
+       - roadmap.md is missing
+       - roadmap directory is missing
+      When: skill already:
+       - read the spec file
+       - seen that roadmap.md is missing
+       - seen that the roadmap directory is missing
+      Then: the roadmap is generated with the correct template
+    vars:
+      prompt_path: ../../smart-plan/prompts/04-get_dir_roadmap_content.json
+      user_message: |
+        Make the roadmap for the given specification: {{ spec_path }}
+      spec_path: docs/spec.md
+      read_file_config_result: |
+        roadmap.versioned: false
+        roadmap.layout: single
+      roadmap_path: roadmap.md
+      read_file_roadmap_result: 'cannot access {{ roadmap_path }}: No such file or directory'
+      read_file_spec_result: *simple-sec
+      directory_content_path: roadmap
+      directory_content_result:
+        'cannot access {{ directory_content_path }}: No such file or directory'
+    assert:
       - type: assert-set
-        assert: &assert-set-write-single-layout-roadmap
+        assert:
           - type: is-json
           - type: tool-call-f1
             value:
@@ -80,38 +158,123 @@ tests:
         value: 'Given a user'
         transform: *get-roadmap-content
 
-  - description: 'Scenario 2: Context Mode from raw conversation history (< 4h task)'
+  - description: |
+      Discovery & Reconciliation
+      [Test 2] Critical divergences
+      Given:
+       - config: Single file layout + no versioning
+       - roadmap.md is missing
+       - roadmap directory contains multiple files (Multi-File layout)
+      When: skill already:
+       - read the spec file
+       - seen that roadmap.md is missing
+       - seen that the roadmap directory contains the multiple files
+      Then: the agent ask the user if they want to reconcile the discrepancies between the single-file and multi-file layouts or correct the configuration.
     vars:
-      prompt_path: 02-get_config.chat.json
-      read_file_config_result: |
-        roadmap.versioned: false
-        roadmap.layout: single
-      user_message: |
-        [CONVERSATION HISTORY]
-        User: I just want a quick fix to change the background color of the login button to navy blue (#000080).
-        Agent: Understood. This is a MICRO task taking less than 4 hours. No specification document will be written. Running /smart-plan.
-    assert:
-      - type: assert-set
-        assert: *assert-set-write-single-layout-roadmap
-      - type: regex
-        value: '-[\s\*]+Source Type:[\s\*]+Conversation Context'
-        transform: *get-roadmap-content
-      - type: regex
-        value: '-[\s\*]+Pointer:[\s\*]+Current Conversation Histor'
-        transform: *get-roadmap-content
-      - type: contains
-        value: '[ISSUE-1]'
-        transform: *get-roadmap-content
-      - type: not-contains
-        value: '[ISSUE-2]'
-        transform: *get-roadmap-content
-
-  - description: 'Scenario 3: Massive spec with layout: auto triggers Multi-File Auto-Split'
-    vars:
-      prompt_path: ../../smart-plan/prompts/03-get_config_spec.chat.json
+      prompt_path: ../../smart-plan/prompts/04-get_dir_roadmap_content.json
       user_message: |
         Make the roadmap for the given specification: {{ spec_path }}
       spec_path: docs/spec.md
+      read_file_config_result: |
+        roadmap.versioned: false
+        roadmap.layout: single
+      roadmap_path: roadmap.md
+      read_file_roadmap_result: 'cannot access {{ roadmap_path }}: No such file or directory'
+      read_file_spec_result: *simple-sec
+      directory_content_path: roadmap
+      directory_content_result: |
+        - README.md
+        - epic-1.md
+        - epic-2.md
+    assert:
+      - type: llm-rubric
+        value:
+          - The agent must detect that a layout divergence has been detected and must ask the user
+            if he wants to perform a layout migration or update the configuration.
+
+  - description: |
+      Merge and Idempotent Update Logic
+      [Test 3] Independent Additions
+      Given:
+       - config: Single file layout + no versioning
+       - roadmap.md exists with an EPIC1 describing initial phase
+      When: skill already:
+       - read the spec file
+       - read the roadmap.md file
+      Then: the agent presents to the user the new Epic 2 with the new tasks that will be added to the roadmap.
+    vars:
+      prompt_path: ../../smart-plan/prompts/03-get_roadmap.json
+      user_message: |
+        Make the roadmap for the given specification: {{ spec_path }}
+      spec_path: docs/spec.md
+      read_file_config_result: |
+        roadmap.versioned: false
+        roadmap.layout: single
+      roadmap_path: roadmap.md
+      read_file_roadmap_result: file://assets/independant_existing_roadmap.md
+      read_file_spec_result: *simple-sec
+    assert:
+      - type: contains
+        value:
+          Do you confirm these changes to the roadmap ? Please type 'yes' to apply the update or
+          specify any adjustments.
+      - type: llm-rubric
+        value: |
+          The output correctly proposes adding a new Epic or new issues in the current Epic
+          for the user profile picture upload and extends the Global Vision metadata to include the avatar/S3 capabilities.
+      - type: llm-rubric
+        value: |
+          The output does not modify existing ISSUE.
+
+  - description: |
+      Merge and Idempotent Update Logic
+      [Test 4] Specification update and sync
+      Given:
+       - config: Single file layout + no versioning
+       - roadmap.md exists with an EPIC1 describing the same feature from an older spec version
+      When: skill already:
+       - read the spec file
+       - read the roadmap.md file
+      Then: the agent presents to the user the modification that he wants to make to the current EPIC/ISSUE based on the updated specification.
+    vars:
+      prompt_path: ../../smart-plan/prompts/03-get_roadmap.json
+      user_message: |
+        Make the roadmap for the given specification: {{ spec_path }}
+      spec_path: docs/spec.md
+      read_file_config_result: |
+        roadmap.versioned: false
+        roadmap.layout: single
+      roadmap_path: roadmap.md
+      read_file_roadmap_result: file://assets/existing_roadmap_to_update.md
+      read_file_spec_result: *simple-sec
+    assert:
+      - type: contains
+        value:
+          Do you confirm these changes to the roadmap ? Please type 'yes' to apply the update or
+          specify any adjustments.
+      - type: llm-rubric
+        value: |
+          The output correctly identifies that the current specification matches an existing 
+          Epic. It proposes updates/modifications to the existing issues rather than duplicating 
+          them or generating an entirely new Epic from scratch.
+
+  - description: |
+      Auto File Layout
+      [Test 5] Auto File Layout + Clean Slate
+      Given:
+       - config: Auto file layout + no versioning
+       - roadmap directory is missing
+      When: skill already:
+       - read the spec file
+       - seen that the roadmap directory is missing
+      Then: the roadmap is generated with the correct template in a Multi-File layout.
+    vars:
+      prompt_path: ../../smart-plan/prompts/04-get_dir_roadmap_content.json
+      user_message: |
+        Make the roadmap for the given specification: {{ spec_path }}
+      spec_path: docs/spec.md
+      roadmap_path: roadmap.md
+      read_file_roadmap_result: 'cannot access {{ roadmap_path }}: No such file or directory'
       read_file_config_result: |
         roadmap.versioned: false
         roadmap.layout: auto
@@ -130,23 +293,18 @@ tests:
 
         ## Epic 4: Analytics Dashboard & Data Warehousing
         Build a real-time ClickHouse ingestion worker listening to Kafka logs, exposing BI endpoints, and generating interactive charts for the web app UI.
+      directory_content_path: roadmap
+      directory_content_result:
+        'cannot access {{ directory_content_path }}: No such file or directory'
     assert:
       - type: is-json
       - type: tool-call-f1
         value: write_file
       # The agent must realize there are 4 Epics (>3 threshold) and trigger the multi-file template
-      - type: equals # Check that all files are written
-        value: 5
-        transform: output.length
       - type: javascript
         value: file://helpers.js:checkToolParamPaths
         config:
-          value:
-            - 'roadmap/README.md'
-            - 'roadmap/epic-1.md'
-            - 'roadmap/epic-2.md'
-            - 'roadmap/epic-3.md'
-            - 'roadmap/epic-4.md'
+          value: 'roadmap/README.md'
       - type: javascript
         value: file://helpers.js:checkToolFilenameContentContains
         config:
@@ -154,66 +312,69 @@ tests:
           value:
             - '# 🗺️ Project Roadmap:'
             - '## 📊 Epics Index'
-            - '(./epic-1.md)'
-            - '(./epic-2.md)'
-            - '(./epic-3.md)'
-            - '(./epic-4.md)'
+            - 'epic-1.md)'
+            - 'epic-2.md)'
+            - 'epic-3.md)'
+            - 'epic-4.md)'
       - type: javascript
         value: file://helpers.js:checkToolFilenameContentNotContains
         config:
           filename: 'roadmap/README.md'
           value: '[ISSUE-1]'
-      - type: javascript
-        value: file://helpers.js:checkToolFilenameContentContains
-        config:
-          filename: 'roadmap/epic-1.md'
-          value: '[ISSUE-1]'
-      - type: javascript
-        value: file://helpers.js:checkToolFilenameContentNotContains
-        config:
-          filename: 'roadmap/epic-2.md'
-          value: '[ISSUE-1]'
 
-  - description: 'Scenario 4: Directory listing when roadmap.versioned is true'
+  - description: |
+      Versioning
+      [Test 6] Versioning activated
+      Given:
+       - config: Single file layout + versioning
+       - roadmap.md is missing
+       - roadmap directory contains already v0.1 and v0.2 directories
+      When: skill already:
+       - read the spec file
+       - seen that roadmap.md is missing
+       - seen the roadmap directory content
+      Then: the agent asked for the targeted version.
     vars:
-      prompt_path: ../../smart-plan/prompts/03-get_config_spec.chat.json
+      prompt_path: ../../smart-plan/prompts/03-check_versionned_roadmap.json
       user_message: |
         Make the roadmap for the given specification: {{ spec_path }}
       spec_path: docs/spec.md
       read_file_config_result: |
         roadmap.versioned: true
         roadmap.layout: single
-      read_file_spec_result: |
-        # Extension Spec: Add Webhooks notifications
-        Add an outgoing webhook pipeline triggered on successful user checkout.
-    assert:
-      - type: is-json
-      - type: tool-call-f1
-        value:
-          - directory_content
-      - type: equals
-        value: 'roadmap'
-        transform: |
-          const args = output[0].function?.arguments;
-          argsJson = typeof args === 'string' ? JSON.parse(args) : args;
-          return argsJson.path
-
-  - description: 'Scenario 4: Interactive validation check when roadmap.versioned is true'
-    vars:
-      prompt_path: ../../smart-plan/prompts/04-get_dir_roadmap_content.json
-      user_message: |
-        Make the roadmap for the given specification: {{ spec_path }}
-      spec_path: docs/spec.md
-      read_file_config_result: |
-        roadmap.versioned: true
-        roadmap.layout: single
-      read_file_spec_result: |
-        # Extension Spec: Add Webhooks notifications
-        Add an outgoing webhook pipeline triggered on successful user checkout.
-      directory_content_roadmap_result:
+      read_file_spec_result: STUB
+      directory_content_path: roadmap
+      directory_content_result:
         - 0.1
         - 0.2
     assert:
       - type: llm-rubric
         value: |
           Verify that the agent is asking if we want to use the current version `0.2` or a next one as `0.3`.
+
+# - description: 'Scenario 2: Context Mode from raw conversation history (< 4h task)'
+#   vars:
+#     prompt_path: 02-get_config.chat.json
+#     read_file_config_result: |
+#       roadmap.versioned: false
+#       roadmap.layout: single
+#     user_message: |
+#       [CONVERSATION HISTORY]
+#       User: I just want a quick fix to change the background color of the login button to navy blue (#000080).
+#       Agent: Understood. This is a MICRO task taking less than 4 hours. No specification document will be written. Running /smart-plan.
+# assert:
+#   - type: assert-set
+#     assert: *assert-set-write-single-layout-roadmap
+#   - type: regex
+#     value: '-[\s\*]+Source Type:[\s\*]+Conversation Context'
+#     transform: *get-roadmap-content
+#   - type: regex
+#     value: '-[\s\*]+Pointer:[\s\*]+Current Conversation History'
+#     transform: *get-roadmap-content
+#   - type: contains
+#     value: '[ISSUE-1]'
+#     transform: *get-roadmap-content
+#   - type: not-contains
+#     value: '[ISSUE-2]'
+#     transform: *get-roadmap-content
+

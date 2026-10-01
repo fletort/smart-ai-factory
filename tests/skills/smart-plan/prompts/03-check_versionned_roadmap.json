@@ -32,37 +32,11 @@
         "type": "function",
         "function": {
           "name": "read_file",
-          "arguments": "{\"path\": \"{{ roadmap_path }}\"}"
+          "arguments": "{\"path\": \"{{ spec_path }}\"}"
         }
       },
       {
         "id": "call_3",
-        "type": "function",
-        "function": {
-          "name": "read_file",
-          "arguments": "{\"path\": \"{{ spec_path }}\"}"
-        }
-      }
-    ]
-  },
-  {
-    "role": "tool",
-    "tool_call_id": "call_2",
-    "name": "read_file",
-    "content": "{{ read_file_roadmap_result }}"
-  },
-  {
-    "role": "tool",
-    "tool_call_id": "call_3",
-    "name": "read_file",
-    "content": "{{ read_file_spec_result }}"
-  },
-  {
-    "role": "assistant",
-    "content": "",
-    "tool_calls": [
-      {
-        "id": "call_4",
         "type": "function",
         "function": {
           "name": "directory_content",
@@ -73,7 +47,13 @@
   },
   {
     "role": "tool",
-    "tool_call_id": "call_4",
+    "tool_call_id": "call_2",
+    "name": "read_file",
+    "content": "{{ read_file_spec_result }}"
+  },
+  {
+    "role": "tool",
+    "tool_call_id": "call_3",
     "name": "directory_content",
     "content": "{{ directory_content_result }}"
   }

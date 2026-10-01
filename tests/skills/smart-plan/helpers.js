@@ -105,6 +105,9 @@ module.exports = {
     const valueToFind = context?.config?.value;
     if (!filename || !valueToFind) return false;
 
+    // As getFileContent returns an empty string if the file is not found, we need to check if file is present
+    if (!Array.isArray(output) || !getAllPaths(output).includes(filename)) return false;
+
     const content = getFileContent(output, filename);
 
     if (Array.isArray(valueToFind)) {

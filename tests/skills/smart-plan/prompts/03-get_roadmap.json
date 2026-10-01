@@ -14,14 +14,6 @@
           "name": "read_file",
           "arguments": "{\"path\": \".smart.ai/config.yml\"}"
         }
-      },
-      {
-        "id": "call_2",
-        "type": "function",
-        "function": {
-          "name": "read_file",
-          "arguments": "{\"path\": \"{{ spec_path }}\"}"
-        }
       }
     ]
   },
@@ -32,8 +24,36 @@
     "content": "{{ read_file_config_result }}"
   },
   {
+    "role": "assistant",
+    "content": "",
+    "tool_calls": [
+      {
+        "id": "call_2",
+        "type": "function",
+        "function": {
+          "name": "read_file",
+          "arguments": "{\"path\": \"{{ roadmap_path }}\"}"
+        }
+      },
+      {
+        "id": "call_3",
+        "type": "function",
+        "function": {
+          "name": "read_file",
+          "arguments": "{\"path\": \"{{ spec_path }}\"}"
+        }
+      }
+    ]
+  },
+  {
     "role": "tool",
     "tool_call_id": "call_2",
+    "name": "read_file",
+    "content": "{{ read_file_roadmap_result }}"
+  },
+  {
+    "role": "tool",
+    "tool_call_id": "call_3",
     "name": "read_file",
     "content": "{{ read_file_spec_result }}"
   }
