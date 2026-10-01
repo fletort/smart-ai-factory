@@ -15,7 +15,7 @@ Implement basic user profile features including raw image storage.
 
 #### Target Issues List
 
-- [ ] **[ISSUE-1]** - Implement basic S3 bucket integration and upload route
+- [ ] **[ISSUE-1.1]** - Implement basic S3 bucket integration and upload route
   - **Depends on:** None
-- [ ] **[ISSUE-2]** - Build simple frontend file input button for upload
-  - **Depends on:** [ISSUE-1]
+- [ ] **[ISSUE-1.2]** - Build simple frontend file input button for upload
+  - **Depends on:** [ISSUE-1.1]

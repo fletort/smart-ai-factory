@@ -16,9 +16,9 @@ basic routing.
 
 #### Target Issues List
 
-- [x] **[ISSUE-1]** - Setup repository, CI/CD pipeline, and express architecture
+- [x] **[ISSUE-1.1]** - Setup repository, CI/CD pipeline, and express architecture
   - **Depends on:** None
-- [x] **[ISSUE-2]** - Implement JWT authentication and secure middleware
-  - **Depends on:** [ISSUE-1]
-- [ ] **[ISSUE-3]** - Create user profile database schema and migrations
-  - **Depends on:** [ISSUE-2]
+- [x] **[ISSUE-1.2]** - Implement JWT authentication and secure middleware
+  - **Depends on:** [ISSUE-1.1]
+- [ ] **[ISSUE-1.3]** - Create user profile database schema and migrations
+  - **Depends on:** [ISSUE-1.2]

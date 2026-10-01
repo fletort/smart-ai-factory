@@ -28,7 +28,10 @@ defaultTest:
   vars:
     skill_prompt: file://../../../.agents/skills/smart-plan/SKILL.md
   options:
-    provider: openrouter:deepseek/deepseek-v4.1-flash
+    provider:
+      id: openrouter:deepseek/deepseek-v4.1-flash
+      config:
+        apiKey: '{{ env.TEST_OPENROUTER_KEY }}'
 
 tests:
   - file://../configs/tests/read_config_first.yml
@@ -192,9 +195,9 @@ tests:
         - epic-2.md
     assert:
       - type: llm-rubric
-        value:
-          - The agent must detect that a layout divergence has been detected and must ask the user
-            if he wants to perform a layout migration or update the configuration.
+        value: |
+          The agent must detect that a layout divergence has been detected and must ask the user
+          if he wants to perform a layout migration or update the configuration.
 
   - description: |
       Merge and Idempotent Update Logic
@@ -226,7 +229,8 @@ tests:
       - type: llm-rubric
         value: |
           The output correctly proposes adding a new Epic or new issues in the current Epic
-          for the user profile picture upload and extends the Global Vision metadata to include the avatar/S3 capabilities.
+          for the user profile picture upload and extends the Global Vision metadata to
+          include the avatar/S3 capabilities.
       - type: llm-rubric
         value: |
           The output does not modify existing ISSUE.
