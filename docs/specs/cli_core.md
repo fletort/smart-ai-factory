@@ -54,7 +54,7 @@ graph TD
     CLI --> TRIAGE
     MCP --> TRIAGE
     TRIAGE --> BRAIN
-    TRIAGE --> LLM & INTER & TRACK & VCS & WS
+    TRIAGE --> LLM & INTER & TRACK & PRH & VCS & WS
     BRAIN --> LLM & INTER & TRACK & PRH & VCS
     LLM --> LITE
     INTER --> TTY & HEAD
