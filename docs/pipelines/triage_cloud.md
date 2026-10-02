@@ -79,10 +79,11 @@ segregate execution scopes and maximize billing efficiency:
     `roadmap/vX.Y/README.md`, `roadmap/vX.Y/epic-X.md` when versioned.
 - **Command:** `smart-ai --mode cloud triage --all`, run from the pinned PyPI package (for example
   `uvx smart-ai==X.Y.Z`).
-- **Action:** Selects every eligible roadmap issue (not checked, no `(#N)` yet, dependencies already
-  cleared). Every issue gets its definitive GitHub ticket on its first run: if the specification is
-  clear, the ticket is created `ready-to-dev`; if it is blocked, it is created with the
-  `brainstorming` label. In both cases `(#N)` is synced to the roadmap (by default through an
+- **Action:** Selects eligible roadmap issues: unchecked, not marked deleted, with neither `(#N)` nor
+  an existing tracking-marker ticket, and with every dependency checked or linked to a ticket without
+  the `brainstorming` label. Every issue gets its definitive GitHub ticket on its first run: if the
+  specification is clear, the ticket is created `ready-to-dev`; if blocked, it gets `brainstorming`.
+  In both cases `(#N)` is synced to the roadmap (by default through an
   aggregated pull request, so the branch protection is never bypassed) and the run stops safely when
   a human is needed (exit code 3 is the expected "waiting for a human" outcome, not a failure).
 - **Conversation Context epics:** an epic anchored on `Current Conversation History` has no spec
