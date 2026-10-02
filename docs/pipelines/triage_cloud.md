@@ -5,6 +5,11 @@
 This document details the automation architecture, event-driven pipelines, and token-saving memory
 persistence mechanisms of the **Smart-AI-Factory** when running on GitHub Actions.
 
+The cloud pipelines run the **same `smart-ai` Python CLI** as the [local triage](./triage_local.md),
+in `--mode cloud`. Technical design: [`smart-ai` CLI core](../specs/cli_core.md) and
+[Triage engine](../specs/triage_engine.md). The triage consumes the roadmap produced by
+[Smart-Plan](./smart_plan.md).
+
 ---
 
 ## 🔄 Cloud Execution Workflow
@@ -21,10 +26,11 @@ graph TD
     end
 
     subgraph box1["🧠 Processing Loop"]
-        CI_Triage -->|Invoke| CoreTriage[Launch Triage Script in cloud mode]
+        CI_Triage -->|Invoke| CoreTriage[smart-ai --mode cloud triage --all]
         CoreTriage -->|1. Reads config| Config[.smart.ai/config.yml]
-        CoreTriage -->|2. Queries| LLM1[Triage LLM: simple_triage_model]
-        LLM1 -->|3. Parses next task in roadmap| JSON1[Strict JSON Spec Payload]
+        CoreTriage -->|2. Selects eligible roadmap issues| RM0[Roadmap files]
+        CoreTriage -->|3. Queries| LLM1[Triage LLM: simple_triage_model]
+        LLM1 -->|4. Triages each issue| JSON1[Strict JSON Spec Payload]
     end
 
     subgraph "🛑 Brainstorming"
@@ -33,19 +39,21 @@ graph TD
         %% OPTION A : Stop & Open a Ticket
         CheckConfig -->|"false (Option A)"| CloudStop[🛑 Manual Brainstorm Mode]
         CloudStop -->|6. Create Tracking Issue| GH_BS[gh issue create --label brainstorming]
-        CloudStop -->|7. Post Questions| NativeComment[Inject LLM1 native questions into Issue body]
+        CloudStop -->|7. Post Questions + FACTORY_CONTEXT| NativeComment[Questions and hidden state in Issue body]
+        NativeComment -->|8. Exit code 3: waiting for a human| Wait[Human answers in a comment]
+        Wait -->|issue_comment event| Resume[smart-ai --mode cloud brainstorm]
 
         %% OPTION B : Full Auto Brainstorm -> PR Direct
         CheckConfig -->|"true (Option B)"| CloudAuto[🤖 Auto Brainstorm Mode]
         CloudAuto -->|6. Invoke LLM| LLM2[Invoke Advanced LLM: advanced_brainstorm_model]
-        LLM2 -->|7. Resolve ambiguity autonomously| Fix[Update docs/architecture.md]
-        Fix -->|8. Push Solution| PR[Open Pull Request with complete specs]
+        LLM2 -->|7. Resolve ambiguity autonomously| Fix[Update docs/architecture.md and specs]
+        Fix -->|8. Push branch| PR[Open Pull Request with complete specs]
     end
 
     subgraph "⚙️ Automation & Traceability"
         JSON1 -->|"Status: ready_to_dev"| DevOpCloud[DevOps Automation]
         DevOpCloud -->|4. Automated Label & Ticket| GH_Issue[gh issue create --label size]
-        DevOpCloud -->|5. Push Roadmap update| GitSync[Update cloud roadmap with #issue_num]
+        DevOpCloud -->|5. Push Roadmap update by bot| GitSync[Update cloud roadmap with #issue_num]
     end
 
 ```
@@ -65,17 +73,33 @@ segregate execution scopes and maximize billing efficiency:
     `roadmap/vX.Y/roadmap.md` when versioned
   - in a multi-file layout, `roadmap/README.md`, `roadmap/epic-X.md` when unversioned, or
     `roadmap/vX.Y/README.md`, `roadmap/vX.Y/epic-X.md` when versioned.
-- **Action:** Runs the triage script in cloud mode. If the next item is clear, it creates the
-  development issue. If it is blocked, it kicks off the Brainstorm environment and stops safely.
+- **Command:** `smart-ai --mode cloud triage --all`, run from the pinned PyPI package (for example
+  `uvx smart-ai==X.Y.Z`).
+- **Action:** Selects every eligible roadmap issue (not checked, no `(#N)` yet, dependencies already
+  triaged). If an issue is clear, it creates the development issue and writes `(#N)` back to the
+  roadmap in a bot commit. If it is blocked, it opens the brainstorm tracking issue and stops safely
+  (exit code 3 is the expected "waiting for a human" outcome, not a failure).
+- **Conversation Context epics:** an epic anchored on `Current Conversation History` has no spec
+  file. The pipeline opens a tracking issue asking for that context, then the normal brainstorm loop
+  applies.
+- **Loop protection:** pushes made by the bot are ignored and runs are serialised with a
+  `concurrency` group.
 - **Billing footprint:** ~30 seconds of compute time per run.
 
 ### 2. `ai_routing_pipeline.yml`
 
 - **Trigger:** Triggered on `issue_comment` events where the issue contains the label
   `brainstorming`.
-- **Action:** Runs the brainstorm script. It feeds your manual answer directly into the
+- **Command:** `smart-ai --mode cloud brainstorm --issue <number>`.
+- **Action:** Resumes the session from the issue content and feeds your answer into the
   conversational loop.
+- **Authorisation:** runs only for comment authors that are `OWNER`, `MEMBER` or `COLLABORATOR`.
+  Comment text is untrusted data: it is never interpolated into a shell script and is delimited as
+  data in the prompts.
 - **Billing footprint:** ~15 seconds of compute time per reply.
+
+Both workflows use least-privilege `permissions` (`contents`, `issues`, `pull-requests` only where
+needed) and must pass `actionlint` and `zizmor`.
 
 ---
 
@@ -90,23 +114,27 @@ To prevent this, **Smart-AI-Factory** treats the GitHub Issue body as a cached m
 
 ### How it works
 
-1. When the triage script detects an ambiguous specification, it extracts the relevant snippet of
-   the roadmap and the specific architecture rule that was violated.
-2. It stringifies this data into a compact JSON object and injects it as an invisible HTML comment
-   inside the issue description:
+1. When the triage detects an ambiguous specification, it extracts the relevant snippet of the
+   roadmap and the specific architecture rule that was violated.
+2. It serialises this data into a compact, versioned JSON object (the `BrainstormState` of the
+   [triage engine](../specs/triage_engine.md#52-state-persistence-factory_context)) and injects it
+   as an invisible HTML comment inside the issue description:
 
    ```html
-   ### 🛑 Technical specification gaps — Claude Code needs more inputs to clear this ticket. Please
+   ### 🛑 Technical specification gaps — the triage needs more inputs to clear this ticket. Please
    answer the questions below.
 
-   <!-- FACTORY_CONTEXT {"roadmap_line": "- [ ] Setup Auth", "detected_gap": "Missing provider info", "schema_version": "1.0.0"} -->
+   <!-- FACTORY_CONTEXT {"schema_version": "1.0.0", "issue_id": "ISSUE-1.1", "roadmap_line": "- [ ] **[ISSUE-1.1]** - Setup Auth", "detected_gap": "Missing provider info"} -->
    ```
 
-3. When you write a comment on the web, the brainstorm script uses the GitHub CLI to download
+3. When you write a comment on the web, the brainstorm command uses the GitHub CLI to download
    **only** the issue text and the comments thread.
-4. The script strips the invisible `FACTORY_CONTEXT` out of the text and supplies it as the sole
-   reference frame to the `advanced_brainstorm_model`. **The codebase is never read during this
-   phase.**
+4. The CLI extracts and validates the invisible `FACTORY_CONTEXT`, and supplies it with the thread
+   as the sole reference frame to the model (`simple_triage_model` for manual brainstorm,
+   `advanced_brainstorm_model` for auto brainstorm). **The codebase is never read during this
+   phase.** Unknown `schema_version` values are rejected explicitly.
+5. Once the specification is clear, the issue is created (or the tracking issue is updated) with a
+   hidden `<!-- smart-ai:issue-id=ISSUE-1.1 -->` marker, so a retry never produces a duplicate.
 
 **Token Saving Result:** Prompt data payload drops from ~45,000 tokens (full project scanning) to
 less than ~1,500 tokens per discussion turn.
@@ -119,10 +147,14 @@ Because no terminal input buffer is available during cloud execution, the system
 **HITL** requirements into native GitHub workflow authorizations:
 
 - **Configuring `auto_brainstorm: false` (Case A - Manual Refinement):** If the Triage LLM discovers
-  an ambiguous task, the pipeline stops automated execution immediately. The script automatically
+  an ambiguous task, the pipeline stops automated execution immediately. The CLI automatically
   provisions a GitHub Issue containing the model's native clarifying questions inside the issue
   body, freezing the backlog until a human engineer provides the missing technical inputs in the
   comments.
+- **Configuring `auto_brainstorm: true` (Case B - Autonomous Refinement):** The
+  `advanced_brainstorm_model` resolves the ambiguity through the API. Its proposed changes to the
+  specs and `docs/architecture.md` are committed on a dedicated branch and submitted as a **pull
+  request**; nothing is pushed to the default branch, so a human always reviews them.
 - **Configuring `hitl_during_triage: true` (Backlog Protection):** When a specification is flagged
   as `ready_to_dev` by the cloud engine, it creates the issue with a `pending-approval` state. In
   this way, the task remains unassigned to coding agents. Detailed documentation of this next phase

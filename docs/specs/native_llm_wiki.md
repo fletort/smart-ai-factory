@@ -169,7 +169,8 @@ installation process and can be personalised to your project:
 ### 4.1 Phase 2 (Triage Script) Automated Context Lock
 
 When the Gemini Flash PO or a local triage routine receives an update on roadmap.md or a feature
-ticket:
+ticket (see the [triage engine specification](./triage_engine.md#3-context-packing) for the budgeted
+packing implementation):
 
 1. Tree Lookup: It reads CLAUDE.md/AGENTS.md ➡️ docs/INDEX.md ➡️ src/README.md to identify affected
    modules.
