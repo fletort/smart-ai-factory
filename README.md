@@ -31,7 +31,7 @@ graph TD
     end
 
     subgraph Phase 2: Triage & Task Creation
-        RM -->|git push / CLI| TR[Triage Script]
+        RM -->|git push / smart-ai CLI| TR[Triage CLI]
         TR -->|Analyze Specs & Architecture| JSON[Structured Technical Ticket]
         JSON -->|Create & Label Issues| GH[GitHub Issues]
         JSON -->|Ambiguous Specs| BS[🛑 Level: BRAINSTORM]
@@ -95,7 +95,7 @@ configuration requirements are split into specialized manuals:
   _Learn how to refine feature ideas, apply the 3-Question Rule, evaluate scope (MICRO vs LARGE),
   and route to execution._
 - **🎯 Planning & Roadmap Management:** [Smart-Plan: Scheduling](docs/pipelines/smart_plan.md)
-  _Understand how to create/update roadmaps, and manage task dependencies (coming soon)._
+  _Understand how to create/update roadmaps and manage task dependencies._
 - **💻 Local Workspace Integration:**
   [Visual Studio Code & Continue.dev Configuration Guide](docs/ide/vscode.md)  
   _Learn how to spin up your local multi-key Dev Container and how to manage your manual local
@@ -110,19 +110,25 @@ configuration requirements are split into specialized manuals:
   asynchronous human gates._
 - **Native LLM Wiki Engine:**
   [Native LLM Wiki Engine for Smart-AI-Factory specification](docs/specs/native_llm_wiki.md)
+- **🐍 `smart-ai` Python CLI (Phase 2 and beyond):**
+  [CLI core technical specification](docs/specs/cli_core.md) and
+  [Triage engine technical specification](docs/specs/triage_engine.md)  
+  _Learn about the shared Python engine (config, LLM layer, resumable interaction sessions, GitHub,
+  MCP) behind the local and cloud triage._
 
 ## 🚀 Quick Start
 
 1. Copy the `.continue/`, `.agents/` and `.github/` directories to the root of your project. Copy
-   the content of the `templates/` directory to the root of your project.
+   the content of the `templates/` directory to the root of your project. Triage (Phase 2) will also
+   require installing the CLI with `pipx install smart-ai` once it is released.
 2. Set up your local environment file by:
    1. copying `.continue/.env.template` to `.continue/.env`, `.env.template` to `.env` and adding
       your API keys.
    2. editing `.smart.ai/config.yml` to define your workspace configuration inside this file
 3. Open your project using **Dev Containers** for a zero-friction, pre-configured workspace.
 4. Start with `/smart-spec` to refine your feature idea
-5. The specification is now complete. Roadmap planning and issue creation will be handled by a
-   future planning workflow
+5. Roadmap planning is available with `/smart-plan`. Triage (Phase 2) is specified and will be
+   delivered by the `smart-ai` Python CLI (see the technical specifications above)
 
 ## 🧠 Framework Philosophy
 
