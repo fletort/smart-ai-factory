@@ -194,6 +194,7 @@ Triggered by `unclear_specification`. It is a resumable session (see
 class BrainstormState(BaseModel):
     schema_version: str = "1.0.0"
     issue_id: str
+    last_processed_comment_id: int | None
     roadmap_line: str
     spec_pointer: str
     detected_gap: str
@@ -208,17 +209,19 @@ class BrainstormState(BaseModel):
 The state is serialised in `FACTORY_CONTEXT` in cloud mode, so it must stay minimal: it replaces any
 re-reading of the repository.
 
-| Field                     | Purpose                                                                                                                                                            |
-| :------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `schema_version`          | Versions the format. A state with an unknown version is rejected explicitly instead of being misread.                                                              |
-| `issue_id`                | Roadmap issue ID (`ISSUE-2.1`, version-prefixed for a versioned roadmap). Matches the `tracking-id` marker and targets the right roadmap line for the write-back.  |
-| `roadmap_line`            | Copy of the roadmap line at triage time. Gives the title without reading the file and detects a roadmap changed in the meantime.                                   |
-| `spec_pointer`            | Spec anchor pointer: a spec file path, or `Current Conversation History`. Tells an auto-brainstorm turn where the specification comes from.                        |
-| `detected_gap`            | Summary of what blocks the triage, as phrased by the triage model. Frames the discussion without resending the whole spec at each turn.                            |
-| `architecture_rule`       | Rule of `docs/architecture.md` that is violated, if any. The only architecture excerpt a cloud brainstorm needs.                                                   |
-| `source_context_snapshot` | Specification text or user-provided context. Required for `Conversation Context` anchors, where no spec file exists to re-read.                                    |
-| `turns`                   | Compact `(role, text)` history of questions and answers; the oldest turns are summarised once the size cap is reached. Its length enforces `max_brainstorm_turns`. |
-| `mode`                    | `manual` or `auto`, fixed at session start from `auto_brainstorm` or the local menu choice. Selects which model alias is called on resume.                         |
+| Field                       | Purpose                                                                                                                                                                         |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `schema_version`            | Versions the format. A state with an unknown version is rejected explicitly instead of being misread.                                                                           |
+| `issue_id`                  | Roadmap issue ID (`ISSUE-2.1`, version-prefixed for a versioned roadmap). Matches the `tracking-id` marker and targets the right roadmap line for the write-back.               |
+| `last_processed_comment_id` | Id of the last user comment validated on this issue (idempotence purpose)                                                                                                       |
+| `roadmap_line`              | Copy of the roadmap line at triage time. Gives the title without reading the file and detects a roadmap changed in the meantime.                                                |
+| `spec_pointer`              | Spec anchor pointer: a spec file path, or `Current Conversation History`. Tells an auto-brainstorm turn where the specification comes from.                                     |
+| `detected_gap`              | Summary of what blocks the triage, as phrased by the triage model. Frames the discussion without resending the whole spec at each turn.                                         |
+| `architecture_rule`         | Rule of `docs/architecture.md` that is violated, if any. The only architecture excerpt a cloud brainstorm needs.                                                                |
+| `source_context_snapshot`   | Specification text or user-provided context. Required for `Conversation Context` anchors, where no spec file exists to re-read.                                                 |
+| `turns`                     | Compact `(role, text)` history of questions and answers; the oldest turns are summarised once the size cap is reached. Used **only** as context history for the model.          |
+| `total_turn_count`          | A strict monotonic integer incremented at each dialogue turn. Enforces `max_brainstorm_turns` to guarantee protection against runaway loops, independent of history compaction. |
+| `mode`                      | `manual` or `auto`, fixed at session start from `auto_brainstorm` or the local menu choice. Selects which model alias is called on resume.                                      |
 
 Two lifecycle fields complete the table above:
 
@@ -246,11 +249,17 @@ Two lifecycle fields complete the table above:
 
 ### 5.2 State persistence (`FACTORY_CONTEXT`)
 
-In cloud mode, the state is serialised in a hidden HTML comment of the tracking issue body:
+In cloud mode, to guarantee data integrity and prevent injection vulnerabilities (such as untrusted
+user comments containing the `-->` sequence breaking the wrapper), the state is serialized to JSON,
+encoded using a standard **base64url** string, and embedded safely within a hidden HTML comment in
+the tracking issue description:
 
 ```html
-<!-- FACTORY_CONTEXT {"schema_version":"1.0.0","issue_id":"ISSUE-2.1","detected_gap":"…"} -->
+<!-- SMART_AI_FACTORY_STATE: eyJzY2hlbWFfdmVyc2lvbiI6IjEuMC4wIiwiaXNzdWVfaWQiOiJJU1NPRS0yLjEiLCJkZXRlY3RlZF9nYXAiOiJleGFtcGxlIn0= -->
 ```
+
+On workflow resume, the CLI extracts the token, decodes the base64url payload back to JSON, and runs
+a strict decode-then-validate schema check before rehydrating the execution state.
 
 On each reply, the CLI downloads only the issue body and its comments, extracts and validates the
 JSON, and resumes. Unknown `schema_version` values are rejected with a clear message. The comment
@@ -344,15 +353,28 @@ Rules:
    `smart-plan` update keeps the link.
 5. `--dry-run` prints the diff and the issue payload without any write.
 
+Port operations used by this lifecycle (the ports are defined in
+[cli_core.md](./cli_core.md#8-github-layer)):
+
+| Lifecycle step                           | Port operations                                                                        |
+| :--------------------------------------- | :------------------------------------------------------------------------------------- |
+| Create the ticket (first run)            | `find_by_marker`, then `create_issue`                                                  |
+| Mutate the ticket on `ready_to_dev`      | `get_issue`, `update_issue` (title, body), `remove_labels`, `add_labels`               |
+| Dependency check (`brainstorming` label) | `get_issue` on each dependency                                                         |
+| Resume from a comment                    | `get_issue_with_comments`                                                              |
+| Open the specification PR (auto mode)    | `create_branch`, `commit`, `push`, `open_pull_request`, then `update_issue` to link it |
+| Resume from a merge or closing event     | `get_pull_request`, `find_by_marker` (marker in the PR body), `comment`                |
+| Roadmap write-back in cloud              | `commit`, `push` (local mode only writes the file)                                     |
+
 ## 8. Cloud Execution Details
 
 Workflows are generated from templates and call the pinned CLI (`uvx smart-ai==X.Y.Z ...`).
 
-| Workflow                  | Trigger                                                                                        | Command                                          |
-| :------------------------ | :--------------------------------------------------------------------------------------------- | :----------------------------------------------- |
-| `ai_triage_pipeline.yml`  | `push` on the roadmap paths resolved from the config                                           | `smart-ai --mode cloud triage --all`             |
-| `ai_routing_pipeline.yml` | `issue_comment` on issues labelled `brainstorming`                                             | `smart-ai --mode cloud brainstorm --issue <num>` |
-| `ai_routing_pipeline.yml` | `pull_request` closed, merged or not, from a `smart-ai/brainstorm-*` branch of this repository | `smart-ai --mode cloud brainstorm --pr <num>`    |
+| Workflow                  | Trigger                                                                                        | Command                                                                                      |
+| :------------------------ | :--------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------- |
+| `ai_triage_pipeline.yml`  | `push` on the roadmap paths resolved from the config                                           | `smart-ai --mode cloud triage --all`                                                         |
+| `ai_routing_pipeline.yml` | `issue_comment` on issues labelled `brainstorming`                                             | `smart-ai --mode cloud brainstorm --issue <num> --comment-id ${{ github.event.comment.id }}` |
+| `ai_routing_pipeline.yml` | `pull_request` closed, merged or not, from a `smart-ai/brainstorm-*` branch of this repository | `smart-ai --mode cloud brainstorm --pr <num>`                                                |
 
 Safeguards:
 
@@ -391,8 +413,8 @@ src/smart_ai/triage/
 - **Roadmap parser and write-back**: golden fixtures covering the four layouts, versioned and
   unversioned, divergence, malformed lines, already-triaged lines and checked boxes. Fixtures reuse
   the shapes in `tests/skills/smart-plan/assets/`.
-- **Engine**: fakes for the four ports; scenarios for `ready_to_dev`, one brainstorm loop (manual
-  and auto), conversation-context anchor, approval `n`/`edit`, retry after failed write-back
+- **Engine**: fakes for all the ports; scenarios for `ready_to_dev`, one brainstorm loop (manual and
+  auto), conversation-context anchor, approval `n`/`edit`, retry after failed write-back
   (idempotence marker), budget exhaustion.
 - **Suspend/resume**: serialise state, resume in a fresh process, assert identical outcome.
 - **Prompts**: Promptfoo suites for the triage and brainstorm prompts, with assertions on the JSON

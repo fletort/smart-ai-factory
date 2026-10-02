@@ -37,6 +37,8 @@ graph TD
         LLM["LlmClient"]
         INTER["InteractionChannel"]
         TRACK["IssueTracker"]
+        PRH["PullRequestHost"]
+        VCS["VersionControl"]
         WS["Workspace"]
     end
 
@@ -44,18 +46,21 @@ graph TD
         LITE["LiteLLM"]
         TTY["TerminalChannel<br/>(questionary + rich)"]
         HEAD["SuspendChannel<br/>(cloud / MCP)"]
-        GH["GhCliTracker<br/>(gh subprocess)"]
+        GH["GhCliTracker + GhCliPullRequests<br/>(gh subprocess)"]
+        GIT["GitCliVcs<br/>(git subprocess)"]
         FS["Local filesystem"]
     end
 
     CLI --> TRIAGE
     MCP --> TRIAGE
     TRIAGE --> BRAIN
-    TRIAGE --> LLM & INTER & TRACK & WS
-    BRAIN --> LLM & INTER
+    TRIAGE --> LLM & INTER & TRACK & VCS & WS
+    BRAIN --> LLM & INTER & TRACK & PRH & VCS
     LLM --> LITE
     INTER --> TTY & HEAD
     TRACK --> GH
+    PRH --> GH
+    VCS --> GIT
     WS --> FS
 ```
 
@@ -74,7 +79,8 @@ src/smart_ai/
 │   ├── config.py       # Pydantic models + loader of .smart.ai/config.yml
 │   ├── llm.py          # LlmClient port + LiteLLM adapter, cost accounting
 │   ├── interaction.py  # InteractionChannel port + Terminal / Suspend adapters
-│   ├── github.py       # IssueTracker port + gh CLI adapter
+│   ├── github.py       # IssueTracker + PullRequestHost ports, gh CLI adapters
+│   ├── vcs.py          # VersionControl port (branch, commit, push), git CLI adapter
 │   ├── workspace.py    # File access, LLM Wiki traversal, token-budgeted context packing
 │   └── errors.py       # Exception hierarchy mapped to exit codes
 ├── triage/     # See triage_engine.md
@@ -234,9 +240,11 @@ what makes the cloud mode cheap (see the `FACTORY_CONTEXT` strategy in
   validation errors back to the model, then the call fails with exit code 5.
 - **Resilience**: bounded retries with backoff on rate limits and 5xx. Free-tier quota errors (for
   example Gemini) are surfaced clearly and may fall back to a configured alias.
-- **Budget**: a per-run accumulator checks a soft threshold `max_cost_usd_per_run` before each call.
-  No new LLM requests are initiated once this cumulative budget is breached, preventing runaway
-  multi-turn agent expenses.
+- **Budget**: A per-run accumulator enforces a strict hard cap via worst-case cost reservation
+  before each LLM call. The engine calculates the maximum potential cost of the request (based on
+  prompt size, `max_tokens` limits, and model pricing). If this worst-case cost breaches
+  `max_cost_usd_per_run`, the call is aborted immediately to guarantee spend never exceeds the
+  configured limit. Actual token usage is reconciled immediately after each successful response.
 - **Prompts** are Jinja2 files under `src/smart_ai/prompts/`. Untrusted text (issue comments,
   roadmap titles) is always inserted inside delimited blocks, and the system prompt states that
   those blocks are data, never instructions.
@@ -244,13 +252,46 @@ what makes the cloud mode cheap (see the `FACTORY_CONTEXT` strategy in
 
 ## 8. GitHub Layer
 
-`IssueTracker` exposes: `find_by_marker`, `create_issue`, `comment`, `get_issue_with_comments`,
-`add_labels`. The `gh` adapter:
+`IssueTracker`, `PullRequestHost` and `VersionControl` are separate ports, so that services (triage
+today, development and review phases later) never call `gh` or `git` directly. How the triage uses
+them is described in [triage_engine.md](./triage_engine.md#7-issue-creation--roadmap-write-back).
 
-- Reads credentials from `GH_TOKEN` (CI) or the local `gh auth` session.
-- Creates issues with `--body-file` (never shell interpolation of user content).
-- Looks issues up by a hidden `smart-ai:tracking-id` marker, injected at creation of the first
-  issue, so that every write is idempotent (see `triage_engine.md`).
+```python
+class IssueTracker(Protocol):
+    def find_by_marker(self, marker: str) -> Issue | None: ...
+    def create_issue(self, title: str, body: str, labels: list[str]) -> Issue: ...
+    def get_issue(self, number: int) -> Issue: ...  # title, body, labels, state
+    def get_issue_with_comments(self, number: int) -> IssueThread: ...
+    def update_issue(self, number: int, *, title: str | None = None, body: str | None = None) -> Issue: ...
+    def add_labels(self, number: int, labels: list[str]) -> None: ...
+    def remove_labels(self, number: int, labels: list[str]) -> None: ...
+    def comment(self, number: int, body: str) -> None: ...
+
+class PullRequestHost(Protocol):
+    def open_pull_request(self, head: str, base: str, title: str, body: str) -> PullRequest: ...
+    def get_pull_request(self, number: int) -> PullRequest: ...
+    # PullRequest: state (open | merged | closed), head_branch, head_repo, base, body, merge_sha
+
+class VersionControl(Protocol):
+    def default_branch(self) -> str: ...
+    def create_branch(self, name: str, from_ref: str) -> None: ...
+    def commit(self, paths: list[Path], message: str) -> str: ...  # bot identity, returns sha
+    def push(self, branch: str) -> None: ...
+```
+
+Rules shared by the `gh` and `git` adapters:
+
+- Credentials come from `GH_TOKEN` (CI) or the local `gh auth` session; commits use a dedicated bot
+  identity.
+- Bodies are passed with `--body-file` (never shell interpolation of user content).
+- `update_issue` takes the full new body and refuses (error, exit code 7) a body that does not
+  contain the `smart-ai:tracking-id` marker, so the marker and the `FACTORY_CONTEXT` block cannot be
+  lost by a mutation. Bodies are always produced by one renderer shared by creation and updates.
+- `add_labels` and `remove_labels` are idempotent (adding a present label or removing an absent one
+  is a no-op), which keeps retries safe.
+- Issues are looked up by the hidden `smart-ai:tracking-id` marker, injected at creation of the
+  first issue, so that every write is idempotent (see `triage_engine.md`).
+- Every adapter failure is mapped to exit code 7 with the failing operation named.
 
 ## 9. Packaging & Distribution
 
@@ -279,8 +320,9 @@ payload of section 6.
 
 ## 11. Test Strategy
 
-- **Unit tests (pytest)**: services against in-memory fakes of the four ports; parsers against
-  fixture roadmaps; LiteLLM calls with `mock_response`.
+- **Unit tests (pytest)**: services against in-memory fakes of the ports (`LlmClient`,
+  `InteractionChannel`, `IssueTracker`, `PullRequestHost`, `VersionControl`, `Workspace`); parsers
+  against fixture roadmaps; LiteLLM calls with `mock_response`.
 - **Prompt tests (Promptfoo)**: same approach as
   [skill-test-strategy.md](../dev/skill-test-strategy.md), targeting the files under
   `src/smart_ai/prompts/`.
