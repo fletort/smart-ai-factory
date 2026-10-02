@@ -45,15 +45,19 @@ graph TD
 
         %% OPTION B : Full Auto Brainstorm -> PR Direct
         CheckConfig -->|"true (Option B)"| CloudAuto[🤖 Auto Brainstorm Mode]
-        CloudAuto -->|6. Invoke LLM| LLM2[Invoke Advanced LLM: advanced_brainstorm_model]
-        LLM2 -->|7. Resolve ambiguity autonomously| Fix[Update docs/architecture.md and specs]
-        Fix -->|8. Push branch| PR[Open Pull Request with complete specs]
+        CloudAuto -->|6. Create Tracking Issue| GH_BS2[gh issue create --label brainstorming]
+        GH_BS2 -->|7. Invoke LLM| LLM2[Invoke Advanced LLM: advanced_brainstorm_model]
+        LLM2 -->|8. Resolve ambiguity autonomously| Fix[Update docs/architecture.md and specs]
+        Fix -->|9. Push branch, link PR in the ticket| PR[Open Pull Request with complete specs]
+        PR -->|10. Exit code 3: waiting for review| Review[Human reviews the PR]
+        Review -->|pull_request merged event| Resume
     end
 
     subgraph "⚙️ Automation & Traceability"
         JSON1 -->|"Status: ready_to_dev"| DevOpCloud[DevOps Automation]
         DevOpCloud -->|4. Automated Label & Ticket| GH_Issue[gh issue create --label size]
         DevOpCloud -->|5. Push Roadmap update by bot| GitSync[Update cloud roadmap with #issue_num]
+        Resume -->|ready_to_dev: mutate the SAME ticket| Mutate[Remove brainstorming, add size and ready-to-dev]
     end
 
 ```
@@ -76,9 +80,11 @@ segregate execution scopes and maximize billing efficiency:
 - **Command:** `smart-ai --mode cloud triage --all`, run from the pinned PyPI package (for example
   `uvx smart-ai==X.Y.Z`).
 - **Action:** Selects every eligible roadmap issue (not checked, no `(#N)` yet, dependencies already
-  triaged). If an issue is clear, it creates the development issue and writes `(#N)` back to the
-  roadmap in a bot commit. If it is blocked, it opens the brainstorm tracking issue and stops safely
-  (exit code 3 is the expected "waiting for a human" outcome, not a failure).
+  cleared). Every issue gets its definitive GitHub ticket on its first run: if the specification is
+  clear, the ticket is created `ready-to-dev`; if it is blocked, it is created with the
+  `brainstorming` label. In both cases `(#N)` is written back to the roadmap in a bot commit and the
+  run stops safely when a human is needed (exit code 3 is the expected "waiting for a human"
+  outcome, not a failure).
 - **Conversation Context epics:** an epic anchored on `Current Conversation History` has no spec
   file. The pipeline opens a tracking issue asking for that context, then the normal brainstorm loop
   applies.
@@ -89,10 +95,15 @@ segregate execution scopes and maximize billing efficiency:
 ### 2. `ai_routing_pipeline.yml`
 
 - **Trigger:** Triggered on `issue_comment` events where the issue contains the label
-  `brainstorming`.
-- **Command:** `smart-ai --mode cloud brainstorm --issue <number>`.
-- **Action:** Resumes the session from the issue content and feeds your answer into the
-  conversational loop.
+  `brainstorming`, and on `pull_request` closed events for the specification PRs opened by the auto
+  brainstorm (branch `smart-ai/brainstorm-*` of this repository). A merge of such a PR is what
+  resumes the triage: the `push` workflow is not triggered by it because it does not touch the
+  roadmap files.
+- **Command:** `smart-ai --mode cloud brainstorm --issue <number>` for a comment, or
+  `smart-ai --mode cloud brainstorm --pr <number>` for a PR event.
+- **Action:** Resumes the session from the issue content. A comment is fed into the conversational
+  loop. A merged PR re-runs the triage on the merged specifications. A PR closed without merge makes
+  the ticket fall back to manual brainstorm and asks the human for the missing decisions.
 - **Authorisation:** runs only for comment authors that are `OWNER`, `MEMBER` or `COLLABORATOR`.
   Comment text is untrusted data: it is never interpolated into a shell script and is delimited as
   data in the prompts.
@@ -130,11 +141,19 @@ To prevent this, **Smart-AI-Factory** treats the GitHub Issue body as a cached m
 3. When you write a comment on the web, the brainstorm command uses the GitHub CLI to download
    **only** the issue text and the comments thread.
 4. The CLI extracts and validates the invisible `FACTORY_CONTEXT`, and supplies it with the thread
-   as the sole reference frame to the model (`simple_triage_model` for manual brainstorm,
-   `advanced_brainstorm_model` for auto brainstorm). **The codebase is never read during this
-   phase.** Unknown `schema_version` values are rejected explicitly.
-5. Once the specification is clear, the issue is created (or the tracking issue is updated) with a
-   hidden `<!-- smart-ai:issue-id=ISSUE-1.1 -->` marker, so a retry never produces a duplicate.
+   as the primary reference frame. **By default, the full codebase is not scanned.** However, if the
+   discussion requires historical context, the model can deterministically rehydrate its knowledge
+   by reading specific files specified in the `spec_pointer` or explicitly requested during the
+   thread.
+5. Once the specification is clear (human answers, or a merged specification PR), this same tracking
+   issue is **mutated in place** and becomes the development issue: `brainstorming` label removed,
+   final enriched specification written in the body, `size:<SIZE>` and `ready-to-dev` labels added.
+   It is never replaced by a new one, so the whole history (initial gap, discussion, specification
+   PR) stays on the ticket.
+
+A hidden identity marker `<!-- smart-ai:tracking-id=ISSUE-1.1 -->` is injected **as soon as the
+ticket is created, whether it is a brainstorming ticket or a ready-for-dev ticket**. Any pipeline
+retry therefore finds the existing ticket immediately and never generates a duplicate.
 
 **Token Saving Result:** Prompt data payload drops from ~45,000 tokens (full project scanning) to
 less than ~1,500 tokens per discussion turn.
@@ -154,8 +173,12 @@ Because no terminal input buffer is available during cloud execution, the system
 - **Configuring `auto_brainstorm: true` (Case B - Autonomous Refinement):** The
   `advanced_brainstorm_model` resolves the ambiguity through the API. Its proposed changes to the
   specs and `docs/architecture.md` are committed on a dedicated branch and submitted as a **pull
-  request**; nothing is pushed to the default branch, so a human always reviews them.
+  request** linked to the tracking issue; nothing is pushed to the default branch, so a human always
+  reviews them. The triage is **not** repeated until the PR is merged, so no development ticket is
+  produced from unreviewed specifications. If the PR is closed without merge, the ticket falls back
+  to manual brainstorm.
 - **Configuring `hitl_during_triage: true` (Backlog Protection):** When a specification is flagged
-  as `ready_to_dev` by the cloud engine, it creates the issue with a `pending-approval` state. In
-  this way, the task remains unassigned to coding agents. Detailed documentation of this next phase
-  (coding phase) will be added soon.
+  as `ready_to_dev` by the cloud engine, the ticket receives a `pending-approval` label instead of
+  `ready-to-dev`. In this way, the task remains unassigned to coding agents until a maintainer
+  replaces `pending-approval` with `ready-to-dev`. Detailed documentation of this next phase (coding
+  phase) will be added soon.

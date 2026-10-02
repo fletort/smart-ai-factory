@@ -27,12 +27,13 @@ graph TD
     ASKCTX --> PACK
     PACK --> LLM["Triage LLM: simple_triage_model"]
     LLM -->|unclear_specification| BRAIN["Brainstorm session"]
-    BRAIN -->|answers / auto spec| LLM
+    BRAIN -.->|"cloud, first blocking run"| TRACK["Create tracking ticket + write back (#N)"]
+    BRAIN -->|"answers / merged spec PR"| LLM
     LLM -->|ready_to_dev| GATE{"hitl_during_triage?"}
     GATE -->|yes| APPROVE["Approval step"]
     GATE -->|no| CREATE
-    APPROVE -->|approved| CREATE["Create GitHub issue"]
-    CREATE --> WB["Write back (#N) in roadmap"]
+    APPROVE -->|approved| CREATE["Create the ticket, or mutate the tracking ticket"]
+    CREATE --> WB["Write back (#N) if not linked yet"]
 ```
 
 ## 2. Roadmap Discovery & Parsing
@@ -96,7 +97,12 @@ An issue is **eligible** when all of the following hold:
 
 1. It has no `(#N)` and no `<!-- [DELETED] -->` mark.
 2. It is not checked.
-3. Every ID in `depends_on` exists and has an issue number (or is checked).
+3. Every ID in `depends_on` exists and its specification is cleared: it is checked, or it has an
+   issue number and that issue does not carry the `brainstorming` label.
+
+`(#N)` means "a GitHub ticket exists and owns the lifecycle of this roadmap issue". A ticket still
+in brainstorm is never selected again by this section: it is resumed by its own events (section
+5.3).
 
 Selection options: `--issue ISSUE-X.Y` (target one, dependencies still enforced), `--limit N`
 (default 1 locally, all eligible in CI), `--all`. Eligible issues sharing the same blockers are
@@ -114,8 +120,12 @@ Goal: the smallest context that lets a low-cost model judge the issue.
 3. **Architecture rules**: `docs/architecture.md` if it exists.
 4. **Budget**: the packed context is capped (default 12,000 tokens, configurable); the lowest
    priority items are dropped first and the drop is reported in the output.
-5. **Cloud mode**: no repository traversal beyond the spec file and wiki indexes. During a
-   brainstorm turn in the cloud, **only** the issue thread and `FACTORY_CONTEXT` are used.
+5. **Cloud mode**: no blind repository traversal. A brainstorm turn uses the issue thread and
+   `FACTORY_CONTEXT` as its primary context. The engine may rehydrate it with a bounded set of
+   files: the `spec_pointer` file and the paths explicitly named in the thread. Those paths are
+   resolved by the engine, not by the model: they must exist, stay inside the repository (no `..`,
+   no symlink escape) and fit in the token budget of step 4. After a merged specification PR, the
+   files are read from the merged default branch.
 
 ### 3.1 "Conversation Context" anchors
 
@@ -151,6 +161,19 @@ class TriageResult(BaseModel):
     questions: list[str] = []               # at most 3, see the 3-Question Rule of smart-spec
 ```
 
+| Field                | Used when               | Purpose                                                                                                                          |
+| :------------------- | :---------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
+| `status`             | always                  | Routes the pipeline: `ready_to_dev` goes to approval and creation, `unclear_specification` starts the brainstorm.                |
+| `rationale`          | always                  | One or two sentences explaining the decision. Debug logs only: never written to the GitHub issue nor sent back in later prompts. |
+| `size`               | `ready_to_dev`          | Complexity tier. Becomes the `size:<SIZE>` label, selects the Phase 3 DevRouter model tier and feeds the cost estimate.          |
+| `title`              | `ready_to_dev`          | GitHub issue title. The engine enforces the `[SIZE]` prefix itself.                                                              |
+| `goal`               | `ready_to_dev`          | What the issue achieves, in one or two sentences (the "Goal" of the preview card).                                               |
+| `inputs`             | `ready_to_dev`          | Inputs of the feature. Optional: some tasks have none.                                                                           |
+| `output`             | `ready_to_dev`          | Expected, verifiable result. Mandatory: it is the basis of the acceptance check.                                                 |
+| `rules`              | `ready_to_dev`          | Constraints for the developer agent (for example mandatory tests, scope limits). Injected into the Phase 3 prompt.               |
+| `missing_parameters` | `unclear_specification` | Short list of what is missing (for example "payment provider"). Shown in the local menu and stored as `detected_gap`.            |
+| `questions`          | `unclear_specification` | Questions put to the human, at most 3. Displayed in the terminal or posted in the tracking issue body.                           |
+
 Validation beyond the schema:
 
 - `ready_to_dev` requires `size`, `title`, `goal` and `output`; `unclear_specification` requires at
@@ -175,9 +198,34 @@ class BrainstormState(BaseModel):
     spec_pointer: str
     detected_gap: str
     architecture_rule: str | None
+    source_context_snapshot: str | None
     turns: list[Turn]                       # compact (role, text), oldest summarised
     mode: Literal["manual", "auto"]
+    awaiting: Literal["answer", "pr_review"]
+    pending_pr: int | None
 ```
+
+The state is serialised in `FACTORY_CONTEXT` in cloud mode, so it must stay minimal: it replaces any
+re-reading of the repository.
+
+| Field                     | Purpose                                                                                                                                                            |
+| :------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schema_version`          | Versions the format. A state with an unknown version is rejected explicitly instead of being misread.                                                              |
+| `issue_id`                | Roadmap issue ID (`ISSUE-2.1`, version-prefixed for a versioned roadmap). Matches the `tracking-id` marker and targets the right roadmap line for the write-back.  |
+| `roadmap_line`            | Copy of the roadmap line at triage time. Gives the title without reading the file and detects a roadmap changed in the meantime.                                   |
+| `spec_pointer`            | Spec anchor pointer: a spec file path, or `Current Conversation History`. Tells an auto-brainstorm turn where the specification comes from.                        |
+| `detected_gap`            | Summary of what blocks the triage, as phrased by the triage model. Frames the discussion without resending the whole spec at each turn.                            |
+| `architecture_rule`       | Rule of `docs/architecture.md` that is violated, if any. The only architecture excerpt a cloud brainstorm needs.                                                   |
+| `source_context_snapshot` | Specification text or user-provided context. Required for `Conversation Context` anchors, where no spec file exists to re-read.                                    |
+| `turns`                   | Compact `(role, text)` history of questions and answers; the oldest turns are summarised once the size cap is reached. Its length enforces `max_brainstorm_turns`. |
+| `mode`                    | `manual` or `auto`, fixed at session start from `auto_brainstorm` or the local menu choice. Selects which model alias is called on resume.                         |
+
+Two lifecycle fields complete the table above:
+
+- `awaiting`: what the session is waiting for. `answer` = a human comment, `pr_review` = the merge
+  or closing of the specification PR opened by the auto mode. It decides which event may resume the
+  session (section 5.3).
+- `pending_pr`: number of that PR, `None` otherwise.
 
 ### 5.1 Modes
 
@@ -187,10 +235,12 @@ class BrainstormState(BaseModel):
 - **Auto** (`auto_brainstorm: true`, or option 2 of the local menu): the `advanced_brainstorm_model`
   is called through the same LLM layer (no external binary). It receives the packed context and the
   gap, and returns a `BrainstormResolution`: the decisions taken and a proposed update of
-  `docs/architecture.md` / the spec. The triage call is then repeated with those decisions.
-  - Local: the proposed file changes are shown and require confirmation before being written.
+  `docs/architecture.md` / the spec.
+  - Local: the proposed file changes are shown and require confirmation before being written, then
+    the triage call is repeated with those decisions.
   - Cloud: changes are committed on a branch and submitted as a **pull request**, never pushed to
-    the default branch.
+    the default branch. The triage is **not** repeated in the same run: the session waits for the PR
+    to be merged (section 5.3), so no development issue is ever based on unreviewed decisions.
 - A session is limited to `max_brainstorm_turns` (default 5) to prevent runaway cost; reaching the
   limit leaves the issue untriaged and reports why.
 
@@ -207,26 +257,80 @@ JSON, and resumes. Unknown `schema_version` values are rejected with a clear mes
 size is capped (about 6,000 characters); when exceeded, the oldest turns are summarised by the
 triage model.
 
+### 5.3 Cloud ticket lifecycle and resume triggers
+
+The ticket created when the ambiguity is detected is the **definitive ticket**: it only changes
+state (labels, body) during its life and is never replaced. Both brainstorm modes follow the same
+state machine; only the event that resumes the session differs.
+
+```mermaid
+stateDiagram-v2
+    [*] --> Brainstorming: ambiguity detected, ticket #N created, (#N) written to the roadmap
+    Brainstorming --> AwaitingAnswer: manual mode, questions posted
+    Brainstorming --> AwaitingPR: auto mode, PR opened and linked in the ticket
+    AwaitingAnswer --> Retriage: human comment
+    AwaitingPR --> Retriage: PR merged
+    AwaitingPR --> AwaitingAnswer: PR closed without merge
+    Retriage --> AwaitingAnswer: still unclear and turns left
+    Retriage --> Ready: ready_to_dev
+    Ready --> [*]: ticket mutated in place
+```
+
+| Transition                   | Trigger                                                 | Effect on the ticket                                                                                                                                 |
+| :--------------------------- | :------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------- |
+| creation (both modes)        | `push` workflow, ambiguity detected                     | Ticket created with the `tracking-id` marker, label `brainstorming`, `FACTORY_CONTEXT`; `(#N)` written to the roadmap.                               |
+| Brainstorming to AwaitingPR  | same run, auto mode                                     | PR opened from a `smart-ai/brainstorm-<id>` branch; its number goes to `pending_pr`, `awaiting` becomes `pr_review`; the ticket body links the PR.   |
+| AwaitingPR to Retriage       | PR merged (`pull_request` closed with `merged == true`) | The routing workflow resumes the session on the merged default branch and repeats the triage call with the merged specs and the recorded decisions.  |
+| AwaitingPR to AwaitingAnswer | PR closed without merge                                 | The CLI comments on the ticket, sets `mode` to `manual` and `awaiting` to `answer`, and asks the human for the missing decisions.                    |
+| AwaitingAnswer to Retriage   | `issue_comment` from an authorised author               | The comment is appended to `turns`, then the triage call is repeated.                                                                                |
+| Retriage to Ready            | triage result `ready_to_dev`                            | Same ticket mutated: `brainstorming` removed, final specification written in the body, `size:<SIZE>` and `ready-to-dev` (or `pending-approval`) set. |
+
+Rules:
+
+- A development issue is never created from decisions that are not merged: in auto mode the triage
+  resumes only from the merged state of the default branch.
+- The PR is linked to the ticket with a plain reference, never a closing keyword, so merging it does
+  not close the ticket.
+- The PR body carries the same `tracking-id` marker, so the merge event finds its ticket with
+  `find_by_marker` without parsing branch names.
+- A comment posted while `awaiting` is `pr_review` is ignored with a notice: the PR review is the
+  channel until it is merged or closed.
+- Retriage counts as a turn of `max_brainstorm_turns`; when the limit is reached the ticket stays in
+  `brainstorming` and the reason is commented on it.
+
 ## 6. Approval Step (`hitl_during_triage`)
 
 - **Local**: a **FinOps Preview Card** is rendered (title, goal, inputs, output, rules, estimated
   cost of the future Phase 3 run for the size tier) and the user answers `y`, `n` or `edit`. `edit`
   adds free text as a new turn and repeats the triage call.
-- **Cloud**: the issue is created with the `pending-approval` label instead of an interactive
-  prompt. Removing that label is the approval (consumed by Phase 3).
+- **Cloud**: the ticket gets the `pending-approval` label instead of `ready-to-dev`, in place of an
+  interactive prompt. A maintainer approves by replacing `pending-approval` with `ready-to-dev`
+  (consumed by Phase 3).
 - With `hitl_during_triage: false` the step is skipped in both modes.
 - `--non-interactive` with `hitl_during_triage: true` locally exits with code 3 and lists the
   proposed issues, without creating anything.
 
 ## 7. Issue Creation & Roadmap Write-Back
 
-1. **Idempotence marker**: every created issue body contains `<!-- smart-ai:issue-id=ISSUE-2.1 -->`
-   and the title keeps the roadmap ID context in the body. Before creating, the tracker is searched
-   for this marker; if found, creation is skipped and the existing number is used. This makes a
-   retry after a failed write-back safe.
-2. **Labels**: `size:<SIZE>` (and `pending-approval`, `brainstorming` where relevant).
-3. **Write-back**: the engine rewrites only the matching line, appending `(#N)` right after the ID
-   bold block:
+1. **Idempotence marker**: the hidden marker `<!-- smart-ai:tracking-id=ISSUE-2.1 -->` is injected
+   **in the body of the very first GitHub issue created for a roadmap issue**, whether it is a
+   brainstorm tracking issue or a `ready_to_dev` issue. For a versioned roadmap the value is
+   prefixed with the version (`v0.2/ISSUE-2.1`) because IDs are only unique per roadmap.
+   - Before **any** creation, the tracker is searched with `find_by_marker`. If an issue exists, it
+     is reused: the pipeline resumes it (waiting for input) or updates it, and never creates a
+     second one. A retry while waiting for a human answer therefore cannot create a duplicate.
+   - There is **one GitHub issue per roadmap issue for its whole life**: when a brainstorm ends, the
+     tracking issue is updated in place (title, body, `size:<SIZE>` label, `brainstorming` label
+     removed) instead of opening a new one. The marker is never removed or rewritten.
+   - Runs on the same ref are serialised by the `concurrency` group, so two runs cannot both miss
+     the marker.
+   - The marker also makes a retry after a failed roadmap write-back safe: the existing number is
+     used for the `(#N)` write-back.
+2. **Labels**: the ticket moves through `brainstorming` then `ready-to-dev`, with `size:<SIZE>` and,
+   when `hitl_during_triage` is on, `pending-approval` before `ready-to-dev`. Labels are assigned by
+   an idempotent label-provisioning operation/setup step.
+3. **Write-back**: as soon as the first ticket exists (so a blocked issue is already linked), the
+   engine rewrites only the matching line, appending `(#N)` right after the ID bold block:
 
    ```diff
    - - [ ] **[ISSUE-2.1]** - Secure API endpoints
@@ -244,10 +348,11 @@ triage model.
 
 Workflows are generated from templates and call the pinned CLI (`uvx smart-ai==X.Y.Z ...`).
 
-| Workflow                  | Trigger                                              | Command                                          |
-| :------------------------ | :--------------------------------------------------- | :----------------------------------------------- |
-| `ai_triage_pipeline.yml`  | `push` on the roadmap paths resolved from the config | `smart-ai --mode cloud triage --all`             |
-| `ai_routing_pipeline.yml` | `issue_comment` on issues labelled `brainstorming`   | `smart-ai --mode cloud brainstorm --issue <num>` |
+| Workflow                  | Trigger                                                                                        | Command                                          |
+| :------------------------ | :--------------------------------------------------------------------------------------------- | :----------------------------------------------- |
+| `ai_triage_pipeline.yml`  | `push` on the roadmap paths resolved from the config                                           | `smart-ai --mode cloud triage --all`             |
+| `ai_routing_pipeline.yml` | `issue_comment` on issues labelled `brainstorming`                                             | `smart-ai --mode cloud brainstorm --issue <num>` |
+| `ai_routing_pipeline.yml` | `pull_request` closed, merged or not, from a `smart-ai/brainstorm-*` branch of this repository | `smart-ai --mode cloud brainstorm --pr <num>`    |
 
 Safeguards:
 
@@ -256,6 +361,10 @@ Safeguards:
 - **Trust boundary**: `issue_comment` runs only for authors whose association is `OWNER`, `MEMBER`
   or `COLLABORATOR`. Comment text is passed to the CLI through a file or an environment variable,
   never interpolated into a `run:` script (this also keeps the workflows compliant with `zizmor`).
+- **Merge event trust**: the `pull_request` trigger only acts on branches `smart-ai/brainstorm-*`
+  whose head repository is this repository (never a fork). The merge itself is the human gate: it
+  requires a reviewer with write access under the repository branch protection. The PR number is
+  passed to the CLI through an environment variable, and the PR body is read as data.
 - **Prompt injection**: issue and comment text is treated as data (delimited blocks) and the model's
   output only ever goes through the Pydantic schema; it cannot trigger tool calls.
 - **Permissions**: `contents: write` (write-back / PR branch), `issues: write`,

@@ -117,7 +117,7 @@ Global options
 Commands
   smart-ai config check       Validate .smart.ai/config.yml and required env variables
   smart-ai triage             Triage the next eligible roadmap issues   (see triage_engine.md)
-  smart-ai brainstorm         Resume a brainstorm session               (see triage_engine.md)
+  smart-ai brainstorm         Resume a session: --issue N (comment) or --pr N (merged/closed spec PR)
   smart-ai mcp serve          Start the MCP server on stdio             (future)
 ```
 
@@ -234,7 +234,9 @@ what makes the cloud mode cheap (see the `FACTORY_CONTEXT` strategy in
   validation errors back to the model, then the call fails with exit code 5.
 - **Resilience**: bounded retries with backoff on rate limits and 5xx. Free-tier quota errors (for
   example Gemini) are surfaced clearly and may fall back to a configured alias.
-- **Budget**: a per-run accumulator enforces `max_cost_usd_per_run` before each call.
+- **Budget**: a per-run accumulator checks a soft threshold `max_cost_usd_per_run` before each call.
+  No new LLM requests are initiated once this cumulative budget is breached, preventing runaway
+  multi-turn agent expenses.
 - **Prompts** are Jinja2 files under `src/smart_ai/prompts/`. Untrusted text (issue comments,
   roadmap titles) is always inserted inside delimited blocks, and the system prompt states that
   those blocks are data, never instructions.
@@ -247,7 +249,8 @@ what makes the cloud mode cheap (see the `FACTORY_CONTEXT` strategy in
 
 - Reads credentials from `GH_TOKEN` (CI) or the local `gh auth` session.
 - Creates issues with `--body-file` (never shell interpolation of user content).
-- Looks issues up by a hidden marker so that every write is idempotent (see `triage_engine.md`).
+- Looks issues up by a hidden `smart-ai:tracking-id` marker, injected at creation of the first
+  issue, so that every write is idempotent (see `triage_engine.md`).
 
 ## 9. Packaging & Distribution
 

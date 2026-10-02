@@ -65,7 +65,7 @@ The triage is a plain Python CLI, installed once with `pipx install smart-ai` (o
 smart-ai config check          # validate .smart.ai/config.yml and API keys
 smart-ai triage                # triage the next eligible roadmap issue
 smart-ai triage --issue ISSUE-2.1
-smart-ai triage --all --dry-run
+smart-ai --dry-run triage --all
 ```
 
 The `/smart-triage` skill (Continue.dev, OpenCode, VS Code Chat) is only a thin wrapper that runs
