@@ -87,9 +87,10 @@ If the filesystem contradicts the configuration (for example `single` in the con
 `roadmap/README.md` on disk), the triage stops and asks whether to follow the filesystem or fix the
 configuration, exactly like `smart-plan`.
 
-A roadmap issue (`[ISSUE-X.Y]`) is **eligible** when it is not checked, has no GitHub issue number
-yet (`(#N)`) and all the issues it depends on are already triaged. By default one issue is triaged
-per local run; use `--limit N` or `--all` for more.
+A roadmap issue (`[ISSUE-X.Y]`) is **eligible** when it is unchecked, not marked deleted, and has
+neither a roadmap `(#N)` nor a ticket found by its tracking marker. Every dependency must be checked
+or linked to a ticket without the `brainstorming` label. By default one issue is triaged per local
+run; use `--limit N` or `--all` for more.
 
 ### Spec anchors
 
