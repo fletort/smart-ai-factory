@@ -26,4 +26,5 @@ roadmap:
 #   advanced_brainstorm_model: claude_sonnet # alias from `models`
 #   auto_brainstorm: false # true = the advanced model resolves ambiguities alone
 #   hitl_during_triage: true # human approval before creating issues
+#   roadmap_writeback: pr # pr (PR, no branch-protection bypass) | direct (push, needs bypass) | off
 #   max_cost_usd_per_run: 0.50 # hard stop for a single run

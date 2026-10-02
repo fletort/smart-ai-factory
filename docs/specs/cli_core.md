@@ -116,7 +116,7 @@ Global options
   --mode {auto,local,cloud}   auto = cloud if GITHUB_ACTIONS=true, else local
   --non-interactive           Never prompt; fail with exit code 3 if input is required
   --json                      Machine-readable output on stdout (logs go to stderr)
-  --dry-run                   Do everything except writing files / calling GitHub create APIs
+  --dry-run                   Do everything except mutating files, version control, or GitHub
   --config PATH               Default: .smart.ai/config.yml
   -v / -q                     Verbosity
 
@@ -184,6 +184,7 @@ triage:
   advanced_brainstorm_model: claude_sonnet # alias from `models`
   auto_brainstorm: false # true = advanced model resolves ambiguities alone
   hitl_during_triage: true # human approval before creating issues
+  roadmap_writeback: pr # pr | direct | off (cloud sync of `(#N)` into the roadmap)
   max_cost_usd_per_run: 0.50 # hard stop, exit code 6
 ```
 
@@ -270,6 +271,8 @@ class IssueTracker(Protocol):
 class PullRequestHost(Protocol):
     def open_pull_request(self, head: str, base: str, title: str, body: str) -> PullRequest: ...
     def get_pull_request(self, number: int) -> PullRequest: ...
+    def find_open_pull_request(self, head: str) -> PullRequest | None: ...
+    def enable_auto_merge(self, number: int) -> bool: ...  # False if the repository forbids it
     # PullRequest: state (open | merged | closed), head_branch, head_repo, base, body, merge_sha
 
 class VersionControl(Protocol):

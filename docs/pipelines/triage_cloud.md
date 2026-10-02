@@ -56,7 +56,7 @@ graph TD
     subgraph "⚙️ Automation & Traceability"
         JSON1 -->|"Status: ready_to_dev"| DevOpCloud[DevOps Automation]
         DevOpCloud -->|4. Automated Label & Ticket| GH_Issue[gh issue create --label size]
-        DevOpCloud -->|5. Push Roadmap update by bot| GitSync[Update cloud roadmap with #issue_num]
+        DevOpCloud -->|5. Roadmap sync PR, see roadmap_writeback| GitSync[Update cloud roadmap with #issue_num]
         Resume -->|ready_to_dev: mutate the SAME ticket| Mutate[Remove brainstorming, add size and ready-to-dev]
     end
 
@@ -82,13 +82,14 @@ segregate execution scopes and maximize billing efficiency:
 - **Action:** Selects every eligible roadmap issue (not checked, no `(#N)` yet, dependencies already
   cleared). Every issue gets its definitive GitHub ticket on its first run: if the specification is
   clear, the ticket is created `ready-to-dev`; if it is blocked, it is created with the
-  `brainstorming` label. In both cases `(#N)` is written back to the roadmap in a bot commit and the
-  run stops safely when a human is needed (exit code 3 is the expected "waiting for a human"
-  outcome, not a failure).
+  `brainstorming` label. In both cases `(#N)` is synced to the roadmap (by default through an
+  aggregated pull request, so the branch protection is never bypassed) and the run stops safely when
+  a human is needed (exit code 3 is the expected "waiting for a human" outcome, not a failure).
 - **Conversation Context epics:** an epic anchored on `Current Conversation History` has no spec
   file. The pipeline opens a tracking issue asking for that context, then the normal brainstorm loop
   applies.
-- **Loop protection:** pushes made by the bot are ignored and runs are serialised with a
+- **Loop protection:** a run that finds no eligible issue (for example after the merge of the
+  roadmap-sync PR) exits immediately without any LLM call, and runs are serialised with a
   `concurrency` group.
 - **Billing footprint:** ~30 seconds of compute time per run.
 
@@ -99,7 +100,7 @@ segregate execution scopes and maximize billing efficiency:
   brainstorm (branch `smart-ai/brainstorm-*` of this repository). A merge of such a PR is what
   resumes the triage: the `push` workflow is not triggered by it because it does not touch the
   roadmap files.
-- **Command:** `smart-ai --mode cloud brainstorm --issue <number>` for a comment, or
+- **Command:** `smart-ai --mode cloud brainstorm --issue <number> --comment-id` for a comment, or
   `smart-ai --mode cloud brainstorm --pr <number>` for a PR event.
 - **Action:** Resumes the session from the issue content. A comment is fed into the conversational
   loop. A merged PR re-runs the triage on the merged specifications. A PR closed without merge makes
@@ -135,16 +136,16 @@ To prevent this, **Smart-AI-Factory** treats the GitHub Issue body as a cached m
    ### 🛑 Technical specification gaps — the triage needs more inputs to clear this ticket. Please
    answer the questions below.
 
-   <!-- FACTORY_CONTEXT {"schema_version": "1.0.0", "issue_id": "ISSUE-1.1", "roadmap_line": "- [ ] **[ISSUE-1.1]** - Setup Auth", "detected_gap": "Missing provider info"} -->
+   <!-- FACTORY_CONTEXT: eyJzY2hlbWFfdmVyc2lvbiI6IjEuMC4wIiwiaXNzdWVfaWQiOiJJU1NPRS0yLjEiLCJkZXRlY3RlZF9nYXAiOiJleGFtcGxlIn0= -->
    ```
 
 3. When you write a comment on the web, the brainstorm command uses the GitHub CLI to download
    **only** the issue text and the comments thread.
 4. The CLI extracts and validates the invisible `FACTORY_CONTEXT`, and supplies it with the thread
-   as the primary reference frame. **By default, the full codebase is not scanned.** However, if the
-   discussion requires historical context, the model can deterministically rehydrate its knowledge
-   by reading specific files specified in the `spec_pointer` or explicitly requested during the
-   thread.
+   as the primary reference frame. **By default, the full codebase is not scanned.** If more context
+   is required, the engine may add only the `spec_pointer` file and repository paths explicitly
+   named in the thread. The engine resolves those paths itself, rejects `..` and symlink escapes,
+   and enforces the token budget; the model cannot request or perform file reads.
 5. Once the specification is clear (human answers, or a merged specification PR), this same tracking
    issue is **mutated in place** and becomes the development issue: `brainstorming` label removed,
    final enriched specification written in the body, `size:<SIZE>` and `ready-to-dev` labels added.

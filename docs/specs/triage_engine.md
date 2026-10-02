@@ -27,13 +27,13 @@ graph TD
     ASKCTX --> PACK
     PACK --> LLM["Triage LLM: simple_triage_model"]
     LLM -->|unclear_specification| BRAIN["Brainstorm session"]
-    BRAIN -.->|"cloud, first blocking run"| TRACK["Create tracking ticket + write back (#N)"]
+    BRAIN -.->|"cloud, first blocking run"| TRACK["Create tracking ticket + sync (#N)"]
     BRAIN -->|"answers / merged spec PR"| LLM
     LLM -->|ready_to_dev| GATE{"hitl_during_triage?"}
     GATE -->|yes| APPROVE["Approval step"]
     GATE -->|no| CREATE
     APPROVE -->|approved| CREATE["Create the ticket, or mutate the tracking ticket"]
-    CREATE --> WB["Write back (#N) if not linked yet"]
+    CREATE --> WB["Sync (#N) to the roadmap if not linked yet"]
 ```
 
 ## 2. Roadmap Discovery & Parsing
@@ -95,14 +95,15 @@ skipped.
 
 An issue is **eligible** when all of the following hold:
 
-1. It has no `(#N)` and no `<!-- [DELETED] -->` mark.
+1. It has no `(#N)` in the roadmap, no ticket found for its `tracking-id` marker (`find_by_marker`),
+   and no `<!-- [DELETED] -->` mark.
 2. It is not checked.
-3. Every ID in `depends_on` exists and its specification is cleared: it is checked, or it has an
-   issue number and that issue does not carry the `brainstorming` label.
+3. Every ID in `depends_on` exists and its specification is cleared: it is checked, or it has a
+   ticket (`(#N)` or marker lookup) that does not carry the `brainstorming` label.
 
-`(#N)` means "a GitHub ticket exists and owns the lifecycle of this roadmap issue". A ticket still
-in brainstorm is never selected again by this section: it is resumed by its own events (section
-5.3).
+The roadmap `(#N)` is a human-readable link that may lag behind the tickets (see section 7, roadmap
+sync): the ticket found through the marker is the source of truth. A ticket still in brainstorm is
+never selected again by this section: it is resumed by its own events (section 5.3).
 
 Selection options: `--issue ISSUE-X.Y` (target one, dependencies still enforced), `--limit N`
 (default 1 locally, all eligible in CI), `--all`. Eligible issues sharing the same blockers are
@@ -201,6 +202,7 @@ class BrainstormState(BaseModel):
     architecture_rule: str | None
     source_context_snapshot: str | None
     turns: list[Turn]                       # compact (role, text), oldest summarised
+    total_turn_count: int = 0               # monotonic; unaffected by history compaction
     mode: Literal["manual", "auto"]
     awaiting: Literal["answer", "pr_review"]
     pending_pr: int | None
@@ -255,7 +257,7 @@ encoded using a standard **base64url** string, and embedded safely within a hidd
 the tracking issue description:
 
 ```html
-<!-- SMART_AI_FACTORY_STATE: eyJzY2hlbWFfdmVyc2lvbiI6IjEuMC4wIiwiaXNzdWVfaWQiOiJJU1NPRS0yLjEiLCJkZXRlY3RlZF9nYXAiOiJleGFtcGxlIn0= -->
+<!-- FACTORY_CONTEXT: eyJzY2hlbWFfdmVyc2lvbiI6IjEuMC4wIiwiaXNzdWVfaWQiOiJJU1NPRS0yLjEiLCJkZXRlY3RlZF9nYXAiOiJleGFtcGxlIn0= -->
 ```
 
 On workflow resume, the CLI extracts the token, decodes the base64url payload back to JSON, and runs
@@ -274,7 +276,7 @@ state machine; only the event that resumes the session differs.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Brainstorming: ambiguity detected, ticket #N created, (#N) written to the roadmap
+    [*] --> Brainstorming: ambiguity detected, ticket #N created, (#N) synced to the roadmap
     Brainstorming --> AwaitingAnswer: manual mode, questions posted
     Brainstorming --> AwaitingPR: auto mode, PR opened and linked in the ticket
     AwaitingAnswer --> Retriage: human comment
@@ -287,7 +289,7 @@ stateDiagram-v2
 
 | Transition                   | Trigger                                                 | Effect on the ticket                                                                                                                                 |
 | :--------------------------- | :------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------- |
-| creation (both modes)        | `push` workflow, ambiguity detected                     | Ticket created with the `tracking-id` marker, label `brainstorming`, `FACTORY_CONTEXT`; `(#N)` written to the roadmap.                               |
+| creation (both modes)        | `push` workflow, ambiguity detected                     | Ticket created with the `tracking-id` marker, label `brainstorming`, `FACTORY_CONTEXT`; `(#N)` synced to the roadmap (section 7).                    |
 | Brainstorming to AwaitingPR  | same run, auto mode                                     | PR opened from a `smart-ai/brainstorm-<id>` branch; its number goes to `pending_pr`, `awaiting` becomes `pr_review`; the ticket body links the PR.   |
 | AwaitingPR to Retriage       | PR merged (`pull_request` closed with `merged == true`) | The routing workflow resumes the session on the merged default branch and repeats the triage call with the merged specs and the recorded decisions.  |
 | AwaitingPR to AwaitingAnswer | PR closed without merge                                 | The CLI comments on the ticket, sets `mode` to `manual` and `awaiting` to `answer`, and asks the human for the missing decisions.                    |
@@ -338,8 +340,9 @@ Rules:
 2. **Labels**: the ticket moves through `brainstorming` then `ready-to-dev`, with `size:<SIZE>` and,
    when `hitl_during_triage` is on, `pending-approval` before `ready-to-dev`. Labels are assigned by
    an idempotent label-provisioning operation/setup step.
-3. **Write-back**: as soon as the first ticket exists (so a blocked issue is already linked), the
-   engine rewrites only the matching line, appending `(#N)` right after the ID bold block:
+3. **Roadmap sync (`(#N)` write-back)**: as soon as the first ticket exists (so a blocked issue is
+   already linked), the engine rewrites only the matching line, appending `(#N)` right after the ID
+   bold block:
 
    ```diff
    - - [ ] **[ISSUE-2.1]** - Secure API endpoints
@@ -349,6 +352,23 @@ Rules:
    The line is re-read and verified (same ID) just before writing. Checkboxes, IDs, dependencies and
    every other line are never modified, consistent with the preservation rules of `smart-plan`.
 
+   How the edit reaches the repository is set by `triage.roadmap_writeback`:
+   - `pr` (default): the cloud run applies the edit on a reused branch `smart-ai/roadmap-sync`,
+     created from the latest default branch, and opens one aggregated pull request per run (an
+     already open one is updated by the push, see `find_open_pull_request`). Auto-merge is requested
+     when the repository allows it, otherwise a human merges. Nothing is pushed to the default
+     branch, so the branch protection is respected and no bypass credential is needed. If the branch
+     has diverged, it is recreated: the edit is deterministic and recomputed from the tickets.
+   - `direct`: the cloud run commits and pushes to the default branch with a bot identity that is
+     allowed to bypass the protection (for example a GitHub App). Reserved for repositories without
+     protection, or that explicitly accept this risk.
+   - `off`: no git write-back, the tickets are the only link with the roadmap.
+   - Local mode always edits the file in the working tree (the user commits it), unless `off`.
+
+   In `pr` mode the sync is eventually consistent, so nothing relies on `(#N)` being merged:
+   eligibility, dependency checks and resume use the marker lookup (section 2.3), and a re-run
+   before the merge reuses the existing ticket.
+
 4. **Roadmap re-planning**: because IDs are stable and `(#N)` is just text on the line, a later
    `smart-plan` update keeps the link.
 5. `--dry-run` prints the diff and the issue payload without any write.
@@ -356,15 +376,15 @@ Rules:
 Port operations used by this lifecycle (the ports are defined in
 [cli_core.md](./cli_core.md#8-github-layer)):
 
-| Lifecycle step                           | Port operations                                                                        |
-| :--------------------------------------- | :------------------------------------------------------------------------------------- |
-| Create the ticket (first run)            | `find_by_marker`, then `create_issue`                                                  |
-| Mutate the ticket on `ready_to_dev`      | `get_issue`, `update_issue` (title, body), `remove_labels`, `add_labels`               |
-| Dependency check (`brainstorming` label) | `get_issue` on each dependency                                                         |
-| Resume from a comment                    | `get_issue_with_comments`                                                              |
-| Open the specification PR (auto mode)    | `create_branch`, `commit`, `push`, `open_pull_request`, then `update_issue` to link it |
-| Resume from a merge or closing event     | `get_pull_request`, `find_by_marker` (marker in the PR body), `comment`                |
-| Roadmap write-back in cloud              | `commit`, `push` (local mode only writes the file)                                     |
+| Lifecycle step                           | Port operations                                                                                                                                                          |
+| :--------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Create the ticket (first run)            | `find_by_marker`, then `create_issue`                                                                                                                                    |
+| Mutate the ticket on `ready_to_dev`      | `get_issue`, `update_issue` (title, body), `remove_labels`, `add_labels`                                                                                                 |
+| Dependency check (`brainstorming` label) | `get_issue` on each dependency                                                                                                                                           |
+| Resume from a comment                    | `get_issue_with_comments`                                                                                                                                                |
+| Open the specification PR (auto mode)    | `create_branch`, `commit`, `push`, `open_pull_request`, then `update_issue` to link it                                                                                   |
+| Resume from a merge or closing event     | `get_pull_request`, `find_by_marker` (marker in the PR body), `comment`                                                                                                  |
+| Roadmap sync in cloud                    | `pr`: `create_branch`, `commit`, `push`, `find_open_pull_request`, `open_pull_request`, `enable_auto_merge`; `direct`: `commit`, `push`; local mode only writes the file |
 
 ## 8. Cloud Execution Details
 
@@ -378,8 +398,10 @@ Workflows are generated from templates and call the pinned CLI (`uvx smart-ai==X
 
 Safeguards:
 
-- **Loop prevention**: the write-back commit is made by the bot and the triage workflow ignores
-  pushes whose actor is that bot; a `concurrency` group per ref serialises runs.
+- **Loop prevention**: the triage workflow is idempotent by construction. A push that brings no
+  eligible issue (for example the merge of a roadmap-sync PR, whose actor is not the bot) ends with
+  exit code 0 before any LLM call. A `concurrency` group per ref serialises runs. In `direct` mode,
+  pushes whose actor is the bot are also ignored.
 - **Trust boundary**: `issue_comment` runs only for authors whose association is `OWNER`, `MEMBER`
   or `COLLABORATOR`. Comment text is passed to the CLI through a file or an environment variable,
   never interpolated into a `run:` script (this also keeps the workflows compliant with `zizmor`).
@@ -388,7 +410,7 @@ Safeguards:
   requires a reviewer with write access under the repository branch protection. The PR number is
   passed to the CLI through an environment variable, and the PR body is read as data.
 - **Prompt injection**: issue and comment text is treated as data (delimited blocks) and the model's
-  output only ever goes through the Pydantic schema; it cannot trigger tool calls.
+  output only ever goes through the Pydantic schema.
 - **Permissions**: `contents: write` (write-back / PR branch), `issues: write`,
   `pull-requests: write` only on the jobs that need them.
 - **Failure mode**: on any non-zero exit code other than 3, the workflow comments the error summary
