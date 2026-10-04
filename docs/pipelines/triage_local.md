@@ -77,20 +77,16 @@ when `.smart.ai/config.yml` is missing.
 
 ## 🗺️ Which Issues Are Triaged?
 
-The triage reads the roadmap files produced by `smart-plan`, following your `roadmap` configuration:
+The triage reads the roadmap produced by [`smart-plan`](./smart_plan.md), following your `roadmap`
+configuration (single or multi file, versioned or not). For a versioned roadmap, the latest version
+is used unless `--roadmap-version` is given. If the filesystem contradicts the configuration, the
+triage stops and asks whether to follow the filesystem or fix the configuration, exactly like
+`smart-plan`.
 
-- single file: `roadmap.md` or `roadmap/vX.Y/roadmap.md` when versioned;
-- multi files: `roadmap/README.md` and `roadmap/epic-X.md`, or `roadmap/vX.Y/...` when versioned.
-  For a versioned roadmap, the latest version is used unless `--roadmap-version` is given.
-
-If the filesystem contradicts the configuration (for example `single` in the config but
-`roadmap/README.md` on disk), the triage stops and asks whether to follow the filesystem or fix the
-configuration, exactly like `smart-plan`.
-
-A roadmap issue (`[ISSUE-X.Y]`) is **eligible** when it is unchecked, not marked deleted, and has
-neither a roadmap `(#N)` nor a ticket found by its tracking marker. Every dependency must be checked
-or linked to a ticket without the `brainstorming` label. By default one issue is triaged per local
-run; use `--limit N` or `--all` for more.
+A roadmap issue (`[ISSUE-X.Y]`) is **eligible** when it is not done, not already linked to a ticket,
+and its dependencies are cleared (exact rules:
+[triage engine](../specs/triage_engine.md#23-eligibility)). By default one issue is triaged per
+local run; use `--limit N` or `--all` for more.
 
 ### Spec anchors
 
@@ -100,7 +96,8 @@ Each epic points to its specification (**Spec Anchors**):
   [Native LLM Wiki](../specs/native_llm_wiki.md)).
 - **Conversation Context**: no spec file exists, the specification was only discussed in a chat. The
   triage first **asks you for that context** (a description, or a path to a file). Only if it is not
-  sufficient does the brainstorm loop start.
+  sufficient does the brainstorm loop start
+  ([details](../specs/triage_engine.md#31-conversation-context-anchors)).
 
 ---
 
@@ -143,7 +140,8 @@ these file changes before they are written, then the triage is repeated and norm
 `ready_to_dev`.
 
 A brainstorm is capped (`max_brainstorm_turns`, default 5) so that a stuck session cannot burn
-budget; when the cap is reached the issue stays untriaged and the reason is displayed.
+budget; when the cap is reached the issue stays untriaged and the reason is displayed. The session
+model is described in the [triage engine](../specs/triage_engine.md#5-brainstorm).
 
 ---
 
@@ -170,10 +168,10 @@ Rules:  - Focus strictly on this scoped task. No future architecture.
 ```
 
 - **`y` (Yes):** The script executes the native GitHub CLI command (`gh issue create`), fetches the
-  new issue number, and surgically rewrites the matching line of your local roadmap file (e.g.,
-  `- [ ] **[ISSUE-2.1]** - Secure API` becomes `- [ ] **[ISSUE-2.1]** (#42) - Secure API`). Only
-  `(#N)` is added: IDs, dependencies and checkboxes are never touched. A hidden marker in the issue
-  body prevents duplicates if you re-run after a failure.
+  new issue number, and adds `(#42)` to the matching line of your local roadmap file (e.g.,
+  `- [ ] **[ISSUE-2.1]** - Secure API` becomes `- [ ] **[ISSUE-2.1]** (#42) - Secure API`). Nothing
+  else in the roadmap is touched, and re-running after a failure never creates a duplicate
+  ([rules](../specs/triage_engine.md#7-issue-creation--roadmap-write-back)).
 - **`n` (No):** The session ends safely without polluting your Git state or GitHub backlog.
 - **`edit`:** The CLI asks for your adjustment in the terminal (or the chat when launched through
   the skill) and feeds it into the Triage LLM, then displays the new card.

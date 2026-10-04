@@ -2,9 +2,11 @@
 
 **State**: _Proposed specification (The specified files may not exist yet.)_
 
-This document specifies the triage logic built on the [`smart-ai` CLI core](./cli_core.md). The
-user-facing behaviour is described in [triage_local.md](../pipelines/triage_local.md) and
-[triage_cloud.md](../pipelines/triage_cloud.md).
+This document specifies the triage logic built on the [`smart-ai` CLI core](./cli_core.md). It is
+the **single source of truth** for the triage rules (eligibility, context, LLM contract, brainstorm,
+ticket lifecycle, roadmap sync), shared by the local and cloud modes: the user-facing behaviour in
+[triage_local.md](../pipelines/triage_local.md) and [triage_cloud.md](../pipelines/triage_cloud.md)
+links here instead of repeating these rules.
 
 ## 1. Scope
 
@@ -333,8 +335,8 @@ Rules:
    - There is **one GitHub issue per roadmap issue for its whole life**: when a brainstorm ends, the
      tracking issue is updated in place (title, body, `size:<SIZE>` label, `brainstorming` label
      removed) instead of opening a new one. The marker is never removed or rewritten.
-   - Runs on the same ref are serialised by the `concurrency` group, so two runs cannot both miss
-     the marker.
+   - Runs on the same ref are serialised (see the concurrency rule in
+     [triage_cloud.md](../pipelines/triage_cloud.md)), so two runs cannot both miss the marker.
    - The marker also makes a retry after a failed roadmap write-back safe: the existing number is
      used for the `(#N)` write-back.
 2. **Labels**: the ticket moves through `brainstorming` then `ready-to-dev`, with `size:<SIZE>` and,
@@ -386,36 +388,30 @@ Port operations used by this lifecycle (the ports are defined in
 | Resume from a merge or closing event     | `get_pull_request`, `find_by_marker` (marker in the PR body), `comment`                                                                                                  |
 | Roadmap sync in cloud                    | `pr`: `create_branch`, `commit`, `push`, `find_open_pull_request`, `open_pull_request`, `enable_auto_merge`; `direct`: `commit`, `push`; local mode only writes the file |
 
-## 8. Cloud Execution Details
+## 8. Command Contract
 
-Workflows are generated from templates and call the pinned CLI (`uvx smart-ai==X.Y.Z ...`).
+The engine is runtime-agnostic: every front-end (terminal, IDE skill, MCP, GitHub Actions) calls the
+same commands. How the GitHub Actions workflows trigger them, and their security rules, are
+described in [triage_cloud.md](../pipelines/triage_cloud.md).
 
-| Workflow                  | Trigger                                                                                        | Command                                                                                      |
-| :------------------------ | :--------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------- |
-| `ai_triage_pipeline.yml`  | `push` on the roadmap paths resolved from the config                                           | `smart-ai --mode cloud triage --all`                                                         |
-| `ai_routing_pipeline.yml` | `issue_comment` on issues labelled `brainstorming`                                             | `smart-ai --mode cloud brainstorm --issue <num> --comment-id ${{ github.event.comment.id }}` |
-| `ai_routing_pipeline.yml` | `pull_request` closed, merged or not, from a `smart-ai/brainstorm-*` branch of this repository | `smart-ai --mode cloud brainstorm --pr <num>`                                                |
+| Command                                               | Purpose                                                         |
+| :---------------------------------------------------- | :-------------------------------------------------------------- |
+| `smart-ai triage [--issue ID \| --limit N \| --all]`  | Select and triage eligible roadmap issues (sections 2 to 7)     |
+| `smart-ai brainstorm --issue <num> --comment-id <id>` | Resume a session from a human comment (section 5.3)             |
+| `smart-ai brainstorm --pr <num>`                      | Resume a session after its specification PR is merged or closed |
 
-Safeguards:
+Contract guarantees:
 
-- **Loop prevention**: the triage workflow is idempotent by construction. A push that brings no
-  eligible issue (for example the merge of a roadmap-sync PR, whose actor is not the bot) ends with
-  exit code 0 before any LLM call. A `concurrency` group per ref serialises runs. In `direct` mode,
-  pushes whose actor is the bot are also ignored.
-- **Trust boundary**: `issue_comment` runs only for authors whose association is `OWNER`, `MEMBER`
-  or `COLLABORATOR`. Comment text is passed to the CLI through a file or an environment variable,
-  never interpolated into a `run:` script (this also keeps the workflows compliant with `zizmor`).
-- **Merge event trust**: the `pull_request` trigger only acts on branches `smart-ai/brainstorm-*`
-  whose head repository is this repository (never a fork). The merge itself is the human gate: it
-  requires a reviewer with write access under the repository branch protection. The PR number is
-  passed to the CLI through an environment variable, and the PR body is read as data.
-- **Prompt injection**: issue and comment text is treated as data (delimited blocks) and the model's
-  output only ever goes through the Pydantic schema.
-- **Permissions**: `contents: write` (write-back / PR branch), `issues: write`,
-  `pull-requests: write` only on the jobs that need them.
-- **Failure mode**: on any non-zero exit code other than 3, the workflow comments the error summary
-  on the tracking issue when one exists; exit code 3 is the normal "waiting for a human" outcome and
-  is not a failure.
+- **Idempotent**: re-running any command after a failure or a duplicate event never creates a second
+  ticket (marker, section 7) and never processes the same comment twice
+  (`last_processed_comment_id`).
+- **Nothing to do is not an error**: a run that finds no eligible issue or no pending event exits
+  with code 0 before any LLM call.
+- **Waiting for a human is not a failure**: exit code 3 (see
+  [cli_core.md](./cli_core.md#41-exit-codes)).
+- **Untrusted input**: issue and comment text is treated as data (delimited blocks) and the model's
+  output only ever goes through the Pydantic schema. Callers pass event data to the CLI through
+  files or environment variables, never through shell interpolation.
 
 ## 9. Module Layout
 

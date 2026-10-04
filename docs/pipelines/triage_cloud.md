@@ -71,27 +71,19 @@ segregate execution scopes and maximize billing efficiency:
 
 ### 1. `ai_triage_pipeline.yml`
 
-- **Trigger:** Triggered exclusively on `push` events affecting one of the roadmap files. The
-  roadmap file use can be:
-  - in a single-file layout the unique `roadmap.md` file when unversioned or the
-    `roadmap/vX.Y/roadmap.md` when versioned
-  - in a multi-file layout, `roadmap/README.md`, `roadmap/epic-X.md` when unversioned, or
-    `roadmap/vX.Y/README.md`, `roadmap/vX.Y/epic-X.md` when versioned.
+- **Trigger:** `push` events affecting a roadmap file, whatever its layout (single or multi,
+  versioned or not, see [Smart-Plan](./smart_plan.md#storage--layout-architecture)).
 - **Command:** `smart-ai --mode cloud triage --all`, run from the pinned PyPI package (for example
   `uvx smart-ai==X.Y.Z`).
-- **Action:** Selects eligible roadmap issues: unchecked, not marked deleted, with neither `(#N)` nor
-  an existing tracking-marker ticket, and with every dependency checked or linked to a ticket without
-  the `brainstorming` label. Every issue gets its definitive GitHub ticket on its first run: if the
-  specification is clear, the ticket is created `ready-to-dev`; if blocked, it gets `brainstorming`.
-  In both cases `(#N)` is synced to the roadmap (by default through an
-  aggregated pull request, so the branch protection is never bypassed) and the run stops safely when
-  a human is needed (exit code 3 is the expected "waiting for a human" outcome, not a failure).
+- **Action:** Triages every eligible roadmap issue (rules in the
+  [triage engine](../specs/triage_engine.md#23-eligibility)). Every issue gets its definitive GitHub
+  ticket on its first run: `ready-to-dev` if the specification is clear, `brainstorming` if blocked.
+  The `(#N)` link is synced to the roadmap, by default through an aggregated pull request so the
+  branch protection is never bypassed. The run stops safely when a human is needed (exit code 3 is
+  the expected "waiting for a human" outcome, not a failure).
 - **Conversation Context epics:** an epic anchored on `Current Conversation History` has no spec
   file. The pipeline opens a tracking issue asking for that context, then the normal brainstorm loop
   applies.
-- **Loop protection:** a run that finds no eligible issue (for example after the merge of the
-  roadmap-sync PR) exits immediately without any LLM call, and runs are serialised with a
-  `concurrency` group.
 - **Billing footprint:** ~30 seconds of compute time per run.
 
 ### 2. `ai_routing_pipeline.yml`
@@ -101,18 +93,33 @@ segregate execution scopes and maximize billing efficiency:
   brainstorm (branch `smart-ai/brainstorm-*` of this repository). A merge of such a PR is what
   resumes the triage: the `push` workflow is not triggered by it because it does not touch the
   roadmap files.
-- **Command:** `smart-ai --mode cloud brainstorm --issue <number> --comment-id` for a comment, or
-  `smart-ai --mode cloud brainstorm --pr <number>` for a PR event.
-- **Action:** Resumes the session from the issue content. A comment is fed into the conversational
-  loop. A merged PR re-runs the triage on the merged specifications. A PR closed without merge makes
-  the ticket fall back to manual brainstorm and asks the human for the missing decisions.
-- **Authorisation:** runs only for comment authors that are `OWNER`, `MEMBER` or `COLLABORATOR`.
-  Comment text is untrusted data: it is never interpolated into a shell script and is delimited as
-  data in the prompts.
+- **Command:** `smart-ai --mode cloud brainstorm --issue <number> --comment-id "$COMMENT_ID"` for a
+  comment, or `smart-ai --mode cloud brainstorm --pr <number>` for a PR event. Event data is passed
+  through environment variables, never interpolated into the script.
+- **Action:** Resumes the session from the issue content (state machine:
+  [triage engine](../specs/triage_engine.md#53-cloud-ticket-lifecycle-and-resume-triggers)). A
+  comment feeds the conversational loop, a merged PR re-runs the triage on the merged
+  specifications, and a PR closed without merge makes the ticket fall back to manual brainstorm.
 - **Billing footprint:** ~15 seconds of compute time per reply.
 
-Both workflows use least-privilege `permissions` (`contents`, `issues`, `pull-requests` only where
-needed) and must pass `actionlint` and `zizmor`.
+### Safeguards (both workflows)
+
+- **Loop protection:** the triage workflow is idempotent: a push that brings no eligible issue (for
+  example the merge of a roadmap-sync PR) exits with code 0 before any LLM call. A `concurrency`
+  group per ref serialises runs, so two runs cannot both miss the ticket marker. With
+  `roadmap_writeback: direct`, pushes whose actor is the bot are also ignored.
+- **Comment authorisation:** `issue_comment` runs only for authors whose association is `OWNER`,
+  `MEMBER` or `COLLABORATOR`. Comment text is untrusted data: it is passed through a file or an
+  environment variable, never interpolated into a `run:` script (this also keeps the workflows
+  compliant with `zizmor`).
+- **Merge event trust:** the `pull_request` trigger only acts on `smart-ai/brainstorm-*` branches
+  whose head repository is this repository (never a fork). The merge is the human gate: it needs a
+  reviewer with write access under the repository branch protection.
+- **Permissions:** least privilege per job: `contents: write` (roadmap sync and PR branches),
+  `issues: write`, `pull-requests: write`, only where needed. Both workflows must pass `actionlint`
+  and `zizmor`.
+- **Failure mode:** on any non-zero exit code other than 3, the workflow comments the error summary
+  on the tracking issue when one exists.
 
 ---
 
@@ -130,32 +137,30 @@ To prevent this, **Smart-AI-Factory** treats the GitHub Issue body as a cached m
 1. When the triage detects an ambiguous specification, it extracts the relevant snippet of the
    roadmap and the specific architecture rule that was violated.
 2. It serialises this data into a compact, versioned JSON object (the `BrainstormState` of the
-   [triage engine](../specs/triage_engine.md#52-state-persistence-factory_context)) and injects it
-   as an invisible HTML comment inside the issue description:
+   [triage engine](../specs/triage_engine.md#52-state-persistence-factory_context)) and embeds it as
+   an invisible HTML comment in the issue description, with the human-readable questions:
 
    ```html
    ### 🛑 Technical specification gaps — the triage needs more inputs to clear this ticket. Please
    answer the questions below.
 
-   <!-- FACTORY_CONTEXT: eyJzY2hlbWFfdmVyc2lvbiI6IjEuMC4wIiwiaXNzdWVfaWQiOiJJU1NPRS0yLjEiLCJkZXRlY3RlZF9nYXAiOiJleGFtcGxlIn0= -->
+   <!-- FACTORY_CONTEXT: (encoded state, see the engine specification) -->
    ```
 
 3. When you write a comment on the web, the brainstorm command uses the GitHub CLI to download
    **only** the issue text and the comments thread.
-4. The CLI extracts and validates the invisible `FACTORY_CONTEXT`, and supplies it with the thread
-   as the primary reference frame. **By default, the full codebase is not scanned.** If more context
-   is required, the engine may add only the `spec_pointer` file and repository paths explicitly
-   named in the thread. The engine resolves those paths itself, rejects `..` and symlink escapes,
-   and enforces the token budget; the model cannot request or perform file reads.
+4. The CLI extracts and validates the invisible `FACTORY_CONTEXT` and uses it with the thread as the
+   primary reference frame. **The full codebase is not scanned**; the bounded rehydration rules
+   (spec file, explicitly named paths, token budget) are in the
+   [triage engine](../specs/triage_engine.md#3-context-packing).
 5. Once the specification is clear (human answers, or a merged specification PR), this same tracking
-   issue is **mutated in place** and becomes the development issue: `brainstorming` label removed,
-   final enriched specification written in the body, `size:<SIZE>` and `ready-to-dev` labels added.
-   It is never replaced by a new one, so the whole history (initial gap, discussion, specification
-   PR) stays on the ticket.
+   issue is **mutated in place** and becomes the development issue, so the whole history (initial
+   gap, discussion, specification PR) stays on the ticket. Labels and lifecycle:
+   [triage engine](../specs/triage_engine.md#53-cloud-ticket-lifecycle-and-resume-triggers).
 
-A hidden identity marker `<!-- smart-ai:tracking-id=ISSUE-1.1 -->` is injected **as soon as the
-ticket is created, whether it is a brainstorming ticket or a ready-for-dev ticket**. Any pipeline
-retry therefore finds the existing ticket immediately and never generates a duplicate.
+A hidden marker in the first ticket created identifies it for any pipeline retry, so a retry never
+generates a duplicate
+([triage engine](../specs/triage_engine.md#7-issue-creation--roadmap-write-back)).
 
 **Token Saving Result:** Prompt data payload drops from ~45,000 tokens (full project scanning) to
 less than ~1,500 tokens per discussion turn.
@@ -174,11 +179,10 @@ Because no terminal input buffer is available during cloud execution, the system
   comments.
 - **Configuring `auto_brainstorm: true` (Case B - Autonomous Refinement):** The
   `advanced_brainstorm_model` resolves the ambiguity through the API. Its proposed changes to the
-  specs and `docs/architecture.md` are committed on a dedicated branch and submitted as a **pull
-  request** linked to the tracking issue; nothing is pushed to the default branch, so a human always
-  reviews them. The triage is **not** repeated until the PR is merged, so no development ticket is
-  produced from unreviewed specifications. If the PR is closed without merge, the ticket falls back
-  to manual brainstorm.
+  specs and `docs/architecture.md` are submitted as a **pull request** linked to the tracking issue;
+  nothing is pushed to the default branch, so a human always reviews them. The triage resumes only
+  once the PR is merged, so no development ticket is produced from unreviewed specifications. If the
+  PR is closed without merge, the ticket falls back to manual brainstorm.
 - **Configuring `hitl_during_triage: true` (Backlog Protection):** When a specification is flagged
   as `ready_to_dev` by the cloud engine, the ticket receives a `pending-approval` label instead of
   `ready-to-dev`. In this way, the task remains unassigned to coding agents until a maintainer
