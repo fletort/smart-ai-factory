@@ -115,7 +115,7 @@ independent and may be triaged in the same run; they are processed sequentially,
 
 Goal: the smallest context that lets a low-cost model judge the issue.
 
-1. **File anchor**: read the pointed spec file (error with a clear message if it does not exist).
+1. **File anchor**: resolve the pointer only as a repository-relative path; reject absolute paths, `..`, and symlink escapes, and report a clear error if the pointed spec file does not exist.
 2. **Wiki traversal** ([Native LLM Wiki](./native_llm_wiki.md) section 4.1): `AGENTS.md` /
    `CLAUDE.md` → `docs/INDEX.md` → `src/README.md` → matching module `README.md` files. Matching is
    done on the spec and issue text, deterministically first (names and links in the indexes), then
