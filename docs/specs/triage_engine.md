@@ -66,7 +66,7 @@ Inputs: `roadmap.versioned` and `roadmap.layout` from the config.
 
 ```python
 class SpecAnchor(BaseModel):
-    source_type: Literal["file", "conversation"]
+    source_type: Literal["File", "Conversation Context"]  # values emitted by smart-plan
     pointer: str                      # "docs/specs/x.md" or "Current Conversation History"
 
 class RoadmapIssue(BaseModel):
