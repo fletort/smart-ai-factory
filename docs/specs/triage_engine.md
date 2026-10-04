@@ -115,7 +115,8 @@ independent and may be triaged in the same run; they are processed sequentially,
 
 Goal: the smallest context that lets a low-cost model judge the issue.
 
-1. **File anchor**: resolve the pointer only as a repository-relative path; reject absolute paths, `..`, and symlink escapes, and report a clear error if the pointed spec file does not exist.
+1. **File anchor**: resolve the pointer only as a repository-relative path; reject absolute paths,
+   `..`, and symlink escapes, and report a clear error if the pointed spec file does not exist.
 2. **Wiki traversal** ([Native LLM Wiki](./native_llm_wiki.md) section 4.1): `AGENTS.md` /
    `CLAUDE.md` → `docs/INDEX.md` → `src/README.md` → matching module `README.md` files. Matching is
    done on the spec and issue text, deterministically first (names and links in the indexes), then
@@ -246,8 +247,11 @@ Two lifecycle fields complete the table above:
   - Local: the proposed file changes are shown and require confirmation before being written, then
     the triage call is repeated with those decisions.
   - Cloud: changes are committed on a branch and submitted as a **pull request**, never pushed to
-    the default branch. The triage is **not** repeated in the same run: the session waits for the PR
-    to be merged (section 5.3), so no development issue is ever based on unreviewed decisions.
+    the default branch. Proposed file changes are validated against a strict allowlist (the
+    `spec_pointer` file and `docs/architecture.md`), rejecting absolute paths, `..` traversal, and
+    symlink escapes, and verifying the diff before `VersionControl.commit`. The triage is **not**
+    repeated in the same run: the session waits for the PR to be merged (section 5.3), so no
+    development issue is ever based on unreviewed decisions.
 - A session is limited to `max_brainstorm_turns` (default 5) to prevent runaway cost; reaching the
   limit leaves the issue untriaged and reports why.
 
