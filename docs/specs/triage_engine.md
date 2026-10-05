@@ -47,13 +47,13 @@ reflected here.
 
 Inputs: `roadmap.versioned` and `roadmap.layout` from the config.
 
-| versioned | layout   | Files read                                                                       |
-| :-------- | :------- | :------------------------------------------------------------------------------- |
-| false     | `single` | `roadmap.md`                                                                     |
-| false     | `multi`  | `roadmap/README.md`, `roadmap/epic-X.md`                                         |
-| true      | `single` | `roadmap/vX.Y/roadmap.md`                                                        |
-| true      | `multi`  | `roadmap/vX.Y/README.md`, `roadmap/vX.Y/epic-X.md`                               |
-| any       | `auto`   | Try the single then the multi location of the table above, the first match wins. |
+| versioned | layout   | Files read                                                                                                      |
+| :-------- | :------- | :-------------------------------------------------------------------------------------------------------------- |
+| false     | `single` | `roadmap.md`                                                                                                    |
+| false     | `multi`  | `roadmap/README.md`, `roadmap/epic-X.md`                                                                        |
+| true      | `single` | `roadmap/vX.Y/roadmap.md`                                                                                       |
+| true      | `multi`  | `roadmap/vX.Y/README.md`, `roadmap/vX.Y/epic-X.md`                                                              |
+| any       | `auto`   | Use the only matching location; if both match, report layout divergence; if neither matches, report no roadmap. |
 
 - **Version selection** (versioned): the latest `vX.Y` directory by numeric order, overridable with
   `--roadmap-version vX.Y`. Unlike `smart-plan`, triage never invents a new version.
@@ -257,22 +257,24 @@ Two lifecycle fields complete the table above:
 
 ### 5.2 State persistence (`FACTORY_CONTEXT`)
 
-In cloud mode, to guarantee data integrity and prevent injection vulnerabilities (such as untrusted
-user comments containing the `-->` sequence breaking the wrapper), the state is serialized to JSON,
-encoded using a standard **base64url** string, and embedded safely within a hidden HTML comment in
+In cloud mode, to guarantee data integrity, prevent payload tampering, and avoid injection
+vulnerabilities (such as untrusted user comments containing the `-->` sequence breaking the
+wrapper), the state is serialized to JSON and secured. To prevent unauthorized alterations, the
+serialized state MUST be cryptographically authenticated using a secure signature mechanism (such as
+an HMAC-SHA256 or JWS token tied to the repository identity). This signature relies on a dedicated
+encryption key injected into the execution context via the `SMART_AI_STATE_SIGNING_KEY` environment
+variable (sourced securely from the repository's Encrypted Secrets). This signed token is then
+encoded using a standard **base64url** string and embedded safely within a hidden HTML comment in
 the tracking issue description:
 
 ```html
 <!-- FACTORY_CONTEXT: eyJzY2hlbWFfdmVyc2lvbiI6IjEuMC4wIiwiaXNzdWVfaWQiOiJJU1NPRS0yLjEiLCJkZXRlY3RlZF9nYXAiOiJleGFtcGxlIn0= -->
 ```
 
-On workflow resume, the CLI extracts the token, decodes the base64url payload back to JSON, and runs
-a strict decode-then-validate schema check before rehydrating the execution state.
-
-On each reply, the CLI downloads only the issue body and its comments, extracts and validates the
-JSON, and resumes. Unknown `schema_version` values are rejected with a clear message. The comment
-size is capped (about 6,000 characters); when exceeded, the oldest turns are summarised by the
-triage model.
+During rehydration (resume), the system MUST reject any state payload whose signature is missing or
+invalid before trusting internal fields like `issue_id`, `pending_pr`, or execution counters.
+Unknown `schema_version` values are rejected with a clear message. The comment size is capped (about
+6,000 characters); when exceeded, the oldest turns are summarised by the triage model.
 
 ### 5.3 Cloud ticket lifecycle and resume triggers
 
@@ -359,12 +361,12 @@ Rules:
    every other line are never modified, consistent with the preservation rules of `smart-plan`.
 
    How the edit reaches the repository is set by `triage.roadmap_writeback`:
-   - `pr` (default): the cloud run applies the edit on a reused branch `smart-ai/roadmap-sync`,
-     created from the latest default branch, and opens one aggregated pull request per run (an
-     already open one is updated by the push, see `find_open_pull_request`). Auto-merge is requested
-     when the repository allows it, otherwise a human merges. Nothing is pushed to the default
-     branch, so the branch protection is respected and no bypass credential is needed. If the branch
-     has diverged, it is recreated: the edit is deterministic and recomputed from the tickets.
+   - `pr` (default): the cloud run applies the edit on an isolated, run-specific branch (e.g.,
+     `smart-ai/roadmap-sync-${run_id}` or linked to the active session), created from the latest
+     default branch, and opens an independent pull request per run to prevent concurrent writeback
+     collisions. Auto-merge is requested when the repository allows it, otherwise a human merges.
+     Nothing is pushed to the default branch, so the branch protection is respected and no bypass
+     credential is needed. The edit is deterministic and recomputed from the tickets.
    - `direct`: the cloud run commits and pushes to the default branch with a bot identity that is
      allowed to bypass the protection (for example a GitHub App). Reserved for repositories without
      protection, or that explicitly accept this risk.

@@ -107,14 +107,20 @@ segregate execution scopes and maximize billing efficiency:
 - **Loop protection:** the triage workflow is idempotent: a push that brings no eligible issue (for
   example the merge of a roadmap-sync PR) exits with code 0 before any LLM call. A `concurrency`
   group per ref serialises runs, so two runs cannot both miss the ticket marker. With
-  `roadmap_writeback: direct`, pushes whose actor is the bot are also ignored.
+  `roadmap_writeback: direct`, pushes whose actor is the bot are also ignored. If
+  `roadmap_writeback: pr` is enabled, the system MUST use an isolated, unique branch per run (e.g.,
+  `smart-ai/roadmap-sync-${run_id}`) instead of a single shared branch to prevent concurrent
+  writeback collisions and data loss across different refs.
 - **Comment authorisation:** `issue_comment` runs only for authors whose association is `OWNER`,
   `MEMBER` or `COLLABORATOR`. Comment text is untrusted data: it is passed through a file or an
   environment variable, never interpolated into a `run:` script (this also keeps the workflows
   compliant with `zizmor`).
 - **Merge event trust:** the `pull_request` trigger only acts on `smart-ai/brainstorm-*` branches
-  whose head repository is this repository (never a fork). The merge is the human gate: it needs a
-  reviewer with write access under the repository branch protection.
+  whose head repository is this repository (never a fork). The merge is the human gate requiring a
+  reviewer with write access under repository branch protection. To prevent cross-session race
+  conditions, the system MUST explicitly bind the event by enforcing that the merged PR number
+  equals `BrainstormState.pending_pr` and validating its tracking session marker before
+  transitioning out of the `AwaitingPR` state.
 - **Permissions:** least privilege per job: `contents: write` (roadmap sync and PR branches),
   `issues: write`, `pull-requests: write`, only where needed. Both workflows must pass `actionlint`
   and `zizmor`.
