@@ -104,7 +104,10 @@ specification, technical specification, and index).
 
 #### Writing Guidelines
 
-1. You must strictly reproduce the layout and Markdown headers defined in the loaded templates.
+1. You must strictly reproduce the numbered sections and the layout of the loaded templates. The
+   bold labels inside a section (e.g. "User / Process Flow", "State Machine") may be renamed to fit
+   the feature (e.g. "Screen Flow" for a UI); a block that does not apply is kept with "not
+   applicable" and the reason, never silently dropped.
 2. Keep all requirements testable, precise, and factual (e.g., avoid words like "fast", use precise
    metrics).
 3. **Conflict Management**: If a new request or increment directly contradicts a choice made in a

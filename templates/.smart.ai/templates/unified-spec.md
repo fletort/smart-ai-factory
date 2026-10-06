@@ -1,5 +1,8 @@
 # Unified Specifications: [Module/Feature Name]
 
+<!-- Adapt the bold labels to the feature (e.g. "Screen Flow", "Workflow States"). If a block does
+not apply, keep it and write "not applicable" with the reason. -->
+
 ## 1. Context & Objectives
 
 - **Global Vision:** [What problem are we solving and why?]
@@ -9,30 +12,36 @@
 
 ## 2. Functional & UX Specifications (What)
 
-- **User Journey & Screen Flow:**
+- **User / Process Flow:**
 
-  ```mermaid
-  graph TD
-      A[User starts action] --> B{Is user logged in?}
-      B -- Yes --> C[Display Feature Screen]
-      B -- No --> D[Redirect to Login]
-      C --> E[User Submits Form]
-      E --> F{Validation Passes?}
-      F -- Yes --> G[Show Success Message]
-      F -- No --> H[Show Error Inline]
-  ```
+<!-- Adapt this bold label to the feature (e.g. "User Journey & Screen Flow", ...) -->
+
+```mermaid
+graph TD
+    A[User starts action] --> B{Is user logged in?}
+
+    B -- Yes --> C[Display Feature Screen]
+    B -- No --> D[Redirect to Login]
+    C --> E[User Submits Form]
+    E --> F{Validation Passes?}
+    F -- Yes --> G[Show Success Message]
+    F -- No --> H[Show Error Inline]
+
+```
 
 - **UI State Machine:**
 
-  ```mermaid
-  stateDiagram-v2
-      [*] --> Idle
-      Idle --> Loading : User Clicks Submit
-      Loading --> Success : API 200
-      Loading --> Error : API 4xx/5xx
-      Error --> Idle : User Retries
-      Success --> [*]
-  ```
+<!-- Adapt this bold label to the feature (e.g. "State Machine (session)", ...) -->
+
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Loading : User Clicks Submit
+    Loading --> Success : API 200
+    Loading --> Error : API 4xx/5xx
+    Error --> Idle : User Retries
+    Success --> [*]
+```
 
 - **Business Rules:**
   - BR-01: [Rule description]

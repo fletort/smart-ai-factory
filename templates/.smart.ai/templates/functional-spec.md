@@ -9,6 +9,8 @@
 
 ## 2. Business Process & Decision Workflow
 
+<!-- Adapt this bold label to the feature (e.g. "User Journey & Screen Flow", ...) -->
+
 _Detailed navigation and user decision matrix:_
 
 ```mermaid
@@ -23,6 +25,8 @@ graph TD
 ```
 
 ## 3. Detailed UI/UX Requirements
+
+<!-- Adapt this bold label to the feature (e.g. "State Machine (session)", ...) -->
 
 - **Required Visual Elements:** [Buttons, forms, alerts, text fields]
 - **UI State Machine (States & Transitions):**
