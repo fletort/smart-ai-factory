@@ -1,12 +1,14 @@
-# Technical Specifications: [Component Name]
+# Technical Specifications: [Component/Feature Name]
 
-## 1. Tech Stack & Dependencies
+## 1. Context & Functional Reference
 
-- **Technologies:** [Languages, frameworks, libraries]
+- **Target Feature:** Link or reference to `functional-spec.md`.
+- **Tech Stack Constraints:** [e.g., Use existing Tailwind tokens, React hooks only, no external
+  library additions]
 
 ## 2. System Architecture & Data Flow
 
-_Use this sequence diagram to trace data lifecycle and internal API transitions:_
+_Data lifecycle, internal API transitions and system boundary interactions:_
 
 ```mermaid
 sequenceDiagram
@@ -29,7 +31,7 @@ sequenceDiagram
 
 ## 3. Database Entity Relationship Diagram (ERD)
 
-_Define any schema updates or new tables here:_
+_Schema updates, new tables, indices, or constraints:_
 
 ```mermaid
 erDiagram
@@ -47,6 +49,20 @@ erDiagram
     }
 ```
 
-## 4. Performance, Security & Deployment
+## 4. Data Model & API Contracts
 
-- [JWT Authentication, API Contracts, Variables]
+- **Endpoints / Methods:** `[METHOD] /api/v1/[path]`
+- **Payload Constraints:** Required fields, type constraints (e.g., `string`, `uuid`), and regex
+  validations.
+
+## 5. Technical Edge Cases & Error Handling
+
+- **EC-01 (Network/Backend Error):** Expected behavior, retry mechanisms, or fallback tokens if the
+  API returns a 500 or times out.
+- **EC-02 (API Validation Failure):** Structure of the HTTP 400 Bad Request error payload for
+  frontend field mapping.
+
+## 6. Performance, Security & Infrastructure
+
+- **Security:** [e.g., JWT Authentication, RBAC Role required, Rate limiting rules]
+- **Performance:** [e.g., DB Index requirements, caching strategy, bundle size constraints]

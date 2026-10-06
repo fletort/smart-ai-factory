@@ -85,36 +85,38 @@ while enforcing strict human verification and high-tier models for development a
 | **XL**              | `xl_coder` (Claude Sonnet)  | **Tech Lead**: Large module development, new API integrations.                                                                         | `dev: true` / `review: true`   | _Subscription / Commercial_      | Integrating new systems requires a model that excels at understanding complex, sprawling architectures without introducing regressions.                                 |
 | **XXL**             | `xxl_coder` (Claude Sonnet) | **Principal Eng**: Core system overhauls + mandatory `architecture.md` updates.                                                        | `dev: true` / `review: true`   | _Subscription / Commercial_      | Massive structural overhauls and synchronization with architecture documents require an elite agent capable of executing sweeping, high-risk code changes.              |
 
-## 📖 Deep-Dive Documentation
+## 📖 Documentation
 
-To keep this manifesto clean and actionable, the framework's detailed technical operations and
-configuration requirements are split into specialized manuals:
+To keep this manifesto clean and actionable, the framework is documented through a global
+architecture document and one unified specification per feature (index:
+[docs/INDEX.md](docs/INDEX.md)).
 
-- **📋 Specification Refinement:**
-  [Smart-Spec: Refinement & Scope Evaluation](docs/pipelines/smart_spec.md)  
+- **🏛️ Architecture:** [System Architecture & Technical Constitution](docs/architecture.md)  
+  _Global architecture, technical stack, repository structure, conventions, security baselines and
+  testing strategy._
+- **📋 Specification Refinement:** [Smart-Spec](docs/specs/smart-spec.md)  
   _Learn how to refine feature ideas, apply the 3-Question Rule, evaluate scope (MICRO vs LARGE),
   and route to execution._
-- **🎯 Planning & Roadmap Management:** [Smart-Plan: Scheduling](docs/pipelines/smart_plan.md)
+- **🎯 Planning & Roadmap Management:** [Smart-Plan](docs/specs/smart-plan.md)  
   _Understand how to create/update roadmaps and manage task dependencies._
+- **🧠 Native LLM Wiki Engine:** [Native LLM Wiki](docs/specs/native-llm-wiki.md)  
+  _The tree-structured memory layer that lets every phase target files surgically._
+- **🐍 `smart-ai` Python CLI (Phase 2 and beyond):** [CLI core](docs/specs/cli-core.md) and
+  [Triage engine](docs/specs/triage-engine.md)  
+  _Learn about the shared Python engine (config, LLM layer, resumable interaction sessions, GitHub,
+  MCP) behind the local and cloud triage._
+- **🔄 Interactive Workspace Loops:**
+  [Local Triage & Live Brainstorming](docs/specs/triage-local.md)  
+  _Deep-dive into the interactive CLI terminal menus, live human approval mechanics, and the local
+  advanced-model brainstorm._
+- **☁️ Cloud-Native Triage Workflows:**
+  [Asynchronous CI/CD & Cloud Triage](docs/specs/triage-cloud.md)  
+  _Understand how GitHub Actions perform stateless triage, persist brainstorming context, and apply
+  asynchronous human gates._
 - **💻 Local Workspace Integration:**
   [Visual Studio Code & Continue.dev Configuration Guide](docs/ide/vscode.md)  
   _Learn how to spin up your local multi-key Dev Container and how to manage your manual local
   FinOps choices._
-- **🔄 Interactive Workspace Loops:**
-  [Local Triage & Live Brainstorming Documentation](docs/pipelines/triage_local.md)  
-  _Deep-dive into the interactive CLI terminal menus, live human approval mechanics, and local
-  Claude Code bypass loops._
-- **☁️ Cloud-Native Triage Workflows:**
-  [Asynchronous CI/CD & Cloud Triage Rules](docs/pipelines/triage_cloud.md)  
-  _Understand how GitHub Actions perform stateless triage, persist brainstorming context, and apply
-  asynchronous human gates._
-- **Native LLM Wiki Engine:**
-  [Native LLM Wiki Engine for Smart-AI-Factory specification](docs/specs/native_llm_wiki.md)
-- **🐍 `smart-ai` Python CLI (Phase 2 and beyond):**
-  [CLI core technical specification](docs/specs/cli_core.md) and
-  [Triage engine technical specification](docs/specs/triage_engine.md)  
-  _Learn about the shared Python engine (config, LLM layer, resumable interaction sessions, GitHub,
-  MCP) behind the local and cloud triage._
 
 ## 🚀 Quick Start
 
@@ -128,7 +130,7 @@ configuration requirements are split into specialized manuals:
 3. Open your project using **Dev Containers** for a zero-friction, pre-configured workspace.
 4. Start with `/smart-spec` to refine your feature idea
 5. Roadmap planning is available with `/smart-plan`. Triage (Phase 2) is specified and will be
-   delivered by the `smart-ai` Python CLI (see the technical specifications above)
+   delivered by the `smart-ai` Python CLI (see the specifications above)
 
 ## 🧠 Framework Philosophy
 

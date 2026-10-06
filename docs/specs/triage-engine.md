@@ -1,49 +1,186 @@
-# Technical Specification: Triage Engine (Phase 2)
+# Unified Specifications: Triage Engine (Phase 2)
 
-**State**: _Proposed specification (The specified files may not exist yet.)_
+> **State**: _Proposed specification (The specified files may not exist yet.)_
 
-This document specifies the triage logic built on the [`smart-ai` CLI core](./cli_core.md). It is
-the **single source of truth** for the triage rules (eligibility, context, LLM contract, brainstorm,
-ticket lifecycle, roadmap sync), shared by the local and cloud modes: the user-facing behaviour in
-[triage_local.md](../pipelines/triage_local.md) and [triage_cloud.md](../pipelines/triage_cloud.md)
-links here instead of repeating these rules.
+## 1. Context & Objectives
 
-## 1. Scope
+- **Global Vision:** Triage turns **high-level roadmap issues** produced by
+  [`smart-plan`](./smart-plan.md) into **detailed, sized GitHub issues**, asking for clarification
+  (brainstorm) when a specification is not precise enough. This document specifies the triage logic
+  built on the [`smart-ai` CLI core](./cli-core.md). It is the **single source of truth** for the
+  triage rules (eligibility, context, LLM contract, brainstorm, ticket lifecycle, roadmap sync),
+  shared by the [local](./triage-local.md) and [cloud](./triage-cloud.md) modes: the user-facing
+  behaviour documented there links here instead of repeating these rules.
+- **Business Goals:**
+  - Backlog generation is fully automated and cost-free by default: the phase requires multiple
+    incremental passes over the documentation to detail tasks, so a "Flash" model (default agent
+    `Gemini Flash PO`, Free Tier) keeps this high-frequency routing loop at zero cost.
+  - Size every ticket (**XS** to **XXL**) so that Phase 3 can route it to the most cost-efficient
+    development model tier.
+  - Never create a development ticket from an ambiguous or unreviewed specification: the
+    **Brainstorm** level (mandatory HITL, `claude-3-5-sonnet` by default) refines the design and
+    updates the architecture docs first.
+  - One GitHub ticket per roadmap issue for its whole life, with idempotent writes.
+- **Non-Goals (Out of Scope):**
+  - Writing code (Phase 3) and creating roadmaps (Phase 1).
+  - Modifying the checkboxes of the roadmap (owned by the user).
+  - The user interface details of the terminal and of the GitHub Actions workflows, which are in
+    [triage local](./triage-local.md) and [triage cloud](./triage-cloud.md).
 
-Triage turns **high-level roadmap issues** produced by [`smart-plan`](../pipelines/smart_plan.md)
-into **detailed, sized GitHub issues**, asking for clarification (brainstorm) when a specification
-is not precise enough. It does not write code (Phase 3) and does not create roadmaps (Phase 1).
+## 2. Functional & UX Specifications (What)
 
-```mermaid
-graph TD
-    START["smart-ai triage"] --> CFG["Load config"]
-    CFG -->|missing| EXIT2["Exit 2: Workspace not configured"]
-    CFG --> DISC["Discover roadmap files"]
-    DISC -->|layout divergence| EXIT4["Ask user / exit 4"]
-    DISC --> PARSE["Parse issues, dependencies, spec anchors"]
-    PARSE --> SELECT["Select eligible issues"]
-    SELECT -->|none| EXIT0["Exit 0: nothing to triage"]
-    SELECT --> SRC{"Spec anchor type"}
-    SRC -->|File| PACK["Pack context from LLM Wiki"]
-    SRC -->|Conversation Context| ASKCTX["Ask user for the context"]
-    ASKCTX --> PACK
-    PACK --> LLM["Triage LLM: simple_triage_model"]
-    LLM -->|unclear_specification| BRAIN["Brainstorm session"]
-    BRAIN -.->|"cloud, first blocking run"| TRACK["Create tracking ticket + sync (#N)"]
-    BRAIN -->|"answers / merged spec PR"| LLM
-    LLM -->|ready_to_dev| GATE{"hitl_during_triage?"}
-    GATE -->|yes| APPROVE["Approval step"]
-    GATE -->|no| CREATE
-    APPROVE -->|approved| CREATE["Create the ticket, or mutate the tracking ticket"]
-    CREATE --> WB["Sync (#N) to the roadmap if not linked yet"]
-```
+- **User / Process Flow:**
 
-## 2. Roadmap Discovery & Parsing
+  ```mermaid
+  graph TD
+      START["smart-ai triage"] --> CFG["Load config"]
+      CFG -->|missing| EXIT2["Exit 2: Workspace not configured"]
+      CFG --> DISC["Discover roadmap files"]
+      DISC -->|layout divergence| EXIT4["Ask user / exit 4"]
+      DISC --> PARSE["Parse issues, dependencies, spec anchors"]
+      PARSE --> SELECT["Select eligible issues"]
+      SELECT -->|none| EXIT0["Exit 0: nothing to triage"]
+      SELECT --> SRC{"Spec anchor type"}
+      SRC -->|File| PACK["Pack context from LLM Wiki"]
+      SRC -->|Conversation Context| ASKCTX["Ask user for the context"]
+      ASKCTX --> PACK
+      PACK --> LLM["Triage LLM: simple_triage_model"]
+      LLM -->|unclear_specification| BRAIN["Brainstorm session"]
+      BRAIN -.->|"cloud, first blocking run"| TRACK["Create tracking ticket + sync (#N)"]
+      BRAIN -->|"answers / merged spec PR"| LLM
+      LLM -->|ready_to_dev| GATE{"hitl_during_triage?"}
+      GATE -->|yes| APPROVE["Approval step"]
+      GATE -->|no| CREATE
+      APPROVE -->|approved| CREATE["Create the ticket, or mutate the tracking ticket"]
+      CREATE --> WB["Sync (#N) to the roadmap if not linked yet"]
+  ```
+
+- **State Machine (session / ticket / workflow):** lifecycle of a ticket in cloud mode. The ticket
+  created when the ambiguity is detected is the **definitive ticket**: it only changes state
+  (labels, body) during its life and is never replaced. Both brainstorm modes follow the same state
+  machine; only the event that resumes the session differs.
+
+  ```mermaid
+  stateDiagram-v2
+      [*] --> Brainstorming: ambiguity detected, ticket #N created, (#N) synced to the roadmap
+      Brainstorming --> AwaitingAnswer: manual mode, questions posted
+      Brainstorming --> AwaitingPR: auto mode, PR opened and linked in the ticket
+      AwaitingAnswer --> Retriage: human comment
+      AwaitingPR --> Retriage: PR merged
+      AwaitingPR --> AwaitingAnswer: PR closed without merge
+      Retriage --> AwaitingAnswer: still unclear and turns left
+      Retriage --> Ready: ready_to_dev
+      Ready --> [*]: ticket mutated in place
+  ```
+
+- **Business Rules:**
+  - BR-01 (Eligibility): a roadmap issue is eligible when (1) it has no `(#N)` in the roadmap, no
+    ticket found for its `tracking-id` marker and no `<!-- [DELETED] -->` mark, (2) it is not
+    checked, and (3) every ID in `depends_on` exists and its specification is cleared (checked, or a
+    ticket that does not carry the `brainstorming` label).
+  - BR-02 (Marker is the source of truth): the roadmap `(#N)` is a human-readable link that may lag
+    behind the tickets; the ticket found through the marker is the source of truth. A ticket still
+    in brainstorm is never selected again by the eligibility rule: it is resumed by its own events.
+  - BR-03 (Selection): `--issue ISSUE-X.Y` targets one issue (dependencies still enforced),
+    `--limit N` (default 1 locally, all eligible in CI), `--all`. Eligible issues sharing the same
+    blockers are independent and may be triaged in the same run, processed sequentially ordered by
+    ID.
+  - BR-04 (Exact roadmap format): the parser reads **exactly the format written by `smart-plan`**. A
+    line that looks like an issue but does not match is reported as a warning and never silently
+    skipped.
+  - BR-05 (Layout divergence): triage never guesses. Local: stop and ask whether to follow the
+    filesystem or fix the config. Non-interactive or cloud: exit code 4.
+  - BR-06 (Version selection): the latest `vX.Y` directory (numeric order) is used, overridable with
+    `--roadmap-version vX.Y`. Unlike `smart-plan`, triage never invents a new version.
+  - BR-07 (Smallest context): the smallest context that lets a low-cost model judge the issue is
+    packed, with a token cap (default 12,000, configurable); the lowest priority items are dropped
+    first and the drop is reported.
+  - BR-08 (Conversation Context anchors): the context is asked first, then the normal triage runs;
+    it is never requested twice.
+  - BR-09 (Three questions): an `unclear_specification` result asks at most 3 questions, consistent
+    with the 3-Question Rule of `smart-spec`.
+  - BR-10 (Brainstorm cap): a session is limited to `max_brainstorm_turns` (default 5); reaching the
+    limit leaves the issue untriaged and reports why.
+  - BR-11 (Reviewed decisions only): a development issue is never created from decisions that are
+    not merged: in auto mode (cloud) the triage resumes only from the merged state of the default
+    branch.
+  - BR-12 (Approval): with `hitl_during_triage: true` a human approves before the issue becomes
+    `ready-to-dev`; with `false` the step is skipped in both modes.
+  - BR-13 (One ticket per roadmap issue): there is one GitHub issue per roadmap issue for its whole
+    life; a brainstorm tracking issue is updated in place, never replaced.
+  - BR-14 (Surgical roadmap write-back): only the matching line is rewritten, appending `(#N)`;
+    checkboxes, IDs, dependencies and every other line are never modified.
+  - BR-15 (Idempotent commands): re-running any command after a failure or duplicate event never
+    creates a second ticket and never processes the same comment twice.
+  - BR-16 (Nothing to do is not an error): no eligible issue or no pending event exits with code 0
+    before any LLM call.
+  - BR-17 (Waiting is not failing): waiting for a human is exit code 3.
+  - BR-18 (Untrusted input): issue and comment text is treated as data (delimited blocks) and the
+    model's output only ever goes through the Pydantic schema. Event data is passed to the CLI
+    through files or environment variables, never through shell interpolation.
+- **User Stories:**
+  - _As a_ product owner, _I want_ my high-level roadmap issues turned into detailed, sized tickets
+    _so that_ developer agents receive precise tasks at the right cost tier.
+  - _As a_ product owner, _I want_ the engine to ask at most 3 targeted questions when the
+    specification is ambiguous _so that_ I only decide what is truly missing.
+  - _As a_ maintainer, _I want_ the advanced model's design decisions to arrive as a pull request
+    _so that_ nothing unreviewed becomes a development ticket.
+  - _As a_ maintainer, _I want_ a ticket to keep its whole history (gap, discussion, specification
+    PR) _so that_ the decisions stay traceable.
+  - _As a_ maintainer, _I want_ retries to never create duplicate tickets _so that_ the backlog
+    stays clean.
+  - _As a_ FinOps owner, _I want_ a size and an estimated cost per ticket _so that_ I can approve
+    spend before it happens.
+
+## 3. Technical Specifications (How)
+
+- **Architecture & Component Interactions:**
+
+  ```mermaid
+  sequenceDiagram
+      autonumber
+      participant Run as smart-ai triage
+      participant RM as Roadmap files
+      participant Ctx as Context packer (LLM Wiki)
+      participant LLM as LlmClient
+      participant Ch as InteractionChannel
+      participant Trk as IssueTracker / PullRequestHost / VersionControl
+
+      Run->>RM: Discover, parse, select eligible issues
+      Run->>Trk: find_by_marker (eligibility, dependencies)
+      Run->>Ctx: Pack spec + wiki + architecture within the token budget
+      Run->>LLM: complete(simple_triage_model, TriageResult)
+      alt unclear_specification
+          Run->>Trk: find_by_marker, then create_issue (brainstorming) on first blocking run
+          Run->>RM: Sync (#N) to the roadmap
+          Run->>Ch: NeedsInput (questions) or auto: advanced model + specification PR
+          Ch-->>Run: answer / merged PR (resume)
+          Run->>LLM: Triage call repeated
+      else ready_to_dev
+          opt hitl_during_triage
+              Run->>Ch: Approval (preview card, or pending-approval label)
+          end
+          Run->>Trk: create_issue, or update_issue + labels on the tracking ticket
+          Run->>RM: Sync (#N) if not linked yet
+      end
+  ```
+
+- **Data Model & API Contracts:**
+  - **Endpoints / Methods:** `smart-ai triage` and `smart-ai brainstorm` (see the command contract
+    below).
+  - **Payload Constraints:** `RoadmapIssue`, `TriageResult` and `BrainstormState` Pydantic models
+    (see the sub-sections below).
+  - **Database Updates (ERD if needed):** none. Persistent state lives in the GitHub issue
+    (`tracking-id` marker, labels, `FACTORY_CONTEXT`) and in the roadmap line `(#N)`.
+
+  Detailed contracts are given in the sub-sections below.
+
+### Roadmap discovery & parsing
 
 The parser reads **exactly the format written by `smart-plan`**. Any change to that format must be
 reflected here.
 
-### 2.1 Layout resolution
+#### Layout resolution
 
 Inputs: `roadmap.versioned` and `roadmap.layout` from the config.
 
@@ -62,7 +199,7 @@ Inputs: `roadmap.versioned` and `roadmap.layout` from the config.
   Non-interactive or cloud: exit code 4 with the divergence described in the output. The triage
   never guesses.
 
-### 2.2 Parsed model
+#### Parsed model
 
 ```python
 class SpecAnchor(BaseModel):
@@ -93,7 +230,7 @@ Recognised patterns (line based):
 A line that looks like an issue but does not match is reported as a warning and never silently
 skipped.
 
-### 2.3 Eligibility
+#### Eligibility
 
 An issue is **eligible** when all of the following hold:
 
@@ -103,24 +240,24 @@ An issue is **eligible** when all of the following hold:
 3. Every ID in `depends_on` exists and its specification is cleared: it is checked, or it has a
    ticket (`(#N)` or marker lookup) that does not carry the `brainstorming` label.
 
-The roadmap `(#N)` is a human-readable link that may lag behind the tickets (see section 7, roadmap
-sync): the ticket found through the marker is the source of truth. A ticket still in brainstorm is
-never selected again by this section: it is resumed by its own events (section 5.3).
+The roadmap `(#N)` is a human-readable link that may lag behind the tickets (see the roadmap sync
+below): the ticket found through the marker is the source of truth. A ticket still in brainstorm is
+never selected again by this rule: it is resumed by its own events (see the cloud ticket lifecycle).
 
 Selection options: `--issue ISSUE-X.Y` (target one, dependencies still enforced), `--limit N`
 (default 1 locally, all eligible in CI), `--all`. Eligible issues sharing the same blockers are
 independent and may be triaged in the same run; they are processed sequentially, ordered by ID.
 
-## 3. Context Packing
+### Context packing
 
 Goal: the smallest context that lets a low-cost model judge the issue.
 
 1. **File anchor**: resolve the pointer only as a repository-relative path; reject absolute paths,
    `..`, and symlink escapes, and report a clear error if the pointed spec file does not exist.
-2. **Wiki traversal** ([Native LLM Wiki](./native_llm_wiki.md) section 4.1): `AGENTS.md` /
-   `CLAUDE.md` → `docs/INDEX.md` → `src/README.md` → matching module `README.md` files. Matching is
-   done on the spec and issue text, deterministically first (names and links in the indexes), then
-   by the LLM only if ambiguous.
+2. **Wiki traversal** ([Native LLM Wiki](./native-llm-wiki.md)): `AGENTS.md` / `CLAUDE.md` →
+   `docs/INDEX.md` → `src/README.md` → matching module `README.md` files. Matching is done on the
+   spec and issue text, deterministically first (names and links in the indexes), then by the LLM
+   only if ambiguous.
 3. **Architecture rules**: `docs/architecture.md` if it exists.
 4. **Budget**: the packed context is capped (default 12,000 tokens, configurable); the lowest
    priority items are dropped first and the drop is reported in the output.
@@ -131,7 +268,7 @@ Goal: the smallest context that lets a low-cost model judge the issue.
    no symlink escape) and fit in the token budget of step 4. After a merged specification PR, the
    files are read from the merged default branch.
 
-### 3.1 "Conversation Context" anchors
+#### "Conversation Context" anchors
 
 An epic anchored on `Current Conversation History` has no spec file. The flow is:
 
@@ -144,7 +281,7 @@ An epic anchored on `Current Conversation History` has no spec file. The flow is
 The provided context is stored in `FACTORY_CONTEXT` (cloud) and, once the issue is created, in its
 body, so it is never requested twice.
 
-## 4. Triage LLM Contract
+### Triage LLM contract
 
 One call per issue, with the `simple_triage_model` alias and a Pydantic `response_model`:
 
@@ -189,10 +326,10 @@ Validation beyond the schema:
 
 The size drives the labels (`size:M`) and, in Phase 3, the DevRouter model tier.
 
-## 5. Brainstorm
+### Brainstorm
 
-Triggered by `unclear_specification`. It is a resumable session (see
-[cli_core.md](./cli_core.md#6-interaction-model-resumable-sessions)) with this state:
+Triggered by `unclear_specification`. It is a resumable session (see the
+[interaction model](./cli-core.md#interaction-model-resumable-sessions)) with this state:
 
 ```python
 class BrainstormState(BaseModel):
@@ -232,10 +369,10 @@ Two lifecycle fields complete the table above:
 
 - `awaiting`: what the session is waiting for. `answer` = a human comment, `pr_review` = the merge
   or closing of the specification PR opened by the auto mode. It decides which event may resume the
-  session (section 5.3).
+  session (see the cloud ticket lifecycle).
 - `pending_pr`: number of that PR, `None` otherwise.
 
-### 5.1 Modes
+#### Modes
 
 - **Manual** (`auto_brainstorm: false`, or option 1 of the local menu): the questions of the triage
   model are given to the human. Each answer is appended to `turns`, then the triage call is repeated
@@ -250,12 +387,12 @@ Two lifecycle fields complete the table above:
     the default branch. Proposed file changes are validated against a strict allowlist (the
     `spec_pointer` file and `docs/architecture.md`), rejecting absolute paths, `..` traversal, and
     symlink escapes, and verifying the diff before `VersionControl.commit`. The triage is **not**
-    repeated in the same run: the session waits for the PR to be merged (section 5.3), so no
-    development issue is ever based on unreviewed decisions.
+    repeated in the same run: the session waits for the PR to be merged (see the cloud ticket
+    lifecycle), so no development issue is ever based on unreviewed decisions.
 - A session is limited to `max_brainstorm_turns` (default 5) to prevent runaway cost; reaching the
   limit leaves the issue untriaged and reports why.
 
-### 5.2 State persistence (`FACTORY_CONTEXT`)
+#### State persistence (`FACTORY_CONTEXT`)
 
 In cloud mode, to guarantee data integrity, prevent payload tampering, and avoid injection
 vulnerabilities (such as untrusted user comments containing the `-->` sequence breaking the
@@ -276,28 +413,13 @@ invalid before trusting internal fields like `issue_id`, `pending_pr`, or execut
 Unknown `schema_version` values are rejected with a clear message. The comment size is capped (about
 6,000 characters); when exceeded, the oldest turns are summarised by the triage model.
 
-### 5.3 Cloud ticket lifecycle and resume triggers
+#### Cloud ticket lifecycle and resume triggers
 
-The ticket created when the ambiguity is detected is the **definitive ticket**: it only changes
-state (labels, body) during its life and is never replaced. Both brainstorm modes follow the same
-state machine; only the event that resumes the session differs.
-
-```mermaid
-stateDiagram-v2
-    [*] --> Brainstorming: ambiguity detected, ticket #N created, (#N) synced to the roadmap
-    Brainstorming --> AwaitingAnswer: manual mode, questions posted
-    Brainstorming --> AwaitingPR: auto mode, PR opened and linked in the ticket
-    AwaitingAnswer --> Retriage: human comment
-    AwaitingPR --> Retriage: PR merged
-    AwaitingPR --> AwaitingAnswer: PR closed without merge
-    Retriage --> AwaitingAnswer: still unclear and turns left
-    Retriage --> Ready: ready_to_dev
-    Ready --> [*]: ticket mutated in place
-```
+The state machine is given in the functional section above. Triggers and effects:
 
 | Transition                   | Trigger                                                 | Effect on the ticket                                                                                                                                 |
 | :--------------------------- | :------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------- |
-| creation (both modes)        | `push` workflow, ambiguity detected                     | Ticket created with the `tracking-id` marker, label `brainstorming`, `FACTORY_CONTEXT`; `(#N)` synced to the roadmap (section 7).                    |
+| creation (both modes)        | `push` workflow, ambiguity detected                     | Ticket created with the `tracking-id` marker, label `brainstorming`, `FACTORY_CONTEXT`; `(#N)` synced to the roadmap (see the roadmap sync).         |
 | Brainstorming to AwaitingPR  | same run, auto mode                                     | PR opened from a `smart-ai/brainstorm-<id>` branch; its number goes to `pending_pr`, `awaiting` becomes `pr_review`; the ticket body links the PR.   |
 | AwaitingPR to Retriage       | PR merged (`pull_request` closed with `merged == true`) | The routing workflow resumes the session on the merged default branch and repeats the triage call with the merged specs and the recorded decisions.  |
 | AwaitingPR to AwaitingAnswer | PR closed without merge                                 | The CLI comments on the ticket, sets `mode` to `manual` and `awaiting` to `answer`, and asks the human for the missing decisions.                    |
@@ -317,7 +439,7 @@ Rules:
 - Retriage counts as a turn of `max_brainstorm_turns`; when the limit is reached the ticket stays in
   `brainstorming` and the reason is commented on it.
 
-## 6. Approval Step (`hitl_during_triage`)
+### Approval step (`hitl_during_triage`)
 
 - **Local**: a **FinOps Preview Card** is rendered (title, goal, inputs, output, rules, estimated
   cost of the future Phase 3 run for the size tier) and the user answers `y`, `n` or `edit`. `edit`
@@ -329,7 +451,7 @@ Rules:
 - `--non-interactive` with `hitl_during_triage: true` locally exits with code 3 and lists the
   proposed issues, without creating anything.
 
-## 7. Issue Creation & Roadmap Write-Back
+### Issue creation & roadmap write-back
 
 1. **Idempotence marker**: the hidden marker `<!-- smart-ai:tracking-id=ISSUE-2.1 -->` is injected
    **in the body of the very first GitHub issue created for a roadmap issue**, whether it is a
@@ -342,7 +464,8 @@ Rules:
      tracking issue is updated in place (title, body, `size:<SIZE>` label, `brainstorming` label
      removed) instead of opening a new one. The marker is never removed or rewritten.
    - Runs on the same ref are serialised (see the concurrency rule in
-     [triage_cloud.md](../pipelines/triage_cloud.md)), so two runs cannot both miss the marker.
+     [triage cloud](./triage-cloud.md#safeguards-both-workflows)), so two runs cannot both miss the
+     marker.
    - The marker also makes a retry after a failed roadmap write-back safe: the existing number is
      used for the `(#N)` write-back.
 2. **Labels**: the ticket moves through `brainstorming` then `ready-to-dev`, with `size:<SIZE>` and,
@@ -374,15 +497,15 @@ Rules:
    - Local mode always edits the file in the working tree (the user commits it), unless `off`.
 
    In `pr` mode the sync is eventually consistent, so nothing relies on `(#N)` being merged:
-   eligibility, dependency checks and resume use the marker lookup (section 2.3), and a re-run
+   eligibility, dependency checks and resume use the marker lookup (see Eligibility), and a re-run
    before the merge reuses the existing ticket.
 
 4. **Roadmap re-planning**: because IDs are stable and `(#N)` is just text on the line, a later
    `smart-plan` update keeps the link.
 5. `--dry-run` prints the diff and the issue payload without any write.
 
-Port operations used by this lifecycle (the ports are defined in
-[cli_core.md](./cli_core.md#8-github-layer)):
+Port operations used by this lifecycle (the ports are defined in the
+[CLI core](./cli-core.md#github-layer)):
 
 | Lifecycle step                           | Port operations                                                                                                                                                          |
 | :--------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -394,45 +517,95 @@ Port operations used by this lifecycle (the ports are defined in
 | Resume from a merge or closing event     | `get_pull_request`, `find_by_marker` (marker in the PR body), `comment`                                                                                                  |
 | Roadmap sync in cloud                    | `pr`: `create_branch`, `commit`, `push`, `find_open_pull_request`, `open_pull_request`, `enable_auto_merge`; `direct`: `commit`, `push`; local mode only writes the file |
 
-## 8. Command Contract
+### Command contract
 
 The engine is runtime-agnostic: every front-end (terminal, IDE skill, MCP, GitHub Actions) calls the
 same commands. How the GitHub Actions workflows trigger them, and their security rules, are
-described in [triage_cloud.md](../pipelines/triage_cloud.md).
+described in [triage cloud](./triage-cloud.md).
 
-| Command                                               | Purpose                                                         |
-| :---------------------------------------------------- | :-------------------------------------------------------------- |
-| `smart-ai triage [--issue ID \| --limit N \| --all]`  | Select and triage eligible roadmap issues (sections 2 to 7)     |
-| `smart-ai brainstorm --issue <num> --comment-id <id>` | Resume a session from a human comment (section 5.3)             |
-| `smart-ai brainstorm --pr <num>`                      | Resume a session after its specification PR is merged or closed |
+| Command                                               | Purpose                                                                     |
+| :---------------------------------------------------- | :-------------------------------------------------------------------------- |
+| `smart-ai triage [--issue ID \| --limit N \| --all]`  | Select and triage eligible roadmap issues (discovery to roadmap write-back) |
+| `smart-ai brainstorm --issue <num> --comment-id <id>` | Resume a session from a human comment (cloud ticket lifecycle)              |
+| `smart-ai brainstorm --pr <num>`                      | Resume a session after its specification PR is merged or closed             |
 
 Contract guarantees:
 
 - **Idempotent**: re-running any command after a failure or a duplicate event never creates a second
-  ticket (marker, section 7) and never processes the same comment twice
-  (`last_processed_comment_id`).
+  ticket (marker) and never processes the same comment twice (`last_processed_comment_id`).
 - **Nothing to do is not an error**: a run that finds no eligible issue or no pending event exits
   with code 0 before any LLM call.
 - **Waiting for a human is not a failure**: exit code 3 (see
-  [cli_core.md](./cli_core.md#41-exit-codes)).
+  [exit codes](./cli-core.md#exit-codes)).
 - **Untrusted input**: issue and comment text is treated as data (delimited blocks) and the model's
   output only ever goes through the Pydantic schema. Callers pass event data to the CLI through
   files or environment variables, never through shell interpolation.
 
-## 9. Module Layout
+### Module layout
 
 ```text
 src/smart_ai/triage/
 ├── roadmap.py      # discovery, parsing, eligibility, surgical write-back
 ├── models.py       # RoadmapIssue, TriageResult, BrainstormState, ...
 ├── context.py      # wiki traversal and token-budgeted packing
-├── engine.py       # orchestration of the flow of section 1
+├── engine.py       # orchestration of the flow of the user journey above
 ├── brainstorm.py   # resumable step function (manual / auto)
 ├── approval.py     # FinOps preview card and decision
 └── README.md       # code-wiki entry (module boundaries)
 ```
 
-## 10. Test Strategy
+- **Edge Cases & Error Handling:**
+  - **EC-01 (Workspace not configured):** exit code 2.
+  - **EC-02 (Layout divergence):** local: ask whether to follow the filesystem or fix the config;
+    non-interactive or cloud: exit code 4.
+  - **EC-03 (Malformed roadmap line):** reported as a warning, never silently skipped.
+  - **EC-04 (Nothing eligible):** exit code 0 before any LLM call.
+  - **EC-05 (Spec file missing or pointer escaping the repository):** a clear error is reported;
+    absolute paths, `..` and symlink escapes are rejected.
+  - **EC-06 (Context over budget):** the lowest priority items are dropped and the drop is reported.
+  - **EC-07 (Invalid structured output):** one repair call, then exit code 5.
+  - **EC-08 (Brainstorm turn cap reached):** the issue stays untriaged (the ticket stays in
+    `brainstorming` in cloud, with the reason commented on it).
+  - **EC-09 (FACTORY_CONTEXT signature missing or invalid, or unknown `schema_version`):** the state
+    is rejected before any internal field is trusted.
+  - **EC-10 (Comment while `awaiting` is `pr_review`):** ignored with a notice.
+  - **EC-11 (PR closed without merge):** the ticket falls back to manual brainstorm.
+  - **EC-12 (Retry or duplicate event):** the marker lookup reuses the existing ticket;
+    `last_processed_comment_id` prevents a comment from being processed twice.
+  - **EC-13 (Failed roadmap write-back):** a retry reuses the existing ticket number for `(#N)`.
+  - **EC-14 (`--non-interactive` with `hitl_during_triage: true` locally):** exit code 3 listing the
+    proposed issues, nothing created.
+  - **EC-15 (Roadmap changed in the meantime):** detected through `roadmap_line`; the line is
+    re-read and its ID verified just before writing.
+
+## 4. Acceptance Criteria (QA)
+
+- [ ] **Nominal Scenario:** Given an eligible roadmap issue with a clear specification, when
+      `smart-ai triage` runs, then a ticket is created with the `[SIZE]`-prefixed title, the
+      `size:<SIZE>` label and the `tracking-id` marker, and `(#N)` is appended to the matching
+      roadmap line only.
+- [ ] **Eligibility Scenario:** Given an issue whose dependency ticket carries the `brainstorming`
+      label, when the selection runs, then the issue is not selected.
+- [ ] **Brainstorm Scenario (manual):** Given `unclear_specification`, when the human answers, then
+      the answer is appended to `turns`, the triage call is repeated and the same ticket is mutated
+      on `ready_to_dev` (`brainstorming` removed, `size:<SIZE>` and `ready-to-dev` set).
+- [ ] **Brainstorm Scenario (auto, cloud):** Given `auto_brainstorm: true`, when the advanced model
+      resolves the ambiguity, then a pull request limited to the allowlist is opened, no development
+      issue is created before it is merged, and the merge resumes the triage.
+- [ ] **Approval Scenario:** Given `hitl_during_triage: true` in cloud, when the result is
+      `ready_to_dev`, then the ticket gets `pending-approval` instead of `ready-to-dev`.
+- [ ] **Conversation Context Scenario:** Given an epic anchored on `Current Conversation History`,
+      when the triage runs, then the context is asked before the triage and never requested twice.
+- [ ] **Idempotence Scenario:** Given a retry after a failure, when the command runs again, then no
+      second ticket is created and no comment is processed twice.
+- [ ] **Error Scenario:** Given a layout divergence in non-interactive or cloud mode, when the
+      triage runs, then it exits with code 4 and describes the divergence.
+- [ ] **Error Scenario (state):** Given a `FACTORY_CONTEXT` with an invalid signature, when a
+      session is resumed, then the payload is rejected before any field is trusted.
+- [ ] **Nothing-to-do Scenario:** Given no eligible issue, when the triage runs, then it exits with
+      code 0 before any LLM call.
+
+### Test strategy
 
 - **Roadmap parser and write-back**: golden fixtures covering the four layouts, versioned and
   unversioned, divergence, malformed lines, already-triaged lines and checked boxes. Fixtures reuse

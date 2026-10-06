@@ -2,12 +2,16 @@
 
 ## 1. General Overview
 
-- **Summary:** [Brief 2-line description of the feature]
-- **Scope:** [IN / OUT]
+- **Global Vision:** [What problem are we solving and why?]
+- **Business Goals:** [KPIs, user value proposition]
+- **Non-Goals (Out of Scope):** [Explicitly state what this specification will NOT cover. Crucial
+  for AI scoping.]
 
 ## 2. Business Process & Decision Workflow
 
-_Use this flowchart to detail the complete navigation or user decision matrix:_
+<!-- Adapt this bold label to the feature (e.g. "User Journey & Screen Flow", ...) -->
+
+_Detailed navigation and user decision matrix:_
 
 ```mermaid
 graph TD
@@ -22,8 +26,10 @@ graph TD
 
 ## 3. Detailed UI/UX Requirements
 
-- **Required Visual Elements:** [Buttons, forms, alerts]
-- **State Machine (UI States):**
+<!-- Adapt this bold label to the feature (e.g. "State Machine (session)", ...) -->
+
+- **Required Visual Elements:** [Buttons, forms, alerts, text fields]
+- **UI State Machine (States & Transitions):**
 
 ```mermaid
 stateDiagram-v2
@@ -35,6 +41,16 @@ stateDiagram-v2
     Success --> [*]
 ```
 
-## 4. Business Rules Matrix & Edge Cases
+## 4. User Stories & Business Rules
 
-- Matrix of functional constraints and network disconnect scenarios.
+- **User Stories:**
+  - _As a_ [Persona], _I want to_ [Action] _so that_ [Benefit].
+- **Business Rules Matrix:**
+  - **BR-01:** [e.g., An invoice can only be generated if the client's country is valid.]
+  - **BR-02:** [e.g., Users can only retry payment 3 times before account lockout.]
+
+## 5. Acceptance Criteria (QA)
+
+- [ ] **Nominal Scenario:** Given [context], when [action], then [expected success result].
+- [ ] **Functional Error Scenario:** Given [invalid user input], when [action], then [expected
+      inline validation message].
