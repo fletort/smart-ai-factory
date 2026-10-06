@@ -9,7 +9,7 @@ specifications:
     # functional: .smart.ai/templates/functional-spec.md
     # technical: .smart.ai/templates/technical-spec.md
   paths:
-    main_technical_document: doc/architecture.md
+    main_technical_document: docs/architecture.md
     main_functional_document: README.md
     unified_spec_path: docs/specs
     functional_spec_path: docs/specs
