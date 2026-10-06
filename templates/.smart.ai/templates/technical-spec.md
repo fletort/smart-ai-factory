@@ -23,7 +23,7 @@ sequenceDiagram
     alt Invalid Token
         Gateway-->>App: HTTP 401 Unauthorized
     end
-    Svc->{DB}: Query / Mutate Data
+    Svc->>DB: Query / Mutate Data
     DB-->>Svc: SQL/NoSQL Result
     Svc-->>Gateway: App Data Object
     Gateway-->>App: HTTP 200 OK (JSON)
