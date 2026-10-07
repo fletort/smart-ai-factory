@@ -152,7 +152,7 @@ describe('GeminiOpenAiProvider', () => {
           functionCall: {
             id: 'call-1',
             name: 'read_file',
-            args: { path: '.smart.ai/config.yml' },
+            args: { path: '.smart.ai/conf.yml' },
           },
         },
       ];
@@ -164,7 +164,7 @@ describe('GeminiOpenAiProvider', () => {
           id: 'call-1',
           function: {
             name: 'read_file',
-            arguments: '{"path":".smart.ai/config.yml"}',
+            arguments: '{"path":".smart.ai/conf.yml"}',
           },
         },
       ];

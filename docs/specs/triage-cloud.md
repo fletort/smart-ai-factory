@@ -41,7 +41,7 @@
 
       subgraph box1["🧠 Processing Loop"]
           CI_Triage -->|Invoke| CoreTriage[smart-ai --mode cloud triage --all]
-          CoreTriage -->|1. Reads config| Config[.smart.ai/config.yml]
+          CoreTriage -->|1. Reads config| Config[.smart.ai/conf.yml]
           CoreTriage -->|2. Selects eligible roadmap issues| RM0[Roadmap files]
           CoreTriage -->|3. Queries| LLM1[Triage LLM: simple_triage_model]
           LLM1 -->|4. Triages each issue| JSON1[Strict JSON Spec Payload]

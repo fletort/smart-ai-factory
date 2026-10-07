@@ -20,8 +20,9 @@ Phase.
 
 1. **CRITICAL PRE-CONDITION (Sequential Execution Only)**: You MUST execute this step strictly in
    isolation before evaluating any other rule, case, or file path mentioned later in this prompt.
-   - **Step 1.A (Read File)**: Read the `.smart.ai/config.yml` file.
-   - **Step 1.B (Early Exit)**: IF and ONLY IF `.smart.ai/config.yml` is missing, you MUST halt
+   - **Step 1.A (Read File)**: Check the contents of the `.smart.ai/conf.yml` file by using your
+     available file-reading tools.
+   - **Step 1.B (Early Exit)**: IF and ONLY IF `.smart.ai/conf.yml` is missing, you MUST halt
      immediately. Do NOT call any tool for any other file. Output exactly and only:
      "❌**[smart-plan] Workspace not configured.**"
    - **Step 1.C (Mode Detection)**: IF present, use its content to analyze the `roadmap`

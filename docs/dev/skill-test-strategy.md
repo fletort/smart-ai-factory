@@ -72,7 +72,7 @@ A typical mock history under `prompts/*.json` represents an array of chat messag
 1. **System Instructions & User Init**: The first message sets up the core prompt (`SKILL.md`
    contents) and the initial user request.
 2. **Mock Tool Call**: An `assistant` message representing a tool call (e.g., `read_file` for
-   `.smart.ai/config.yml`).
+   `.smart.ai/conf.yml`).
 3. **Mock Tool Output**: A `tool` response representing the mock data returned from that tool.
 4. **Subsequent Conversation**: Simulates any further turns to reach the target state.
 
@@ -93,7 +93,7 @@ A typical mock history under `prompts/*.json` represents an array of chat messag
         "type": "function",
         "function": {
           "name": "read_file",
-          "arguments": "{\"path\": \".smart.ai/config.yml\"}"
+          "arguments": "{\"path\": \".smart.ai/conf.yml\"}"
         }
       }
     ]
@@ -190,7 +190,7 @@ To verify that the model's next turn is correct, we use Promptfoo's rich set of 
 
     ```yaml
     - type: equals
-      value: '.smart.ai/config.yml'
+      value: '.smart.ai/conf.yml'
       transform: |
         const args = output[0].function?.arguments;
         argsJson = typeof args === 'string' ? JSON.parse(args) : args;

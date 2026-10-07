@@ -21,8 +21,8 @@ specification is complete and ready for execution planning.
 
 1. **CRITICAL PRE-CONDITION (Sequential Execution Only)**: You MUST execute this step strictly in
    isolation before evaluating any other rule, case, or file path mentioned later in this prompt.
-   - **Step 1.A (File Check)**: Check if `.smart.ai/config.yml` exists.
-   - **Step 1.B (Early Exit)**: IF and ONLY IF `.smart.ai/config.yml` is missing, you MUST halt
+   - **Step 1.A (File Check)**: Check if `.smart.ai/conf.yml` exists.
+   - **Step 1.B (Early Exit)**: IF and ONLY IF `.smart.ai/conf.yml` is missing, you MUST halt
      immediately. Do NOT call any tool for any other file. Output exactly and only:
      "❌**[smart-spec] Workspace not configured.**"
    - **Step 1.C (Mode Detection)**: IF present, read it to analyze the `specifications.templates`
@@ -62,7 +62,7 @@ specification is complete and ready for execution planning.
 ### Case 3 Execution (Writing Final Specifications)
 
 ONLY when Case 3 is activated and you have the user's permission, you MUST now read the content of
-the Markdown files located at the paths detected in Step 1 (e.g., `.smart.ai/config.yml`).
+the Markdown files located at the paths detected in Step 1 (e.g., `.smart.ai/conf.yml`).
 
 You must also check if this is a new specification or an update: for this point you MUST strictly
 rely on the workspace index located at `docs/INDEX.md`:

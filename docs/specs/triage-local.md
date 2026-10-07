@@ -37,7 +37,7 @@
       end
 
       subgraph "🧠 Processing Loop"
-          CLI -->|1. Reads config| Config[.smart.ai/config.yml]
+          CLI -->|1. Reads config| Config[.smart.ai/conf.yml]
           CLI -->|2. Parses roadmap, selects eligible issues| RM0[Roadmap files]
           CLI -->|3. Invokes| LLM[Triage LLM: simple_triage_model]
           LLM -->|4. Triages the issue| JSON[Strict JSON Spec Payload]
@@ -94,7 +94,7 @@
   - **BR-TLOC-02 (Skill wrapper):** the `/smart-triage` skill (Continue.dev, OpenCode, VS Code Chat)
     is only a thin wrapper that runs the command and relays its questions to the chat. Like
     [`smart-spec`](./smart-spec.md) and [`smart-plan`](./smart-plan.md), it stops immediately with
-    `❌[smart-ai] Workspace not configured.` when `.smart.ai/config.yml` is missing.
+    `❌[smart-ai] Workspace not configured.` when `.smart.ai/conf.yml` is missing.
   - **BR-TLOC-03 (Roadmap source):** the triage reads the roadmap produced by `smart-plan`,
     following the `roadmap` configuration (single or multi file, versioned or not). For a versioned
     roadmap, the latest version is used unless `--roadmap-version` is given.
@@ -136,7 +136,7 @@
   - **BR-TLOC-12 (Approval gate):** once a technical task is clear and its weight is calculated
     (from **XS** to **XXL**), the framework forces an evaluation step: the terminal clears and
     displays a structured **FinOps Preview Card**. The gate is controlled by `hitl_during_triage` in
-    `.smart.ai/config.yml`.
+    `.smart.ai/conf.yml`.
   - **BR-TLOC-13 (Approval answers):**
     - **`y` (Yes):** the script executes the native GitHub CLI command (`gh issue create`), fetches
       the new issue number, and adds `(#42)` to the matching line of the local roadmap file (e.g.
@@ -158,7 +158,7 @@
     3. Only type `claude` inside your terminal to spin up **Claude Code** when you need a completely
        autonomous agent capable of orchestrating heavy, multi-file architectural refactoring across
        your codebase.
-    4. Set `max_cost_usd_per_run` in `.smart.ai/config.yml`: the CLI stops before exceeding it.
+    4. Set `max_cost_usd_per_run` in `.smart.ai/conf.yml`: the CLI stops before exceeding it.
 - **User Stories:**
   - _As a_ developer, _I want to_ run `smart-ai triage` in my terminal or from my chat _so that_ my
     roadmap issues become tickets without leaving my IDE.
@@ -205,7 +205,7 @@
   - **Endpoints / Methods:**
 
     ```bash
-    smart-ai config check          # validate .smart.ai/config.yml and API keys
+    smart-ai config check          # validate .smart.ai/conf.yml and API keys
     smart-ai triage                # triage the next eligible roadmap issue
     smart-ai triage --issue ISSUE-2.1
     smart-ai --dry-run triage --all

@@ -12,7 +12,7 @@
   [docs/specs/](./specs/) (index: [INDEX.md](./INDEX.md)).
 - **Target Architecture**: a **single shared engine with several front-ends**, decoupling the **User
   Interface (local chat)** from the **Execution Engine (core scripts)**. A single configuration
-  matrix (`.smart.ai/config.yml`) governs the five phases of the engineering loop.
+  matrix (`.smart.ai/conf.yml`) governs the five phases of the engineering loop.
 
   ```mermaid
   graph TD
@@ -32,7 +32,7 @@
       end
 
       subgraph "Shared foundation"
-          CFG[".smart.ai/config.yml"]
+          CFG[".smart.ai/conf.yml"]
           WIKI["Native LLM Wiki<br/>(docs/INDEX.md, src/README.md)"]
           CORE["smart-ai core<br/>(config, LLM layer, interaction, GitHub, workspace)"]
       end
@@ -87,7 +87,7 @@
 | Agent skills         | Markdown skills (`.agents/skills/`)     | n/a                     | Phase 0 and 1. Only prompt logic; no business logic that belongs to the CLI.                        |
 | CLI                  | Typer + Rich                            | to pin at first release | One file per command group under `cli/`; output rendering only.                                     |
 | Config and schemas   | Pydantic v2                             | to pin at first release | One validated model for config, LLM structured outputs, JSON CLI output and MCP tool schemas.       |
-| YAML                 | ruamel.yaml                             | to pin at first release | Round-trip parsing keeps the comments of `.smart.ai/config.yml`.                                    |
+| YAML                 | ruamel.yaml                             | to pin at first release | Round-trip parsing keeps the comments of `.smart.ai/conf.yml`.                                      |
 | Secrets              | python-dotenv                           | to pin at first release | Secrets only in `.env` (local) or GitHub `secrets` (cloud), never in `config.yml`.                  |
 | LLM access           | LiteLLM                                 | to pin at first release | The only LLM entry point is `LlmClient.complete`; models are referenced by alias only.              |
 | Prompt templates     | Jinja2                                  | to pin at first release | Prompts are packaged files under `src/smart_ai/prompts/`, not strings in code.                      |
@@ -135,7 +135,7 @@ Target layout of the `smart-ai` package (see [cli-core.md](./specs/cli-core.md#p
 src/smart_ai/
 ├── cli/        # Typer app, one file per command group, output rendering
 ├── core/
-│   ├── config.py       # Pydantic models + loader of .smart.ai/config.yml
+│   ├── config.py       # Pydantic models + loader of .smart.ai/conf.yml
 │   ├── llm.py          # LlmClient port + LiteLLM adapter, cost accounting
 │   ├── interaction.py  # InteractionChannel port + Terminal / Suspend adapters
 │   ├── github.py       # IssueTracker + PullRequestHost ports, gh CLI adapters
@@ -147,8 +147,8 @@ src/smart_ai/
 └── mcp/        # Future MCP adapter (optional extra)
 ```
 
-Files expected by the pipeline in a user's project: `.smart.ai/config.yml`, `roadmap.md` or
-`roadmap/` (optionally `roadmap/vX.Y/`), `docs/INDEX.md`, `docs/architecture.md`, `docs/specs/`,
+Files expected by the pipeline in a user's project: `.smart.ai/conf.yml`, `roadmap.md` or `roadmap/`
+(optionally `roadmap/vX.Y/`), `docs/INDEX.md`, `docs/architecture.md`, `docs/specs/`,
 `src/README.md` and one `README.md` per `src/<module>/`, and the `CLAUDE.md` / `AGENTS.md` router.
 
 ## 4. Coding Standards & Conventions
