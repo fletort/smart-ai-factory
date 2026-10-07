@@ -1,4 +1,4 @@
-# Unified Specifications: Smart-Plan (Phase 1 - Roadmap & Scheduling)
+# Specifications: Smart-Plan (Phase 1 - Roadmap & Scheduling) (ID: PLAN)
 
 > **State**: _Proposed specification_ (the `smart-plan` skill exists in
 > `.agents/skills/smart-plan/`)
@@ -87,11 +87,11 @@
   ```
 
 - **Business Rules:**
-  - BR-01 (Configuration pre-condition): `.smart.ai/config.yml` is read first and on its own. If it
-    is missing, the skill halts with `❌**[smart-plan] Workspace not configured.**` and reads
-    nothing else. Otherwise it announces the detected configuration before continuing:
+  - **BR-PLAN-01 (Configuration pre-condition):** `.smart.ai/config.yml` is read first and on its
+    own. If it is missing, the skill halts with `❌**[smart-plan] Workspace not configured.**` and
+    reads nothing else. Otherwise it announces the detected configuration before continuing:
     `[smart-ai] Roadmap Configuration detected (versioned: <true/false>, layout: <single/multi/auto>)`.
-  - BR-02 (Context & sourcing modes):
+  - **BR-PLAN-02 (Context & sourcing modes):**
     - **File Mode**: triggered when a specification file exists (from `smart-spec`
       [Case 3](./smart-spec.md) or manual user specs). The agent anchors the roadmap to persistent
       file pointers (`Source Type: File`).
@@ -100,43 +100,44 @@
       the current chat context as the source of truth, skipping the creation of a dedicated
       specification file (`Source Type: Conversation Context`,
       `Pointer: Current Conversation History`).
-  - BR-03 (Unique or versioned roadmap): `roadmap.versioned` tells whether the roadmap is unique
-    (`roadmap.md`) or by version (`./roadmap/v0.1/roadmap.md`). In versioned mode the skill proposes
-    the last available version and asks the user to confirm it or give a new one, and **waits for
-    the answer before reading any version directory content**.
-  - BR-04 (Single or multi file layout): `roadmap.layout` tells the layout to use:
+  - **BR-PLAN-03 (Unique or versioned roadmap):** `roadmap.versioned` tells whether the roadmap is
+    unique (`roadmap.md`) or by version (`./roadmap/v0.1/roadmap.md`). In versioned mode the skill
+    proposes the last available version and asks the user to confirm it or give a new one, and
+    **waits for the answer before reading any version directory content**.
+  - **BR-PLAN-04 (Single or multi file layout):** `roadmap.layout` tells the layout to use:
     - `single`: optimised for small-to-medium project scopes. Generates or updates a standalone
       `roadmap.md` at the root or within a versioned subdirectory.
     - `multi` (auto-split): outputs a `README.md` index and individual `epic-X.md` files, to prevent
       output token truncation and maintain readability.
     - `auto` (or not defined): chooses automatically. The multi-file layout is used if the project
       scope exceeds 3 Epics or has more than 50 tasks.
-  - BR-05 (Discovery): only the dedicated roadmap paths are read, never the workspace root:
+  - **BR-PLAN-05 (Discovery):** only the dedicated roadmap paths are read, never the workspace root:
     `roadmap.md` or `roadmap/README.md` (or the `roadmap/vX.Y/` equivalents). If the configured
     target is missing, the other layout location is checked before assuming a clean slate.
-  - BR-06 (Layout divergence): if the filesystem contradicts the configured layout (e.g. `single`
-    but `roadmap/README.md` exists), the skill stops and asks whether to migrate the layout or
-    update the configuration.
-  - BR-07 (Merge rules): an Epic whose `Pointer` matches the new source is updated; an unknown
-    pointer always creates a new Epic (never added to an unrelated one). Existing `[ISSUE-X.Y]` IDs
-    and checkboxes are preserved, new IDs continue after the highest existing one, and removed
-    features are flagged `<!-- [DELETED] -->` or removed without shifting other IDs.
-  - BR-08 (Granularity): every distinct functional requirement results in its own high-level issue;
-    several functional blocks are never merged into one ticket.
-  - BR-09 (Confirmation): a clean slate is written directly, without question. For an existing
-    roadmap, the skill shows a comparison table (modified, added, deleted, metadata) and writes only
-    after the user types `yes`.
-  - BR-10 (Macro-level scope boundary): technical implementation, coding steps, acceptance criteria
-    and code scripts are strictly avoided.
-  - BR-11 (Parallel-ready sequencing): each entry gets a unique epic-qualified ID (`[ISSUE-X.Y]`)
-    and blockers are explicitly tracked with a `Depends on:` tag. By default execution is
-    chronological (task N depends on task N-1); tasks that can be parallelised share the same parent
-    blocker, which leaves the door open for future multi-agent parallel orchestration.
-  - BR-12 (Spec anchors): each Epic records a `Source Type` (File or Conversation Context) and a
-    `Pointer` (spec path or `Current Conversation History`); in multi-file layout the root index
-    also lists them.
-  - BR-13 (User-managed state): checkboxes (`- [ ]` vs `- [x]`) are never modified. The Global
-    Vision and the Epic Purpose are checked and updated if the new specification alters the
+  - **BR-PLAN-06 (Layout divergence):** if the filesystem contradicts the configured layout (e.g.
+    `single` but `roadmap/README.md` exists), the skill stops and asks whether to migrate the layout
+    or update the configuration.
+  - **BR-PLAN-07 (Merge rules):** an Epic whose `Pointer` matches the new source is updated; an
+    unknown pointer always creates a new Epic (never added to an unrelated one). Existing
+    `[ISSUE-X.Y]` IDs and checkboxes are preserved, new IDs continue after the highest existing one,
+    and removed features are flagged `<!-- [DELETED] -->` or removed without shifting other IDs.
+  - **BR-PLAN-08 (Granularity):** every distinct functional requirement results in its own
+    high-level issue; several functional blocks are never merged into one ticket.
+  - **BR-PLAN-09 (Confirmation):** a clean slate is written directly, without question. For an
+    existing roadmap, the skill shows a comparison table (modified, added, deleted, metadata) and
+    writes only after the user types `yes`.
+  - **BR-PLAN-10 (Macro-level scope boundary):** technical implementation, coding steps, acceptance
+    criteria and code scripts are strictly avoided.
+  - **BR-PLAN-11 (Parallel-ready sequencing):** each entry gets a unique epic-qualified ID
+    (`[ISSUE-X.Y]`) and blockers are explicitly tracked with a `Depends on:` tag. By default
+    execution is chronological (task N depends on task N-1); tasks that can be parallelised share
+    the same parent blocker, which leaves the door open for future multi-agent parallel
+    orchestration.
+  - **BR-PLAN-12 (Spec anchors):** each Epic records a `Source Type` (File or Conversation Context)
+    and a `Pointer` (spec path or `Current Conversation History`); in multi-file layout the root
+    index also lists them.
+  - **BR-PLAN-13 (User-managed state):** checkboxes (`- [ ]` vs `- [x]`) are never modified. The
+    Global Vision and the Epic Purpose are checked and updated if the new specification alters the
     project's macro direction.
 - **User Stories:**
   - _As a_ developer, _I want to_ turn a validated specification into a roadmap of high-level issues
@@ -273,18 +274,18 @@
     ```
 
 - **Edge Cases & Error Handling:**
-  - **EC-01 (Missing configuration):** halt, message of BR-01, no other file is read.
-  - **EC-02 (Missing configured roadmap target):** the other layout location is checked before a
-    clean slate is assumed.
-  - **EC-03 (Layout divergence):** all tool invocations are halted and the user is asked whether to
-    perform a layout migration or update the configuration; no further action is taken before the
-    explicit answer.
-  - **EC-04 (Unknown pointer):** a brand-new Epic is created, the pointer is never added to an
+  - **EC-PLAN-01 (Missing configuration):** halt, message of **BR-PLAN-01**, no other file is read.
+  - **EC-PLAN-02 (Missing configured roadmap target):** the other layout location is checked before
+    a clean slate is assumed.
+  - **EC-PLAN-03 (Layout divergence):** all tool invocations are halted and the user is asked
+    whether to perform a layout migration or update the configuration; no further action is taken
+    before the explicit answer.
+  - **EC-PLAN-04 (Unknown pointer):** a brand-new Epic is created, the pointer is never added to an
     unrelated Epic.
-  - **EC-05 (Feature removed by a spec update):** the issue is flagged `<!-- [DELETED] -->` or
+  - **EC-PLAN-05 (Feature removed by a spec update):** the issue is flagged `<!-- [DELETED] -->` or
     removed, without shifting any other ID.
-  - **EC-06 (Existing roadmap, no confirmation):** nothing is written until the user types `yes`;
-    adjustments can be specified instead.
+  - **EC-PLAN-06 (Existing roadmap, no confirmation):** nothing is written until the user types
+    `yes`; adjustments can be specified instead.
 
 ## 4. Acceptance Criteria (QA)
 

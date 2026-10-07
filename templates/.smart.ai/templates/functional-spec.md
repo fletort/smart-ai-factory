@@ -1,4 +1,11 @@
-# Functional Specifications: [Feature Name]
+# Functional Specifications: [Feature Name] (ID: [FEAT_ID])
+
+<!--
+INSTRUCTION: Replace [FEAT_ID] globally with a unique 3-4 letter uppercase trigram (e.g., AUTH,
+BILL, DASH) based on the feature name. All rules and criteria must use this prefix to prevent collisions.
+-->
+
+> **State**: _Proposed specification (The specified files may not exist yet.)_
 
 ## 1. General Overview
 
@@ -46,8 +53,8 @@ stateDiagram-v2
 - **User Stories:**
   - _As a_ [Persona], _I want to_ [Action] _so that_ [Benefit].
 - **Business Rules Matrix:**
-  - **BR-01:** [e.g., An invoice can only be generated if the client's country is valid.]
-  - **BR-02:** [e.g., Users can only retry payment 3 times before account lockout.]
+  - **BR-[FEAT_ID]-01:** [e.g., An invoice can only be generated if the client's country is valid.]
+  - **BR-[FEAT_ID]-02:** [e.g., Users can only retry payment 3 times before account lockout.]
 
 ## 5. Acceptance Criteria (QA)
 

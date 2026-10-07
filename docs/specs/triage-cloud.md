@@ -1,4 +1,4 @@
-# Unified Specifications: Cloud Triage, Stateless CI/CD & Token Optimization
+# Specifications: Cloud Triage, Stateless CI/CD & Token Optimization (ID: TCLD)
 
 > **State**: _Proposed specification (The specified files may not exist yet.)_
 
@@ -97,74 +97,74 @@
   ```
 
 - **Business Rules:**
-  - BR-01 (Two workflows): the framework provisions two distinct GitHub Actions workflows inside
-    `.github/workflows/` to segregate execution scopes and maximise billing efficiency:
+  - **BR-TLCD-01 (Two workflows):** the framework provisions two distinct GitHub Actions workflows
+    inside `.github/workflows/` to segregate execution scopes and maximise billing efficiency:
     `ai_triage_pipeline.yml` and `ai_routing_pipeline.yml`.
-  - BR-02 (`ai_triage_pipeline.yml` trigger): `push` events affecting a roadmap file, whatever its
-    layout (single or multi, versioned or not, see
+  - **BR-TLCD-02 (`ai_triage_pipeline.yml` trigger):** `push` events affecting a roadmap file,
+    whatever its layout (single or multi, versioned or not, see
     [Smart-Plan](./smart-plan.md#3-technical-specifications-how)).
-  - BR-03 (`ai_triage_pipeline.yml` action): triages every eligible roadmap issue (rules in the
-    [triage engine](./triage-engine.md#eligibility)). Every issue gets its definitive GitHub ticket
-    on its first run: `ready-to-dev` if the specification is clear, `brainstorming` if blocked. The
-    `(#N)` link is synced to the roadmap, by default through an aggregated pull request so the
-    branch protection is never bypassed. The run stops safely when a human is needed (exit code 3 is
-    the expected "waiting for a human" outcome, not a failure).
-  - BR-04 (Conversation Context epics): an epic anchored on `Current Conversation History` has no
-    spec file. The pipeline opens a tracking issue asking for that context, then the normal
+  - **BR-TLCD-03 (`ai_triage_pipeline.yml` action):** triages every eligible roadmap issue (rules in
+    the [triage engine](./triage-engine.md#eligibility)). Every issue gets its definitive GitHub
+    ticket on its first run: `ready-to-dev` if the specification is clear, `brainstorming` if
+    blocked. The `(#N)` link is synced to the roadmap, by default through an aggregated pull request
+    so the branch protection is never bypassed. The run stops safely when a human is needed (exit
+    code 3 is the expected "waiting for a human" outcome, not a failure).
+  - **BR-TLCD-04 (Conversation Context epics):** an epic anchored on `Current Conversation History`
+    has no spec file. The pipeline opens a tracking issue asking for that context, then the normal
     brainstorm loop applies.
-  - BR-05 (`ai_routing_pipeline.yml` trigger): `issue_comment` events where the issue contains the
-    label `brainstorming`, and `pull_request` closed events for the specification PRs opened by the
-    auto brainstorm (branch `smart-ai/brainstorm-*` of this repository). A merge of such a PR is
-    what resumes the triage: the `push` workflow is not triggered by it because it does not touch
-    the roadmap files.
-  - BR-06 (`ai_routing_pipeline.yml` action): resumes the session from the issue content (state
-    machine: [triage engine](./triage-engine.md#cloud-ticket-lifecycle-and-resume-triggers)). A
-    comment feeds the conversational loop, a merged PR re-runs the triage on the merged
+  - **BR-TLCD-05 (`ai_routing_pipeline.yml` trigger):** `issue_comment` events where the issue
+    contains the label `brainstorming`, and `pull_request` closed events for the specification PRs
+    opened by the auto brainstorm (branch `smart-ai/brainstorm-*` of this repository). A merge of
+    such a PR is what resumes the triage: the `push` workflow is not triggered by it because it does
+    not touch the roadmap files.
+  - **BR-TLCD-06 (`ai_routing_pipeline.yml` action):** resumes the session from the issue content
+    (state machine: [triage engine](./triage-engine.md#cloud-ticket-lifecycle-and-resume-triggers)).
+    A comment feeds the conversational loop, a merged PR re-runs the triage on the merged
     specifications, and a PR closed without merge makes the ticket fall back to manual brainstorm.
-  - BR-07 (Manual refinement, `auto_brainstorm: false`, Case A): if the Triage LLM discovers an
-    ambiguous task, the pipeline stops automated execution immediately. The CLI automatically
-    provisions a GitHub Issue containing the model's native clarifying questions inside the issue
-    body, freezing the backlog until a human engineer provides the missing technical inputs in the
-    comments.
-  - BR-08 (Autonomous refinement, `auto_brainstorm: true`, Case B): the `advanced_brainstorm_model`
-    resolves the ambiguity through the API. Its proposed changes to the specs and
-    `docs/architecture.md` are submitted as a **pull request** linked to the tracking issue; nothing
-    is pushed to the default branch, so a human always reviews them. The triage resumes only once
-    the PR is merged, so no development ticket is produced from unreviewed specifications. If the PR
-    is closed without merge, the ticket falls back to manual brainstorm.
-  - BR-09 (Backlog protection, `hitl_during_triage: true`): when a specification is flagged as
-    `ready_to_dev` by the cloud engine, the ticket receives a `pending-approval` label instead of
+  - **BR-TLCD-07 (Manual refinement, `auto_brainstorm:** false`, Case A): if the Triage LLM
+    discovers an ambiguous task, the pipeline stops automated execution immediately. The CLI
+    automatically provisions a GitHub Issue containing the model's native clarifying questions
+    inside the issue body, freezing the backlog until a human engineer provides the missing
+    technical inputs in the comments.
+  - **BR-TLCD-08 (Autonomous refinement, `auto_brainstorm:** true`, Case B): the
+    `advanced_brainstorm_model` resolves the ambiguity through the API. Its proposed changes to the
+    specs and `docs/architecture.md` are submitted as a **pull request** linked to the tracking
+    issue; nothing is pushed to the default branch, so a human always reviews them. The triage
+    resumes only once the PR is merged, so no development ticket is produced from unreviewed
+    specifications. If the PR is closed without merge, the ticket falls back to manual brainstorm.
+  - **BR-TLCD-09 (Backlog protection, `hitl_during_triage:** true`): when a specification is flagged
+    as `ready_to_dev` by the cloud engine, the ticket receives a `pending-approval` label instead of
     `ready-to-dev`. The task remains unassigned to coding agents until a maintainer replaces
     `pending-approval` with `ready-to-dev`.
-  - BR-10 (Ticket as cached memory): the GitHub Issue body is treated as a cached memory bank
-    (`FACTORY_CONTEXT`). Once the specification is clear (human answers, or a merged specification
-    PR), this same tracking issue is **mutated in place** and becomes the development issue, so the
-    whole history (initial gap, discussion, specification PR) stays on the ticket.
-  - BR-11 (Idempotent retries): a hidden marker in the first ticket created identifies it for any
-    pipeline retry, so a retry never generates a duplicate
+  - **BR-TLCD-10 (Ticket as cached memory):** the GitHub Issue body is treated as a cached memory
+    bank (`FACTORY_CONTEXT`). Once the specification is clear (human answers, or a merged
+    specification PR), this same tracking issue is **mutated in place** and becomes the development
+    issue, so the whole history (initial gap, discussion, specification PR) stays on the ticket.
+  - **BR-TLCD-11 (Idempotent retries):** a hidden marker in the first ticket created identifies it
+    for any pipeline retry, so a retry never generates a duplicate
     ([triage engine](./triage-engine.md#issue-creation--roadmap-write-back)).
-  - BR-12 (Loop protection): the triage workflow is idempotent: a push that brings no eligible issue
-    (for example the merge of a roadmap-sync PR) exits with code 0 before any LLM call. A
-    `concurrency` group per ref serialises runs, so two runs cannot both miss the ticket marker.
-    With `roadmap_writeback: direct`, pushes whose actor is the bot are also ignored. If
+  - **BR-TLCD-12 (Loop protection):** the triage workflow is idempotent: a push that brings no
+    eligible issue (for example the merge of a roadmap-sync PR) exits with code 0 before any LLM
+    call. A `concurrency` group per ref serialises runs, so two runs cannot both miss the ticket
+    marker. With `roadmap_writeback: direct`, pushes whose actor is the bot are also ignored. If
     `roadmap_writeback: pr` is enabled, the system MUST use an isolated, unique branch per run
     (e.g., `smart-ai/roadmap-sync-${run_id}`) instead of a single shared branch to prevent
     concurrent writeback collisions and data loss across different refs.
-  - BR-13 (Comment authorisation): `issue_comment` runs only for authors whose association is
-    `OWNER`, `MEMBER` or `COLLABORATOR`. Comment text is untrusted data: it is passed through a file
-    or an environment variable, never interpolated into a `run:` script (this also keeps the
+  - **BR-TLCD-13 (Comment authorisation):** `issue_comment` runs only for authors whose association
+    is `OWNER`, `MEMBER` or `COLLABORATOR`. Comment text is untrusted data: it is passed through a
+    file or an environment variable, never interpolated into a `run:` script (this also keeps the
     workflows compliant with `zizmor`).
-  - BR-14 (Merge event trust): the `pull_request` trigger only acts on `smart-ai/brainstorm-*`
-    branches whose head repository is this repository (never a fork). The merge is the human gate
-    requiring a reviewer with write access under repository branch protection. To prevent
-    cross-session race conditions, the system MUST explicitly bind the event by enforcing that the
-    merged PR number equals `BrainstormState.pending_pr` and validating its tracking session marker
-    before transitioning out of the `AwaitingPR` state.
-  - BR-15 (Permissions): least privilege per job: `contents: write` (roadmap sync and PR branches),
-    `issues: write`, `pull-requests: write`, only where needed. Both workflows must pass
+  - **BR-TLCD-14 (Merge event trust):** the `pull_request` trigger only acts on
+    `smart-ai/brainstorm-*` branches whose head repository is this repository (never a fork). The
+    merge is the human gate requiring a reviewer with write access under repository branch
+    protection. To prevent cross-session race conditions, the system MUST explicitly bind the event
+    by enforcing that the merged PR number equals `BrainstormState.pending_pr` and validating its
+    tracking session marker before transitioning out of the `AwaitingPR` state.
+  - **BR-TLCD-15 (Permissions):** least privilege per job: `contents: write` (roadmap sync and PR
+    branches), `issues: write`, `pull-requests: write`, only where needed. Both workflows must pass
     `actionlint` and `zizmor`.
-  - BR-16 (Failure mode): on any non-zero exit code other than 3, the workflow comments the error
-    summary on the tracking issue when one exists.
+  - **BR-TLCD-16 (Failure mode):** on any non-zero exit code other than 3, the workflow comments the
+    error summary on the tracking issue when one exists.
 - **User Stories:**
   - _As a_ maintainer, _I want_ a push of the roadmap to trigger the triage automatically _so that_
     the backlog is generated without any manual action.
@@ -228,8 +228,8 @@ Event data is passed through environment variables, never interpolated into the 
 
 ### Safeguards (both workflows)
 
-See the business rules BR-12 to BR-16: loop protection, comment authorisation, merge event trust,
-permissions and failure mode.
+See the business rules BR-TLCD-12 to BR-TLCD-16: loop protection, comment authorisation, merge event
+trust, permissions and failure mode.
 
 ### FinOps state persistence: `FACTORY_CONTEXT`
 
@@ -261,18 +261,18 @@ memory bank.
    [triage engine](./triage-engine.md#cloud-ticket-lifecycle-and-resume-triggers).
 
 - **Edge Cases & Error Handling:**
-  - **EC-01 (Push without eligible issue, e.g. merge of a roadmap-sync PR):** exit code 0 before any
-    LLM call, no loop.
-  - **EC-02 (Concurrent runs on the same ref):** serialised by a `concurrency` group per ref.
-  - **EC-03 (Concurrent roadmap write-backs):** isolated, unique branch per run in `pr` mode.
-  - **EC-04 (Comment from an unauthorised author):** the routing workflow does not run.
-  - **EC-05 (Pull request from a fork or on a non-`smart-ai/brainstorm-*` branch):** ignored.
-  - **EC-06 (Merged PR number differs from `pending_pr`, or marker invalid):** the transition out of
-    `AwaitingPR` is refused.
-  - **EC-07 (PR closed without merge):** the ticket falls back to manual brainstorm.
-  - **EC-08 (Non-zero exit code other than 3):** the workflow comments the error summary on the
+  - **EC-TLCD-01 (Push without eligible issue, e.g. merge of a roadmap-sync PR):** exit code 0
+    before any LLM call, no loop.
+  - **EC-TLCD-02 (Concurrent runs on the same ref):** serialised by a `concurrency` group per ref.
+  - **EC-TLCD-03 (Concurrent roadmap write-backs):** isolated, unique branch per run in `pr` mode.
+  - **EC-TLCD-04 (Comment from an unauthorised author):** the routing workflow does not run.
+  - **EC-TLCD-05 (Pull request from a fork or on a non-`smart-ai/brainstorm-*` branch):** ignored.
+  - **EC-TLCD-06 (Merged PR number differs from `pending_pr`, or marker invalid):** the transition
+    out of `AwaitingPR` is refused.
+  - **EC-TLCD-07 (PR closed without merge):** the ticket falls back to manual brainstorm.
+  - **EC-TLCD-08 (Non-zero exit code other than 3):** the workflow comments the error summary on the
     tracking issue when one exists.
-  - **EC-09 (Conversation Context epic):** a tracking issue asks for the context first.
+  - **EC-TLCD-09 (Conversation Context epic):** a tracking issue asks for the context first.
 
 ## 4. Acceptance Criteria (QA)
 

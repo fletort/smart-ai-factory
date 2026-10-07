@@ -1,4 +1,4 @@
-# Unified Specifications: Triage Engine (Phase 2)
+# Specifications: Triage Engine (Phase 2) (ID: TRGE)
 
 > **State**: _Proposed specification (The specified files may not exist yet.)_
 
@@ -74,50 +74,52 @@
   ```
 
 - **Business Rules:**
-  - BR-01 (Eligibility): a roadmap issue is eligible when (1) it has no `(#N)` in the roadmap, no
-    ticket found for its `tracking-id` marker and no `<!-- [DELETED] -->` mark, (2) it is not
-    checked, and (3) every ID in `depends_on` exists and its specification is cleared (checked, or a
-    ticket that does not carry the `brainstorming` label).
-  - BR-02 (Marker is the source of truth): the roadmap `(#N)` is a human-readable link that may lag
-    behind the tickets; the ticket found through the marker is the source of truth. A ticket still
-    in brainstorm is never selected again by the eligibility rule: it is resumed by its own events.
-  - BR-03 (Selection): `--issue ISSUE-X.Y` targets one issue (dependencies still enforced),
+  - **BR-TRGE-01 (Eligibility):** a roadmap issue is eligible when (1) it has no `(#N)` in the
+    roadmap, no ticket found for its `tracking-id` marker and no `<!-- [DELETED] -->` mark, (2) it
+    is not checked, and (3) every ID in `depends_on` exists and its specification is cleared
+    (checked, or a ticket that does not carry the `brainstorming` label).
+  - **BR-TRGE-02 (Marker is the source of truth):** the roadmap `(#N)` is a human-readable link that
+    may lag behind the tickets; the ticket found through the marker is the source of truth. A ticket
+    still in brainstorm is never selected again by the eligibility rule: it is resumed by its own
+    events.
+  - **BR-TRGE-03 (Selection):** `--issue ISSUE-X.Y` targets one issue (dependencies still enforced),
     `--limit N` (default 1 locally, all eligible in CI), `--all`. Eligible issues sharing the same
     blockers are independent and may be triaged in the same run, processed sequentially ordered by
     ID.
-  - BR-04 (Exact roadmap format): the parser reads **exactly the format written by `smart-plan`**. A
-    line that looks like an issue but does not match is reported as a warning and never silently
-    skipped.
-  - BR-05 (Layout divergence): triage never guesses. Local: stop and ask whether to follow the
-    filesystem or fix the config. Non-interactive or cloud: exit code 4.
-  - BR-06 (Version selection): the latest `vX.Y` directory (numeric order) is used, overridable with
-    `--roadmap-version vX.Y`. Unlike `smart-plan`, triage never invents a new version.
-  - BR-07 (Smallest context): the smallest context that lets a low-cost model judge the issue is
-    packed, with a token cap (default 12,000, configurable); the lowest priority items are dropped
-    first and the drop is reported.
-  - BR-08 (Conversation Context anchors): the context is asked first, then the normal triage runs;
-    it is never requested twice.
-  - BR-09 (Three questions): an `unclear_specification` result asks at most 3 questions, consistent
-    with the 3-Question Rule of `smart-spec`.
-  - BR-10 (Brainstorm cap): a session is limited to `max_brainstorm_turns` (default 5); reaching the
-    limit leaves the issue untriaged and reports why.
-  - BR-11 (Reviewed decisions only): a development issue is never created from decisions that are
-    not merged: in auto mode (cloud) the triage resumes only from the merged state of the default
-    branch.
-  - BR-12 (Approval): with `hitl_during_triage: true` a human approves before the issue becomes
-    `ready-to-dev`; with `false` the step is skipped in both modes.
-  - BR-13 (One ticket per roadmap issue): there is one GitHub issue per roadmap issue for its whole
-    life; a brainstorm tracking issue is updated in place, never replaced.
-  - BR-14 (Surgical roadmap write-back): only the matching line is rewritten, appending `(#N)`;
-    checkboxes, IDs, dependencies and every other line are never modified.
-  - BR-15 (Idempotent commands): re-running any command after a failure or duplicate event never
-    creates a second ticket and never processes the same comment twice.
-  - BR-16 (Nothing to do is not an error): no eligible issue or no pending event exits with code 0
-    before any LLM call.
-  - BR-17 (Waiting is not failing): waiting for a human is exit code 3.
-  - BR-18 (Untrusted input): issue and comment text is treated as data (delimited blocks) and the
-    model's output only ever goes through the Pydantic schema. Event data is passed to the CLI
-    through files or environment variables, never through shell interpolation.
+  - **BR-TRGE-04 (Exact roadmap format):** the parser reads **exactly the format written by
+    `smart-plan`**. A line that looks like an issue but does not match is reported as a warning and
+    never silently skipped.
+  - **BR-TRGE-05 (Layout divergence):** triage never guesses. Local: stop and ask whether to follow
+    the filesystem or fix the config. Non-interactive or cloud: exit code 4.
+  - **BR-TRGE-06 (Version selection):** the latest `vX.Y` directory (numeric order) is used,
+    overridable with `--roadmap-version vX.Y`. Unlike `smart-plan`, triage never invents a new
+    version.
+  - **BR-TRGE-07 (Smallest context):** the smallest context that lets a low-cost model judge the
+    issue is packed, with a token cap (default 12,000, configurable); the lowest priority items are
+    dropped first and the drop is reported.
+  - **BR-TRGE-08 (Conversation Context anchors):** the context is asked first, then the normal
+    triage runs; it is never requested twice.
+  - **BR-TRGE-09 (Three questions):** an `unclear_specification` result asks at most 3 questions,
+    consistent with the 3-Question Rule of `smart-spec`.
+  - **BR-TRGE-10 (Brainstorm cap):** a session is limited to `max_brainstorm_turns` (default 5);
+    reaching the limit leaves the issue untriaged and reports why.
+  - **BR-TRGE-11 (Reviewed decisions only):** a development issue is never created from decisions
+    that are not merged: in auto mode (cloud) the triage resumes only from the merged state of the
+    default branch.
+  - **BR-TRGE-12 (Approval):** with `hitl_during_triage: true` a human approves before the issue
+    becomes `ready-to-dev`; with `false` the step is skipped in both modes.
+  - **BR-TRGE-13 (One ticket per roadmap issue):** there is one GitHub issue per roadmap issue for
+    its whole life; a brainstorm tracking issue is updated in place, never replaced.
+  - **BR-TRGE-14 (Surgical roadmap write-back):** only the matching line is rewritten, appending
+    `(#N)`; checkboxes, IDs, dependencies and every other line are never modified.
+  - **BR-TRGE-15 (Idempotent commands):** re-running any command after a failure or duplicate event
+    never creates a second ticket and never processes the same comment twice.
+  - **BR-TRGE-16 (Nothing to do is not an error):** no eligible issue or no pending event exits with
+    code 0 before any LLM call.
+  - **BR-TRGE-17 (Waiting is not failing):** waiting for a human is exit code 3.
+  - **BR-TRGE-18 (Untrusted input):** issue and comment text is treated as data (delimited blocks)
+    and the model's output only ever goes through the Pydantic schema. Event data is passed to the
+    CLI through files or environment variables, never through shell interpolation.
 - **User Stories:**
   - _As a_ product owner, _I want_ my high-level roadmap issues turned into detailed, sized tickets
     _so that_ developer agents receive precise tasks at the right cost tier.
@@ -152,7 +154,7 @@
       Run->>LLM: complete(simple_triage_model, TriageResult)
       alt unclear_specification
           Run->>Trk: find_by_marker, then create_issue (brainstorming) on first blocking run
-          Run->>RM: Sync (#N) to the roadmap
+          Run->>RM: Sync (N) to the roadmap
           Run->>Ch: NeedsInput (questions) or auto: advanced model + specification PR
           Ch-->>Run: answer / merged PR (resume)
           Run->>LLM: Triage call repeated
@@ -161,7 +163,7 @@
               Run->>Ch: Approval (preview card, or pending-approval label)
           end
           Run->>Trk: create_issue, or update_issue + labels on the tracking ticket
-          Run->>RM: Sync (#N) if not linked yet
+          Run->>RM: Sync (N) if not linked yet
       end
   ```
 
@@ -555,27 +557,29 @@ src/smart_ai/triage/
 ```
 
 - **Edge Cases & Error Handling:**
-  - **EC-01 (Workspace not configured):** exit code 2.
-  - **EC-02 (Layout divergence):** local: ask whether to follow the filesystem or fix the config;
-    non-interactive or cloud: exit code 4.
-  - **EC-03 (Malformed roadmap line):** reported as a warning, never silently skipped.
-  - **EC-04 (Nothing eligible):** exit code 0 before any LLM call.
-  - **EC-05 (Spec file missing or pointer escaping the repository):** a clear error is reported;
-    absolute paths, `..` and symlink escapes are rejected.
-  - **EC-06 (Context over budget):** the lowest priority items are dropped and the drop is reported.
-  - **EC-07 (Invalid structured output):** one repair call, then exit code 5.
-  - **EC-08 (Brainstorm turn cap reached):** the issue stays untriaged (the ticket stays in
+  - **EC-TRGE-01 (Workspace not configured):** exit code 2.
+  - **EC-TRGE-02 (Layout divergence):** local: ask whether to follow the filesystem or fix the
+    config; non-interactive or cloud: exit code 4.
+  - **EC-TRGE-03 (Malformed roadmap line):** reported as a warning, never silently skipped.
+  - **EC-TRGE-04 (Nothing eligible):** exit code 0 before any LLM call.
+  - **EC-TRGE-05 (Spec file missing or pointer escaping the repository):** a clear error is
+    reported; absolute paths, `..` and symlink escapes are rejected.
+  - **EC-TRGE-06 (Context over budget):** the lowest priority items are dropped and the drop is
+    reported.
+  - **EC-TRGE-07 (Invalid structured output):** one repair call, then exit code 5.
+  - **EC-TRGE-08 (Brainstorm turn cap reached):** the issue stays untriaged (the ticket stays in
     `brainstorming` in cloud, with the reason commented on it).
-  - **EC-09 (FACTORY_CONTEXT signature missing or invalid, or unknown `schema_version`):** the state
-    is rejected before any internal field is trusted.
-  - **EC-10 (Comment while `awaiting` is `pr_review`):** ignored with a notice.
-  - **EC-11 (PR closed without merge):** the ticket falls back to manual brainstorm.
-  - **EC-12 (Retry or duplicate event):** the marker lookup reuses the existing ticket;
+  - **EC-TRGE-09 (FACTORY_CONTEXT signature missing or invalid, or unknown `schema_version`):** the
+    state is rejected before any internal field is trusted.
+  - **EC-TRGE-10 (Comment while `awaiting` is `pr_review`):** ignored with a notice.
+  - **EC-TRGE-11 (PR closed without merge):** the ticket falls back to manual brainstorm.
+  - **EC-TRGE-12 (Retry or duplicate event):** the marker lookup reuses the existing ticket;
     `last_processed_comment_id` prevents a comment from being processed twice.
-  - **EC-13 (Failed roadmap write-back):** a retry reuses the existing ticket number for `(#N)`.
-  - **EC-14 (`--non-interactive` with `hitl_during_triage: true` locally):** exit code 3 listing the
-    proposed issues, nothing created.
-  - **EC-15 (Roadmap changed in the meantime):** detected through `roadmap_line`; the line is
+  - **EC-TRGE-13 (Failed roadmap write-back):** a retry reuses the existing ticket number for
+    `(#N)`.
+  - **EC-TRGE-14 (`--non-interactive` with `hitl_during_triage: true` locally):** exit code 3
+    listing the proposed issues, nothing created.
+  - **EC-TRGE-15 (Roadmap changed in the meantime):** detected through `roadmap_line`; the line is
     re-read and its ID verified just before writing.
 
 ## 4. Acceptance Criteria (QA)
