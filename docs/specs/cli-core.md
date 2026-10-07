@@ -1,4 +1,4 @@
-# Unified Specifications: `smart-ai` Python CLI Core
+# Specifications: `smart-ai` Python CLI Core (ID: CORE)
 
 > **State**: _Proposed specification (The specified files may not exist yet.)_
 
@@ -64,34 +64,36 @@
   ```
 
 - **Business Rules:**
-  - BR-01 (Early exit): if the config file is missing, the CLI prints exactly
+  - **BR-CORE-01 (Early exit):** if the config file is missing, the CLI prints exactly
     `❌[smart-ai] Workspace not configured.` and exits with code 2, mirroring the skills.
-  - BR-02 (Config validation): Pydantic validates the whole file at load time. An unknown alias or a
-    missing environment variable is reported by `config check` and at startup with the offending
-    key.
-  - BR-03 (Secrets): secrets are **never** in `config.yml`. Local: `.env`. Cloud: GitHub `secrets`
-    mapped to the same variable names.
-  - BR-04 (Model aliases): model aliases are the only thing the pipeline code knows. Switching a
-    provider is a config edit.
-  - BR-05 (Shared config file): the skills ignore unknown sections of `.smart.ai/config.yml`, so the
-    file stays shared between the skills and the CLI.
-  - BR-06 (Mode): `--mode auto` resolves to `cloud` if `GITHUB_ACTIONS=true`, else `local`.
-  - BR-07 (Non-interactive): `--non-interactive` never prompts; it fails with exit code 3 if input
-    is required.
-  - BR-08 (Dry run): `--dry-run` does everything except mutating files, version control or GitHub.
-  - BR-09 (JSON output): with `--json`, machine-readable output goes to stdout (logs go to stderr),
-    in one document that always carries a `schema_version`.
-  - BR-10 (Resumable sessions): every interactive flow (brainstorm, approval gate) is a resumable
-    step function, so that local (synchronous), cloud and MCP (asynchronous) modes share one logic.
-  - BR-11 (Budget): a strict hard cap per run (`max_cost_usd_per_run`) is enforced before each LLM
-    call; the run stops with exit code 6 if the cap would be breached.
-  - BR-12 (Untrusted text): untrusted text (issue comments, roadmap titles) is always inserted into
-    prompts inside delimited blocks, and the system prompt states that those blocks are data, never
-    instructions.
-  - BR-13 (Ports): services depend only on ports (Python `Protocol` classes), never on `gh` or `git`
-    directly.
-  - BR-14 (Skills are thin): the `.agents/skills/` skills only shell out to `smart-ai ... --json`;
-    they contain no business logic.
+  - **BR-CORE-02 (Config validation):** Pydantic validates the whole file at load time. An unknown
+    alias or a missing environment variable is reported by `config check` and at startup with the
+    offending key.
+  - **BR-CORE-03 (Secrets):** secrets are **never** in `config.yml`. Local: `.env`. Cloud: GitHub
+    `secrets` mapped to the same variable names.
+  - **BR-CORE-04 (Model aliases):** model aliases are the only thing the pipeline code knows.
+    Switching a provider is a config edit.
+  - **BR-CORE-05 (Shared config file):** the skills ignore unknown sections of
+    `.smart.ai/config.yml`, so the file stays shared between the skills and the CLI.
+  - **BR-CORE-06 (Mode):** `--mode auto` resolves to `cloud` if `GITHUB_ACTIONS=true`, else `local`.
+  - **BR-CORE-07 (Non-interactive):** `--non-interactive` never prompts; it fails with exit code 3
+    if input is required.
+  - **BR-CORE-08 (Dry run):** `--dry-run` does everything except mutating files, version control or
+    GitHub.
+  - **BR-CORE-09 (JSON output):** with `--json`, machine-readable output goes to stdout (logs go to
+    stderr), in one document that always carries a `schema_version`.
+  - **BR-CORE-10 (Resumable sessions):** every interactive flow (brainstorm, approval gate) is a
+    resumable step function, so that local (synchronous), cloud and MCP (asynchronous) modes share
+    one logic.
+  - **BR-CORE-11 (Budget):** a strict hard cap per run (`max_cost_usd_per_run`) is enforced before
+    each LLM call; the run stops with exit code 6 if the cap would be breached.
+  - **BR-CORE-12 (Untrusted text):** untrusted text (issue comments, roadmap titles) is always
+    inserted into prompts inside delimited blocks, and the system prompt states that those blocks
+    are data, never instructions.
+  - **BR-CORE-13 (Ports):** services depend only on ports (Python `Protocol` classes), never on `gh`
+    or `git` directly.
+  - **BR-CORE-14 (Skills are thin):** the `.agents/skills/` skills only shell out to
+    `smart-ai ... --json`; they contain no business logic.
 - **User Stories:**
   - _As a_ developer, _I want to_ run `smart-ai` in my terminal _so that_ I triage and brainstorm
     interactively with my own keys.
@@ -442,22 +444,23 @@ No logic is added in the adapter: it only translates between MCP tool calls and 
 payload of the interaction model.
 
 - **Edge Cases & Error Handling:**
-  - **EC-01 (Workspace not configured):** `❌[smart-ai] Workspace not configured.`, exit code 2.
-  - **EC-02 (Unknown alias / missing env variable):** reported with the offending key by
+  - **EC-CORE-01 (Workspace not configured):** `❌[smart-ai] Workspace not configured.`, exit
+    code 2.
+  - **EC-CORE-02 (Unknown alias / missing env variable):** reported with the offending key by
     `config check` and at startup.
-  - **EC-03 (Input required but channel cannot provide it):** exit code 3 (suspended); in cloud this
-    is the expected "waiting for a human" outcome, not a failure.
-  - **EC-04 (Invalid structured output):** one repair call with the validation errors, then exit
-    code 5.
-  - **EC-05 (Provider rate limit / 5xx):** bounded retries with backoff; free-tier quota errors are
-    surfaced clearly and may fall back to a configured alias.
-  - **EC-06 (Budget):** if the worst-case cost of a call breaches `max_cost_usd_per_run`, the call
-    is aborted immediately (exit code 6).
-  - **EC-07 (GitHub or git failure):** mapped to exit code 7 with the failing operation named.
-  - **EC-08 (Mutation without tracking marker):** `update_issue` refuses a body lacking the
+  - **EC-CORE-03 (Input required but channel cannot provide it):** exit code 3 (suspended); in cloud
+    this is the expected "waiting for a human" outcome, not a failure.
+  - **EC-CORE-04 (Invalid structured output):** one repair call with the validation errors, then
+    exit code 5.
+  - **EC-CORE-05 (Provider rate limit / 5xx):** bounded retries with backoff; free-tier quota errors
+    are surfaced clearly and may fall back to a configured alias.
+  - **EC-CORE-06 (Budget):** if the worst-case cost of a call breaches `max_cost_usd_per_run`, the
+    call is aborted immediately (exit code 6).
+  - **EC-CORE-07 (GitHub or git failure):** mapped to exit code 7 with the failing operation named.
+  - **EC-CORE-08 (Mutation without tracking marker):** `update_issue` refuses a body lacking the
     `smart-ai:tracking-id` marker (exit code 7).
-  - **EC-09 (Roadmap layout divergence unresolved):** exit code 4.
-  - **EC-10 (Auto-merge forbidden by the repository):** `enable_auto_merge` returns `False`.
+  - **EC-CORE-09 (Roadmap layout divergence unresolved):** exit code 4.
+  - **EC-CORE-10 (Auto-merge forbidden by the repository):** `enable_auto_merge` returns `False`.
 
 ## 4. Acceptance Criteria (QA)
 

@@ -1,7 +1,11 @@
-# Unified Specifications: [Module/Feature Name]
+# Specifications: [Module/Feature Name] (ID: [FEAT_ID])
 
-<!-- Adapt the bold labels to the feature (e.g. "Screen Flow", "Workflow States"). If a block does
-not apply, keep it and write "not applicable" with the reason. -->
+<!--
+INSTRUCTION: Replace [FEAT_ID] globally with a unique 3-4 letter uppercase trigram (e.g., AUTH,
+BILL, DASH) based on the feature name. All rules and criteria must use this prefix to prevent collisions.
+-->
+
+> **State**: _Proposed specification (The specified files may not exist yet.)_
 
 ## 1. Context & Objectives
 
@@ -44,7 +48,8 @@ stateDiagram-v2
 ```
 
 - **Business Rules:**
-  - BR-01: [Rule description]
+  - **BR-[FEAT_ID]-01:** [Rule description]
+  - **BR-[FEAT_ID]-02:** [Rule description]
 - **User Stories:**
   - _As a_ [Persona], _I want to_ [Action] _so that_ [Benefit].
 

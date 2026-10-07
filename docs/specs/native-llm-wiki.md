@@ -1,4 +1,4 @@
-# Unified Specifications: Native LLM Wiki Engine
+# Specifications: Native LLM Wiki Engine (ID: WIKI)
 
 > **State**: _Proposed specification_ (templates are available in `templates/docs/INDEX.md`,
 > `templates/src/README.md` and `templates/src/_module_/README.md`)
@@ -43,39 +43,40 @@
   and the lookup above is stateless.
 
 - **Business Rules:**
-  - BR-01 (Double-mirror topology): the `smart-ai` core engine expects, validates and dynamically
-    compiles a "Double-Mirror" directory structure at the root of any automated repository: a
-    **Product Wiki** (`docs/INDEX.md`) and a **Code Wiki** (`src/README.md` + one `README.md` per
-    module), both reachable from the system router.
-  - BR-02 (System router size): `CLAUDE.md` / `AGENTS.md` at the root must remain **strictly under
-    50 lines**, to minimise the system-prompt injection footprint of any routing script.
-  - BR-03 (Product Wiki): `docs/INDEX.md` maps high-level business goals, requirements and feature
-    definitions. It is primarily fed by `/smart-spec` (Phase 0) and ingested by the Triage Script
-    (Phase 2).
-  - BR-04 (Code Wiki): `src/README.md` maps technical code boundaries, modules and standalone
-    skills. No individual source code files (`.ts`, `.py`, etc.) are allowed to be tracked in this
-    top-level index.
-  - BR-05 (Module boundary): every subdirectory inside `src/` bundles a localised `README.md`. It
-    forms an impenetrable semantic boundary around that module.
-  - BR-06 (Bootstrap): bootstrap versions of the three documentation types are proposed by the
-    installation process and can be personalised to the project
+  - **BR-WIKI-01 (Double-mirror topology):** the `smart-ai` core engine expects, validates and
+    dynamically compiles a "Double-Mirror" directory structure at the root of any automated
+    repository: a **Product Wiki** (`docs/INDEX.md`) and a **Code Wiki** (`src/README.md` + one
+    `README.md` per module), both reachable from the system router.
+  - **BR-WIKI-02 (System router size):** `CLAUDE.md` / `AGENTS.md` at the root must remain
+    **strictly under 50 lines**, to minimise the system-prompt injection footprint of any routing
+    script.
+  - **BR-WIKI-03 (Product Wiki):** `docs/INDEX.md` maps high-level business goals, requirements and
+    feature definitions. It is primarily fed by `/smart-spec` (Phase 0) and ingested by the Triage
+    Script (Phase 2).
+  - **BR-WIKI-04 (Code Wiki):** `src/README.md` maps technical code boundaries, modules and
+    standalone skills. No individual source code files (`.ts`, `.py`, etc.) are allowed to be
+    tracked in this top-level index.
+  - **BR-WIKI-05 (Module boundary):** every subdirectory inside `src/` bundles a localised
+    `README.md`. It forms an impenetrable semantic boundary around that module.
+  - **BR-WIKI-06 (Bootstrap):** bootstrap versions of the three documentation types are proposed by
+    the installation process and can be personalised to the project
     ([`docs/INDEX.md`](../../templates/docs/INDEX.md),
     [`src/README.md`](../../templates/src/README.md),
     [`src/_module_/README.md`](../../templates/src/_module_/README.md)).
-  - BR-07 (Scaffolding loop): when generating a new skill or DevOps script via the CLI, the
+  - **BR-WIKI-07 (Scaffolding loop):** when generating a new skill or DevOps script via the CLI, the
     framework automatically appends the entry row into `src/README.md` and provisions the local
     `README.md` skeleton, ensuring the repository's LLM Wiki compiles and remains intact.
-  - BR-08 (Phase 2 context lock): when the Gemini Flash PO or a local triage routine receives an
-    update on `roadmap.md` or a feature ticket, it (1) reads `CLAUDE.md`/`AGENTS.md` ➡️
+  - **BR-WIKI-08 (Phase 2 context lock):** when the Gemini Flash PO or a local triage routine
+    receives an update on `roadmap.md` or a feature ticket, it (1) reads `CLAUDE.md`/`AGENTS.md` ➡️
     `docs/INDEX.md` ➡️ `src/README.md` to identify the affected modules, (2) loads only the
     specified file paths from the matching local Code-Wiki's Critical Entrypoints instead of the
     whole codebase, and (3) if a requirement is missing from the wiki or conflicts with constraints,
     labels the ticket as 🛑 Level: BRAINSTORM, halting the pipeline for `claude-3-5-sonnet`
     refinement.
-  - BR-09 (Phase 3 budget ingestion): before dispatching a ticket to a development agent size
-    (`xs_coder` to `xxl_coder`), the DevRouter Script injects the local `src/_module_/README.md`
-    into the agent's system instruction, so that a low-cost model (`xs_coder`) knows its exact
-    structural limitations without needing a high context window.
+  - **BR-WIKI-09 (Phase 3 budget ingestion):** before dispatching a ticket to a development agent
+    size (`xs_coder` to `xxl_coder`), the DevRouter Script injects the local
+    `src/_module_/README.md` into the agent's system instruction, so that a low-cost model
+    (`xs_coder`) knows its exact structural limitations without needing a high context window.
 - **User Stories:**
   - _As a_ FinOps owner, _I want_ agents to read only the relevant wiki sub-nodes _so that_ a
     standard issue stays around $0.01.
@@ -249,13 +250,15 @@
     injection).
 
 - **Edge Cases & Error Handling:**
-  - **EC-01 (Requirement missing from the wiki or conflicting with constraints):** the Triage Script
-    labels the ticket 🛑 Level: BRAINSTORM and halts the pipeline for refinement (BR-08).
-  - **EC-02 (Index insufficient):** the agent asks the user instead of scanning the workspace (see
-    [smart-spec](./smart-spec.md#2-functional--ux-specifications-what), BR-09).
-  - **EC-03 (Router larger than 50 lines):** violates BR-02; the router must be reduced.
-  - **EC-04 (Source file listed in the code index):** violates BR-04; only modules and skills are
-    listed.
+  - **EC-WIKI-01 (Requirement missing from the wiki or conflicting with constraints):** the Triage
+    Script labels the ticket 🛑 Level: BRAINSTORM and halts the pipeline for refinement
+    (**BR-WIKI-08**).
+  - **EC-WIKI-02 (Index insufficient):** the agent asks the user instead of scanning the workspace
+    (see [smart-spec](./smart-spec.md#2-functional--ux-specifications-what), **BR-WIKI-09**).
+  - **EC-WIKI-03 (Router larger than 50 lines):** violates **BR-WIKI-02**; the router must be
+    reduced.
+  - **EC-WIKI-04 (Source file listed in the code index):** violates **BR-WIKI-04**; only modules and
+    skills are listed.
 
 ## 4. Acceptance Criteria (QA)
 

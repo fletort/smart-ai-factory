@@ -1,4 +1,4 @@
-# Unified Specifications: Smart-Spec (Phase 0 - Specification Refinement)
+# Specifications: Smart-Spec (Phase 0 - Specification Refinement) (ID: SPEC)
 
 > **State**: _Implemented as a skill (only)_
 
@@ -58,24 +58,24 @@
 - **State Machine (session / ticket / workflow):** not applicable. The skill is a linear,
   conversational flow with no persisted state: the flow above is the complete behaviour.
 - **Business Rules:**
-  - BR-01 (Configuration pre-condition): `.smart.ai/config.yml` is checked first and on its own. If
-    it is missing, the skill halts immediately, reads nothing else and outputs exactly
+  - **BR-SPEC-01 (Configuration pre-condition):** `.smart.ai/config.yml` is checked first and on its
+    own. If it is missing, the skill halts immediately, reads nothing else and outputs exactly
     `❌**[smart-spec] Workspace not configured.**`.
-  - BR-02 (Template mode detection): when the configuration exists, only its
+  - **BR-SPEC-02 (Template mode detection):** when the configuration exists, only its
     `specifications.templates` section is analysed to detect the mode, announced with
     `[smart-ai] Mode /detected mode/ detected (name of template file(s))`. The template files are
     **not** read at this point.
     - **UNIFIED** mode: only a single `unified` template path is provided.
     - **MODULAR** mode: separate `functional` and `technical` template paths are provided.
-  - BR-03 (Never assume): missing details are never assumed. The first draft flags missing
+  - **BR-SPEC-03 (Never assume):** missing details are never assumed. The first draft flags missing
     information with `⚠️ [PENDING]` and ends with the **3-Question Rule** (at most 3 questions that
     surface blind spots), then waits for validation.
-  - BR-04 (Scope evaluation): once the discussion is mature the scope is evaluated, and always
-    notified to the user with one of:
+  - **BR-SPEC-04 (Scope evaluation):** once the discussion is mature the scope is evaluated, and
+    always notified to the user with one of:
     - `[smart-ai] **SMALL/MICRO** specification estimated`
     - `[smart-ai] **LARGE** specification estimated`
     - `[smart-ai] Scope of the current specification is not yet evaluated`
-  - BR-05 (SMALL/MICRO, < 4 hours): the user chooses between:
+  - **BR-SPEC-05 (SMALL/MICRO, < 4 hours):** the user chooses between:
     - **Case 1**: run `/smart-plan` to append a high-level issue placeholder to the active /
       configured roadmap target, using the chat context. Used when tracking is needed but local
       specification documentation is overkill. No boilerplate specification file is created; the
@@ -84,27 +84,28 @@
       injection. Used when the feature is straightforward and implementation can start immediately,
       with minimal specification overhead.
     - **Case 3**: same as the LARGE scope.
-  - BR-06 (LARGE, >= 4 hours, multiple components or architectural decisions): **Case 3**
+  - **BR-SPEC-06 (LARGE, >= 4 hours, multiple components or architectural decisions):** **Case 3**
     (Phase/Epic with full specifications). The skill asks the user's permission before writing the
     specifications.
-  - BR-07 (Case 3 handoff): once the specifications are complete, the user is prompted to run
-    `/smart-plan` to handle roadmap updates and task scheduling.
-  - BR-08 (Specification mode): in **UNIFIED** mode a single document merges functional and
+  - **BR-SPEC-07 (Case 3 handoff):** once the specifications are complete, the user is prompted to
+    run `/smart-plan` to handle roadmap updates and task scheduling.
+  - **BR-SPEC-08 (Specification mode):** in **UNIFIED** mode a single document merges functional and
     technical needs in the same sections (agile and concise). In **MODULAR** mode the functional
     spec (user stories, business rules, workflows) is checked and updated first (Step 1), then the
     technical spec impact (APIs, schemas, constraints) is mapped (Step 2). The progression is
     announced to the user (e.g. `[smart-ai] Step 1: Updating Functional Specs...`).
-  - BR-09 (Index-driven routing): the new-or-update decision relies strictly on the workspace index
-    `docs/INDEX.md` (see [Native LLM Wiki](./native-llm-wiki.md)). The skill is forbidden from
-    scanning the whole workspace directories; if the index is insufficient, it asks the user.
-  - BR-10 (Writes): once the specification is accepted, the specification file(s) and the index file
-    are written within the SAME response, without asking permission again (UNIFIED: two writes,
-    MODULAR: three writes).
-  - BR-11 (Template fidelity): the layout and Markdown headers defined in the loaded templates are
-    strictly reproduced.
-  - BR-12 (Testable requirements): requirements stay precise, factual and measurable. Vague words
-    (e.g. "fast") are avoided in favour of precise metrics.
-  - BR-13 (Conflict alert): a request that directly contradicts a choice made in a previous
+  - **BR-SPEC-09 (Index-driven routing):** the new-or-update decision relies strictly on the
+    workspace index `docs/INDEX.md` (see [Native LLM Wiki](./native-llm-wiki.md)). The skill is
+    forbidden from scanning the whole workspace directories; if the index is insufficient, it asks
+    the user.
+  - **BR-SPEC-10 (Writes):** once the specification is accepted, the specification file(s) and the
+    index file are written within the SAME response, without asking permission again (UNIFIED: two
+    writes, MODULAR: three writes).
+  - **BR-SPEC-11 (Template fidelity):** the layout and Markdown headers defined in the loaded
+    templates are strictly reproduced.
+  - **BR-SPEC-12 (Testable requirements):** requirements stay precise, factual and measurable. Vague
+    words (e.g. "fast") are avoided in favour of precise metrics.
+  - **BR-SPEC-13 (Conflict alert):** a request that directly contradicts a choice made in a previous
     specification raises a visible technical conflict alert before the change is applied.
 - **User Stories:**
   - _As a_ developer, _I want to_ refine a raw feature idea with a co-architect _so that_ blind
@@ -181,15 +182,15 @@
     used.
 
 - **Edge Cases & Error Handling:**
-  - **EC-01 (Missing configuration):** halt immediately, no other file is read, exact message of
-    BR-01.
-  - **EC-02 (Index insufficient):** the skill never scans the workspace; it asks the user.
-  - **EC-03 (Existing feature matches):** the exact target file is identified from the index table
-    and only that file is read for the update.
-  - **EC-04 (Contradiction with a previous specification):** visible technical conflict alert before
-    applying the change (BR-13).
-  - **EC-05 (Scope not yet evaluated):** the dedicated notification is emitted until the discussion
-    is mature enough.
+  - **EC-SPEC-01 (Missing configuration):** halt immediately, no other file is read, exact message
+    of BR-SPEC-01.
+  - **EC-SPEC-02 (Index insufficient):** the skill never scans the workspace; it asks the user.
+  - **EC-SPEC-03 (Existing feature matches):** the exact target file is identified from the index
+    table and only that file is read for the update.
+  - **EC-SPEC-04 (Contradiction with a previous specification):** visible technical conflict alert
+    before applying the change (BR-SPEC-13).
+  - **EC-SPEC-s05 (Scope not yet evaluated):** the dedicated notification is emitted until the
+    discussion is mature enough.
 
 ## 4. Acceptance Criteria (QA)
 

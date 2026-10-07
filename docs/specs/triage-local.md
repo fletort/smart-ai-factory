@@ -1,4 +1,4 @@
-# Unified Specifications: Local Triage & Interactive Brainstorming
+# Specifications: Local Triage & Interactive Brainstorming (ID: TLOC)
 
 > **State**: _Proposed specification (The specified files may not exist yet.)_
 
@@ -88,54 +88,56 @@
   ```
 
 - **Business Rules:**
-  - BR-01 (Entry points): the triage is a plain Python CLI, installed once with
+  - **BR-TLOC-01 (Entry points):** the triage is a plain Python CLI, installed once with
     `pipx install smart-ai` (or run on demand with `uvx smart-ai`). It is the same program that runs
     in [GitHub Actions](./triage-cloud.md).
-  - BR-02 (Skill wrapper): the `/smart-triage` skill (Continue.dev, OpenCode, VS Code Chat) is only
-    a thin wrapper that runs the command and relays its questions to the chat. Like
+  - **BR-TLOC-02 (Skill wrapper):** the `/smart-triage` skill (Continue.dev, OpenCode, VS Code Chat)
+    is only a thin wrapper that runs the command and relays its questions to the chat. Like
     [`smart-spec`](./smart-spec.md) and [`smart-plan`](./smart-plan.md), it stops immediately with
     `❌[smart-ai] Workspace not configured.` when `.smart.ai/config.yml` is missing.
-  - BR-03 (Roadmap source): the triage reads the roadmap produced by `smart-plan`, following the
-    `roadmap` configuration (single or multi file, versioned or not). For a versioned roadmap, the
-    latest version is used unless `--roadmap-version` is given.
-  - BR-04 (Divergence): if the filesystem contradicts the configuration, the triage stops and asks
-    whether to follow the filesystem or fix the configuration, exactly like `smart-plan`.
-  - BR-05 (Eligible issues): a roadmap issue (`[ISSUE-X.Y]`) is eligible when it is not done, not
-    already linked to a ticket, and its dependencies are cleared (exact rules:
+  - **BR-TLOC-03 (Roadmap source):** the triage reads the roadmap produced by `smart-plan`,
+    following the `roadmap` configuration (single or multi file, versioned or not). For a versioned
+    roadmap, the latest version is used unless `--roadmap-version` is given.
+  - **BR-TLOC-04 (Divergence):** if the filesystem contradicts the configuration, the triage stops
+    and asks whether to follow the filesystem or fix the configuration, exactly like `smart-plan`.
+  - **BR-TLOC-05 (Eligible issues):** a roadmap issue (`[ISSUE-X.Y]`) is eligible when it is not
+    done, not already linked to a ticket, and its dependencies are cleared (exact rules:
     [triage engine](./triage-engine.md#eligibility)). By default one issue is triaged per local run;
     use `--limit N` or `--all` for more.
-  - BR-06 (Spec anchors): each epic points to its specification:
+  - **BR-TLOC-06 (Spec anchors):** each epic points to its specification:
     - **File**: the triage reads the pointed spec (plus the wiki context, see
       [Native LLM Wiki](./native-llm-wiki.md)).
     - **Conversation Context**: no spec file exists, the specification was only discussed in a chat.
       The triage first **asks you for that context** (a description, or a path to a file). Only if
       it is not sufficient does the brainstorm loop start
       ([details](./triage-engine.md#conversation-context-anchors)).
-  - BR-07 (Brainstorm trigger): if the Triage LLM discovers missing constraints, loose requirements,
-    or design pattern violations against `docs/architecture.md`, it flags the payload status as
-    `unclear_specification` (at most 3 questions, like the 3-Question Rule of `smart-spec`).
-  - BR-08 (Brainstorm mode): with `auto_brainstorm: false` (default) the CLI pauses the pipeline and
-    prints an interactive menu in the terminal. With `auto_brainstorm: true` it goes directly to
-    option 2.
-  - BR-09 (Option 1, manual enrichment): the terminal opens a text buffer; the typed business logic
-    (e.g. _"Use Stripe, handle 402 payment required codes, log webhooks to database"_) is appended
-    to the prompt, the low-cost Triage model is re-invoked, and the specification is updated.
-  - BR-10 (Option 2, advanced LLM bypass): the script bypasses manual input and calls the model
-    configured as `advanced_brainstorm_model` (for example Claude Sonnet) through the same LLM layer
-    as every other call, so it works with any provider declared in the configuration. The model
-    receives the packed context (spec, wiki indexes, `docs/architecture.md`), takes the missing
-    design decisions and proposes the matching updates of the specification or architecture
+  - **BR-TLOC-07 (Brainstorm trigger):** if the Triage LLM discovers missing constraints, loose
+    requirements, or design pattern violations against `docs/architecture.md`, it flags the payload
+    status as `unclear_specification` (at most 3 questions, like the 3-Question Rule of
+    `smart-spec`).
+  - **BR-TLOC-08 (Brainstorm mode):** with `auto_brainstorm: false` (default) the CLI pauses the
+    pipeline and prints an interactive menu in the terminal. With `auto_brainstorm: true` it goes
+    directly to option 2.
+  - **BR-TLOC-09 (Option 1, manual enrichment):** the terminal opens a text buffer; the typed
+    business logic (e.g. _"Use Stripe, handle 402 payment required codes, log webhooks to
+    database"_) is appended to the prompt, the low-cost Triage model is re-invoked, and the
+    specification is updated.
+  - **BR-TLOC-10 (Option 2, advanced LLM bypass):** the script bypasses manual input and calls the
+    model configured as `advanced_brainstorm_model` (for example Claude Sonnet) through the same LLM
+    layer as every other call, so it works with any provider declared in the configuration. The
+    model receives the packed context (spec, wiki indexes, `docs/architecture.md`), takes the
+    missing design decisions and proposes the matching updates of the specification or architecture
     documents. The user reviews and confirms these file changes before they are written, then the
     triage is repeated and normally ends with `ready_to_dev`.
-  - BR-11 (Brainstorm cap): a brainstorm is capped (`max_brainstorm_turns`, default 5) so that a
-    stuck session cannot burn budget; when the cap is reached the issue stays untriaged and the
-    reason is displayed. The session model is described in the
+  - **BR-TLOC-11 (Brainstorm cap):** a brainstorm is capped (`max_brainstorm_turns`, default 5) so
+    that a stuck session cannot burn budget; when the cap is reached the issue stays untriaged and
+    the reason is displayed. The session model is described in the
     [triage engine](./triage-engine.md#brainstorm).
-  - BR-12 (Approval gate): once a technical task is clear and its weight is calculated (from **XS**
-    to **XXL**), the framework forces an evaluation step: the terminal clears and displays a
-    structured **FinOps Preview Card**. The gate is controlled by `hitl_during_triage` in
+  - **BR-TLOC-12 (Approval gate):** once a technical task is clear and its weight is calculated
+    (from **XS** to **XXL**), the framework forces an evaluation step: the terminal clears and
+    displays a structured **FinOps Preview Card**. The gate is controlled by `hitl_during_triage` in
     `.smart.ai/config.yml`.
-  - BR-13 (Approval answers):
+  - **BR-TLOC-13 (Approval answers):**
     - **`y` (Yes):** the script executes the native GitHub CLI command (`gh issue create`), fetches
       the new issue number, and adds `(#42)` to the matching line of the local roadmap file (e.g.
       `- [ ] **[ISSUE-2.1]** - Secure API` becomes `- [ ] **[ISSUE-2.1]** (#42) - Secure API`).
@@ -144,10 +146,11 @@
     - **`n` (No):** the session ends safely without polluting the Git state or the GitHub backlog.
     - **`edit`:** the CLI asks for the adjustment in the terminal (or the chat when launched through
       the skill) and feeds it into the Triage LLM, then displays the new card.
-  - BR-14 (Flags): `--dry-run` shows the issue and the roadmap diff without creating or writing
-    anything, and `--non-interactive` never prompts (it exits with code 3 if an answer is required).
-  - BR-15 (Local FinOps best practices): to optimise the local wallet footprint while working inside
-    the IDE, apply these human routing habits:
+  - **BR-TLOC-14 (Flags):** `--dry-run` shows the issue and the roadmap diff without creating or
+    writing anything, and `--non-interactive` never prompts (it exits with code 3 if an answer is
+    required).
+  - **BR-TLOC-15 (Local FinOps best practices):** to optimise the local wallet footprint while
+    working inside the IDE, apply these human routing habits:
     1. Leave **Autocomplete** to fast, focused models (`Codestral` or `Gemini Flash`). They are
        built for extreme speed and consume minimal token fractions per line.
     2. Use `DeepSeek-V3` or `DeepSeek-R1` inside the **Continue Chat Panel** for quick edits, unit
@@ -246,14 +249,15 @@
     the working tree (the user commits it), unless `roadmap_writeback` is `off`.
 
 - **Edge Cases & Error Handling:**
-  - **EC-01 (Missing configuration):** `❌[smart-ai] Workspace not configured.` and exit code 2.
-  - **EC-02 (Layout divergence):** the triage stops and asks whether to follow the filesystem or fix
-    the configuration.
-  - **EC-03 (`--non-interactive` with an answer required):** exit code 3.
-  - **EC-04 (Brainstorm cap reached):** the issue stays untriaged and the reason is displayed.
-  - **EC-05 (User answers `n`):** the session ends safely, nothing is created.
-  - **EC-06 (Failure after ticket creation):** re-running never creates a duplicate.
-  - **EC-07 (Budget):** the CLI stops before exceeding `max_cost_usd_per_run` (exit code 6).
+  - **EC-TLOC-01 (Missing configuration):** `❌[smart-ai] Workspace not configured.` and exit
+    code 2.
+  - **EC-TLOC-02 (Layout divergence):** the triage stops and asks whether to follow the filesystem
+    or fix the configuration.
+  - **EC-TLOC-03 (`--non-interactive` with an answer required):** exit code 3.
+  - **EC-TLOC-04 (Brainstorm cap reached):** the issue stays untriaged and the reason is displayed.
+  - **EC-TLOC-05 (User answers `n`):** the session ends safely, nothing is created.
+  - **EC-TLOC-06 (Failure after ticket creation):** re-running never creates a duplicate.
+  - **EC-TLOC-07 (Budget):** the CLI stops before exceeding `max_cost_usd_per_run` (exit code 6).
 
 ## 4. Acceptance Criteria (QA)
 

@@ -1,4 +1,11 @@
-# Technical Specifications: [Component/Feature Name]
+# Technical Specifications: [Component/Feature Name] (ID: [FEAT_ID])
+
+<!--
+INSTRUCTION: Replace [FEAT_ID] globally with a unique 3-4 letter uppercase trigram (e.g., AUTH,
+BILL, DASH) based on the feature name. All rules and criteria must use this prefix to prevent collisions.
+-->
+
+> **State**: _Proposed specification (The specified files may not exist yet.)_
 
 ## 1. Context & Functional Reference
 
@@ -57,10 +64,10 @@ erDiagram
 
 ## 5. Technical Edge Cases & Error Handling
 
-- **EC-01 (Network/Backend Error):** Expected behavior, retry mechanisms, or fallback tokens if the
-  API returns a 500 or times out.
-- **EC-02 (API Validation Failure):** Structure of the HTTP 400 Bad Request error payload for
-  frontend field mapping.
+- **EC-[FEAT_ID]-01 (Network/Backend Error):** Expected behavior, retry mechanisms, or fallback
+  tokens if the API returns a 500 or times out.
+- **EC-[FEAT_ID]-02 (API Validation Failure):** Structure of the HTTP 400 Bad Request error payload
+  for frontend field mapping.
 
 ## 6. Performance, Security & Infrastructure
 
