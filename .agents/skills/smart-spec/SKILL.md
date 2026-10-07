@@ -73,8 +73,8 @@ rely on the workspace index located at `docs/INDEX.md`:
    - If the user request matches an existing Ref (e.g., "Update billing"), identify the exact target
      file from the table and ask to read _only_ that file.
    - If it's a completely new feature, announce you will create a new entry in the index. The
-     specification fill will be created in the same directories that other listed files. If it is
-     the first specification, and nobody tell you the location, use the usual ./docs directory.
+     specification file will be created in the same directories that other listed files. If it is
+     the first specification, and nobody tells you the location, use the usual ./docs directory.
 3. **Strict Prohibition**: You are strictly forbidden from scanning the whole workspace directories.
    If the index is insufficient, ask the user.
 
