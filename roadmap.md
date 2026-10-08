@@ -1,14 +1,11 @@
-# 🗺️ Project Roadmap: Smart-AI-Factory Pipeline (Phases 0–2)
+# 🗺️ Project Roadmap: Smart-AI-Factory Skills (Phases 0–1)
 
 ## 🎯 Global Vision
 
-Deliver the Smart-AI-Factory pipeline end to end: the prompt-only skills `/smart-spec` (Phase 0)
-turn a raw feature idea into a validated, template-compliant specification and `/smart-plan`
-(Phase 1) converts it into a macro, parallel-ready roadmap, then the `smart-ai` Python CLI (Phase 2)
-triage engine turns those roadmap issues into detailed, sized GitHub tickets. The triage engine runs
-both locally (synchronous HITL) and in GitHub Actions (stateless, ticket-as-memory), shares
-`.smart.ai/conf.yml`, and hands off to the downstream development phases without ever producing code
-or code-level detail.
+Deliver the prompt-only `/smart-spec` (Phase 0) and `/smart-plan` (Phase 1) skills: the former turns
+raw feature ideas into validated specifications, and the latter turns them into macro-level,
+parallel-ready roadmaps. This roadmap covers the skills only; the subsequent local and cloud triage
+engine (Phase 2) is out of scope and will be planned separately.
 
 ## 📊 Epics Flow
 
