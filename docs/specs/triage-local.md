@@ -153,8 +153,8 @@
     working inside the IDE, apply these human routing habits:
     1. Leave **Autocomplete** to fast, focused models (`Codestral` or `Gemini Flash`). They are
        built for extreme speed and consume minimal token fractions per line.
-    2. Use `DeepSeek-V3` or `DeepSeek-R1` inside the **Continue Chat Panel** for quick edits, unit
-       testing generation, and local roadmap evaluations.
+    2. Use low cost model inside the **Continue Chat Panel** for quick edits, unit testing
+       generation, and local roadmap evaluations.
     3. Only type `claude` inside your terminal to spin up **Claude Code** when you need a completely
        autonomous agent capable of orchestrating heavy, multi-file architectural refactoring across
        your codebase.

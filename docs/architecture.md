@@ -88,7 +88,7 @@
 | CLI                  | Typer + Rich                            | to pin at first release | One file per command group under `cli/`; output rendering only.                                     |
 | Config and schemas   | Pydantic v2                             | to pin at first release | One validated model for config, LLM structured outputs, JSON CLI output and MCP tool schemas.       |
 | YAML                 | ruamel.yaml                             | to pin at first release | Round-trip parsing keeps the comments of `.smart.ai/conf.yml`.                                      |
-| Secrets              | python-dotenv                           | to pin at first release | Secrets only in `.env` (local) or GitHub `secrets` (cloud), never in `config.yml`.                  |
+| Secrets              | python-dotenv                           | to pin at first release | Secrets only in `.env` (local) or GitHub `secrets` (cloud), never in `conf.yml`.                    |
 | LLM access           | LiteLLM                                 | to pin at first release | The only LLM entry point is `LlmClient.complete`; models are referenced by alias only.              |
 | Prompt templates     | Jinja2                                  | to pin at first release | Prompts are packaged files under `src/smart_ai/prompts/`, not strings in code.                      |
 | Interactive terminal | questionary                             | to pin at first release | Used only by `TerminalChannel`.                                                                     |
@@ -121,7 +121,7 @@ Current layout:
 │   ├── ide/                 # Visual Studio Code setup guide
 │   └── dev/                 # Developer guides (linting, skill test strategy)
 ├── templates/               # Copied to the user's project
-│   ├── .smart.ai/           # config.yml and specification templates
+│   ├── .smart.ai/           # conf.yml and specification templates
 │   ├── docs/INDEX.md        # Product Wiki bootstrap
 │   └── src/                 # Code Wiki bootstrap (README.md, _module_/README.md)
 ├── tests/skills/            # Promptfoo suites for the skills
@@ -171,8 +171,8 @@ Files expected by the pipeline in a user's project: `.smart.ai/conf.yml`, `roadm
   - Branches: `smart-ai/brainstorm-<id>` (specification PRs), `smart-ai/roadmap-sync-${run_id}`
     (roadmap sync PRs).
   - Documentation files: `kebab-case.md` under `docs/specs/`; specification templates are
-    [unified-spec.md](../templates/.smart.ai/templates/unified-spec.md) and
-    [main-spec.md](../templates/.smart.ai/templates/main-spec.md).
+    [unified-spec.md](../bootstrap/.smart.ai/templates/unified-spec.md) and
+    [main-spec.md](../bootstrap/.smart.ai/templates/main-spec.md).
   - Model aliases (`flash_po`, `claude_sonnet`, ...) are the only model names known by the pipeline
     code.
 
@@ -204,9 +204,9 @@ Files expected by the pipeline in a user's project: `.smart.ai/conf.yml`, `roadm
 ## 5. Security & Performance Baselines
 
 - **Authentication & AuthZ**:
-  - Secrets are never stored in `config.yml`; locally they live in `.env`, in the cloud they come
-    from GitHub `secrets` mapped to the same variable names. Logs never include secrets and prompts
-    are logged only at debug level.
+  - Secrets are never stored in `conf.yml`; locally they live in `.env`, in the cloud they come from
+    GitHub `secrets` mapped to the same variable names. Logs never include secrets and prompts are
+    logged only at debug level.
   - GitHub credentials come from `GH_TOKEN` (CI) or the local `gh auth` session; commits use a
     dedicated bot identity.
   - `issue_comment` events are processed only for authors whose association is `OWNER`, `MEMBER` or

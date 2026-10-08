@@ -69,7 +69,7 @@
   - **BR-CORE-02 (Config validation):** Pydantic validates the whole file at load time. An unknown
     alias or a missing environment variable is reported by `config check` and at startup with the
     offending key.
-  - **BR-CORE-03 (Secrets):** secrets are **never** in `config.yml`. Local: `.env`. Cloud: GitHub
+  - **BR-CORE-03 (Secrets):** secrets are **never** in `conf.yml`. Local: `.env`. Cloud: GitHub
     `secrets` mapped to the same variable names.
   - **BR-CORE-04 (Model aliases):** model aliases are the only thing the pipeline code knows.
     Switching a provider is a config edit.
