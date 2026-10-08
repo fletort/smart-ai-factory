@@ -78,11 +78,11 @@ rely on the workspace index located at `docs/INDEX.md`:
 3. **Strict Prohibition**: You are strictly forbidden from scanning the whole workspace directories.
    If the index is insufficient, ask the user.
 
-Apply changes incrementally into those exact structural skeletons according to specification mode:
+Apply changes into those exact structural skeletons according to specification mode:
 
 #### Scenario A: [UNIFIED] Mode Activated
 
-- Update or create the single specification document incrementally based on the user's request.
+- Update or create the single specification document based on the user's request.
 - Merge functional needs and technical notes into the same document sections. Keep it agile and
   concise.
 
@@ -99,8 +99,8 @@ Apply changes incrementally into those exact structural skeletons according to s
 
 Once the specification is ready and accepted by the user, write the specification file(s) and the
 index file within the SAME response. Do not ask for permission before these writes: UNIFIED mode
-requires two calls (specification and index), while MODULAR mode requires three calls (functional
-specification, technical specification, and index).
+requires at least two modifications (specification and index), while MODULAR mode requires at least
+three modifications (functional specification, technical specification, and index).
 
 #### Writing Guidelines
 

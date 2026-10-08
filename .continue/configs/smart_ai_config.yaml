@@ -13,6 +13,7 @@ models:
       - tool_use
     defaultCompletionOptions:
       maxTokens: 65536
+    useLegacyCompletionsEndpoint: false # Required because OpenRouter exclusively uses the modern chat/completions API format
 
   - name: Gemini 3.6 Flash (Google AI Studio - Free Triage & Chat Alternative)
     provider: gemini
