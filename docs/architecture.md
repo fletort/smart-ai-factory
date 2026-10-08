@@ -120,7 +120,7 @@ Current layout:
 │   ├── specs/               # One unified specification per feature
 │   ├── ide/                 # Visual Studio Code setup guide
 │   └── dev/                 # Developer guides (linting, skill test strategy)
-├── templates/               # Copied to the user's project
+├── bootstrap/               # Copied to the user's project
 │   ├── .smart.ai/           # conf.yml and specification templates
 │   ├── docs/INDEX.md        # Product Wiki bootstrap
 │   └── src/                 # Code Wiki bootstrap (README.md, _module_/README.md)

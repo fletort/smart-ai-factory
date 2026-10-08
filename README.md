@@ -121,7 +121,7 @@ architecture document and one unified specification per feature (index:
 ## 🚀 Quick Start
 
 1. Copy the `.continue/`, `.agents/` and `.github/` directories to the root of your project. Copy
-   the content of the `templates/` directory to the root of your project. Triage (Phase 2) will also
+   the content of the `bootstrap/` directory to the root of your project. Triage (Phase 2) will also
    require installing the CLI with `pipx install smart-ai` once it is released.
 2. Set up your local environment file by:
    1. copying `.continue/.env.template` to `.continue/.env`, `.env.template` to `.env` and adding
