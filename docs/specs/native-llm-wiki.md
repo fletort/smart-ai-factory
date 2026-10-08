@@ -27,11 +27,21 @@
 
 ## 2. Functional & UX Specifications (What)
 
+<!-- ⚠️ DEPENDENCY ALERT: bidirectional ../smart-spec.md -->
+<!-- this section (the _Product Wiki_, BR-WIKI-03) is coupled in both directions
+with the `FEAT_ID` registry and the index-driven routing rules of
+[Smart-Spec](./smart-spec.md) (BR-SPEC-09, BR-SPEC-15, BR-SPEC-16). The `FEAT_ID` column of
+`docs/INDEX.md` is the uniqueness registry used by Phase 0: any change of the column set, of the
+`N.A.` convention or of the row format here makes the collision check of BR-SPEC-15 undecidable,
+and conversely any change of the Phase 0 routing rules invalidates the feature lookup described
+here. -->
+
 - **User / Process Flow:** wiki lookup performed by a pipeline phase.
 
   ```mermaid
   graph TD
       START["Roadmap update or feature ticket received"] --> LOOKUP["Tree lookup:<br/>router, indexes, module code-wikis"]
+
       LOOKUP --> PACK["Context packing:<br/>only the specified file paths are loaded"]
       PACK --> GATE{"Requirement found in the wiki,<br/>no conflict with constraints?"}
       GATE -->|yes| READY["Ready"]
@@ -43,109 +53,107 @@
   and the lookup above is stateless.
 
 - **Business Rules:**
-  - **BR-WIKI-01 (Double-mirror topology):** the `smart-ai` core engine expects, validates and
-    dynamically compiles a "Double-Mirror" directory structure at the root of any automated
-    repository: a **Product Wiki** (`docs/INDEX.md`) and a **Code Wiki** (`src/README.md` + one
-    `README.md` per module), both reachable from the system router.
-  - **BR-WIKI-02 (System router size):** `CLAUDE.md` / `AGENTS.md` at the root must remain
-    **strictly under 50 lines**, to minimise the system-prompt injection footprint of any routing
-    script.
-  - **BR-WIKI-03 (Product Wiki):** `docs/INDEX.md` maps high-level business goals, requirements and
-    feature definitions. It is primarily fed by `/smart-spec` (Phase 0) and ingested by the Triage
-    Script (Phase 2).
-  - **BR-WIKI-04 (Code Wiki):** `src/README.md` maps technical code boundaries, modules and
-    standalone skills. No individual source code files (`.ts`, `.py`, etc.) are allowed to be
-    tracked in this top-level index.
-  - **BR-WIKI-05 (Module boundary):** every subdirectory inside `src/` bundles a localised
-    `README.md`. It forms an impenetrable semantic boundary around that module.
-  - **BR-WIKI-06 (Bootstrap):** bootstrap versions of the three documentation types are proposed by
-    the installation process and can be personalised to the project
-    ([`docs/INDEX.md`](../../templates/docs/INDEX.md),
-    [`src/README.md`](../../templates/src/README.md),
-    [`src/_module_/README.md`](../../templates/src/_module_/README.md)).
-  - **BR-WIKI-07 (Scaffolding loop):** when generating a new skill or DevOps script via the CLI, the
-    framework automatically appends the entry row into `src/README.md` and provisions the local
-    `README.md` skeleton, ensuring the repository's LLM Wiki compiles and remains intact.
-  - **BR-WIKI-08 (Phase 2 context lock):** when the Gemini Flash PO or a local triage routine
-    receives an update on `roadmap.md` or a feature ticket, it (1) reads `CLAUDE.md`/`AGENTS.md` ➡️
-    `docs/INDEX.md` ➡️ `src/README.md` to identify the affected modules, (2) loads only the
-    specified file paths from the matching local Code-Wiki's Critical Entrypoints instead of the
-    whole codebase, and (3) if a requirement is missing from the wiki or conflicts with constraints,
-    labels the ticket as 🛑 Level: BRAINSTORM, halting the pipeline for `claude-3-5-sonnet`
-    refinement.
-  - **BR-WIKI-09 (Phase 3 budget ingestion):** before dispatching a ticket to a development agent
-    size (`xs_coder` to `xxl_coder`), the DevRouter Script injects the local
-    `src/_module_/README.md` into the agent's system instruction, so that a low-cost model
-    (`xs_coder`) knows its exact structural limitations without needing a high context window.
+- **BR-WIKI-01 (Double-mirror topology):** the `smart-ai` core engine expects, validates and
+  dynamically compiles a "Double-Mirror" directory structure at the root of any automated
+  repository: a **Product Wiki** (`docs/INDEX.md`) and a **Code Wiki** (`src/README.md` + one
+  `README.md` per module), both reachable from the system router.
+- **BR-WIKI-02 (System router size):** `CLAUDE.md` / `AGENTS.md` at the root must remain **strictly
+  under 50 lines**, to minimise the system-prompt injection footprint of any routing script.
+- **BR-WIKI-03 (Product Wiki):** `docs/INDEX.md` maps high-level business goals, requirements and
+  feature definitions. It is primarily fed by `/smart-spec` (Phase 0) and ingested by the Triage
+  Script (Phase 2).
+- **BR-WIKI-04 (Code Wiki):** `src/README.md` maps technical code boundaries, modules and standalone
+  skills. No individual source code files (`.ts`, `.py`, etc.) are allowed to be tracked in this
+  top-level index.
+- **BR-WIKI-05 (Module boundary):** every subdirectory inside `src/` bundles a localised
+  `README.md`. It forms an impenetrable semantic boundary around that module.
+- **BR-WIKI-06 (Bootstrap):** bootstrap versions of the three documentation types are proposed by
+  the installation process and can be personalised to the project
+  ([`docs/INDEX.md`](../../templates/docs/INDEX.md),
+  [`src/README.md`](../../templates/src/README.md),
+  [`src/_module_/README.md`](../../templates/src/_module_/README.md)).
+- **BR-WIKI-07 (Scaffolding loop):** when generating a new skill or DevOps script via the CLI, the
+  framework automatically appends the entry row into `src/README.md` and provisions the local
+  `README.md` skeleton, ensuring the repository's LLM Wiki compiles and remains intact.
+- **BR-WIKI-08 (Phase 2 context lock):** when the Gemini Flash PO or a local triage routine receives
+  an update on `roadmap.md` or a feature ticket, it (1) reads `CLAUDE.md`/`AGENTS.md` ➡️
+  `docs/INDEX.md` ➡️ `src/README.md` to identify the affected modules, (2) loads only the specified
+  file paths from the matching local Code-Wiki's Critical Entrypoints instead of the whole codebase,
+  and (3) if a requirement is missing from the wiki or conflicts with constraints, labels the ticket
+  as 🛑 Level: BRAINSTORM, halting the pipeline for `claude-3-5-sonnet` refinement.
+- **BR-WIKI-09 (Phase 3 budget ingestion):** before dispatching a ticket to a development agent size
+  (`xs_coder` to `xxl_coder`), the DevRouter Script injects the local `src/_module_/README.md` into
+  the agent's system instruction, so that a low-cost model (`xs_coder`) knows its exact structural
+  limitations without needing a high context window.
 - **User Stories:**
-  - _As a_ FinOps owner, _I want_ agents to read only the relevant wiki sub-nodes _so that_ a
-    standard issue stays around $0.01.
-  - _As a_ spec author, _I want_ an index of all feature specifications _so that_ `/smart-spec` can
-    decide between creating and updating a specification without scanning the workspace.
-  - _As a_ developer agent (low-cost tier), _I want_ a module code-wiki with entrypoints and
-    constraints _so that_ I know my structural limits without a large context window.
-  - _As a_ maintainer, _I want_ new skills and scripts scaffolded with their wiki entry _so that_
-    the wiki never drifts from the code.
+- _As a_ FinOps owner, _I want_ agents to read only the relevant wiki sub-nodes _so that_ a standard
+  issue stays around $0.01.
+- _As a_ spec author, _I want_ an index of all feature specifications _so that_ `/smart-spec` can
+  decide between creating and updating a specification without scanning the workspace.
+- _As a_ developer agent (low-cost tier), _I want_ a module code-wiki with entrypoints and
+  constraints _so that_ I know my structural limits without a large context window.
+- _As a_ maintainer, _I want_ new skills and scripts scaffolded with their wiki entry _so that_ the
+  wiki never drifts from the code.
 
 ## 3. Technical Specifications (How)
 
 - **Architecture & Component Interactions:**
 
-  Topology of the wiki (the "Double-Mirror" setup):
+Topology of the wiki (the "Double-Mirror" setup):
 
-  ```mermaid
-  graph TD
-      %% Styling definitions
-      classDef runtime fill:#1f2937,stroke:#3b82f6,stroke-width:2px,color:#fff;
-      classDef router fill:#111827,stroke:#10b981,stroke-width:2px,color:#fff;
-      classDef index fill:#1e3a8a,stroke:#6366f1,stroke-width:2px,color:#fff;
-      classDef leaf fill:#374151,stroke:#9ca3af,stroke-width:1px,color:#fff;
+```mermaid
+graph TD
+    %% Styling definitions
+    classDef runtime fill:#1f2937,stroke:#3b82f6,stroke-width:2px,color:#fff;
+    classDef router fill:#111827,stroke:#10b981,stroke-width:2px,color:#fff;
+    classDef index fill:#1e3a8a,stroke:#6366f1,stroke-width:2px,color:#fff;
+    classDef leaf fill:#374151,stroke:#9ca3af,stroke-width:1px,color:#fff;
 
-      %% Nodes configuration
-      RUN[Smart-AI-Factory Runtime Loop]:::runtime
-      CONF[Reads Local Config & Triggers Native LLM Wiki Map]:::runtime
-      ROUTER["CLAUDE.md / AGENTS.md<br>(System Router)"]:::router
+    %% Nodes configuration
+    RUN[Smart-AI-Factory Runtime Loop]:::runtime
+    CONF[Reads Local Config & Triggers Native LLM Wiki Map]:::runtime
+    ROUTER["CLAUDE.md / AGENTS.md<br>(System Router)"]:::router
 
-      SPEC_IDX["docs/INDEX.md<br>(Product / Features Wiki)"]:::index
-      CODE_IDX["src/README.md<br>(Codebase / Skills Wiki)"]:::index
+    SPEC_IDX["docs/INDEX.md<br>(Product / Features Wiki)"]:::index
+    CODE_IDX["src/README.md<br>(Codebase / Skills Wiki)"]:::index
 
-      SPEC_LEAF["docs/specs/*.md<br>(Surgical Context Lock)"]:::leaf
-      CODE_LEAF["src/&lt;module&gt;/README.md<br>(Isolated Skill Boundaries)"]:::leaf
+    SPEC_LEAF["docs/specs/*.md<br>(Surgical Context Lock)"]:::leaf
+    CODE_LEAF["src/&lt;module&gt;/README.md<br>(Isolated Skill Boundaries)"]:::leaf
 
-      %% Flow connections
-      RUN --> CONF
-      CONF --> ROUTER
+    %% Flow connections
+    RUN --> CONF
+    CONF --> ROUTER
 
-      ROUTER -->|Route to Product| SPEC_IDX
-      ROUTER -->|Route to Code| CODE_IDX
+    ROUTER -->|Route to Product| SPEC_IDX
+    ROUTER -->|Route to Code| CODE_IDX
 
-      SPEC_IDX --> SPEC_LEAF
-      CODE_IDX --> CODE_LEAF
-  ```
+    SPEC_IDX --> SPEC_LEAF
+    CODE_IDX --> CODE_LEAF
+```
 
-  Lookup performed by the triage:
+Lookup performed by the triage:
 
-  ```mermaid
-  sequenceDiagram
-      autonumber
-      participant Triage as Triage (Phase 2)
-      participant Router as CLAUDE.md / AGENTS.md
-      participant PIdx as docs/INDEX.md
-      participant CIdx as src/README.md
-      participant Mod as src/module/README.md
-      participant LLM as Triage LLM
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Triage as Triage (Phase 2)
+    participant Router as CLAUDE.md / AGENTS.md
+    participant PIdx as docs/INDEX.md
+    participant CIdx as src/README.md
+    participant Mod as src/module/README.md
+    participant LLM as Triage LLM
 
-      Triage->>Router: Read (under 50 lines)
-      Triage->>PIdx: Locate the feature specification
-      Triage->>CIdx: Identify affected modules
-      Triage->>Mod: Read Critical Entrypoints
-      Note over Triage,Mod: Only the specified file paths are loaded
-      Triage->>LLM: Surgical context (no full codebase)
-      alt Requirement missing or conflicting
-          LLM-->>Triage: unclear specification
-          Triage-->>Triage: Label 🛑 Level: BRAINSTORM, halt pipeline
-      end
-  ```
+    Triage->>Router: Read (under 50 lines)
+    Triage->>PIdx: Locate the feature specification
+    Triage->>CIdx: Identify affected modules
+    Triage->>Mod: Read Critical Entrypoints
+    Note over Triage,Mod: Only the specified file paths are loaded
+    Triage->>LLM: Surgical context (no full codebase)
+    alt Requirement missing or conflicting
+        LLM-->>Triage: unclear specification
+        Triage-->>Triage: Label 🛑 Level: BRAINSTORM, halt pipeline
+    end
+```
 
 - **Data Model & API Contracts:**
   - **Endpoints / Methods:** none; the wiki is a set of Markdown files read by the pipeline phases.
@@ -188,11 +196,11 @@
     ```markdown
     # 🗺️ Functional Specifications Index (Product Wiki)
 
-    | Feature / Skill Domain | Description & Capabilities                                 | Specification File                                     |
-    | :--------------------- | :--------------------------------------------------------- | :----------------------------------------------------- |
-    | **Agent Lifecycle**    | Core ReAct loop mechanics, orchestration states.           | [`specs/agent-lifecycle.md`](specs/agent-lifecycle.md) |
-    | **FinOps Routing**     | Budget evaluation rules, cost profile evaluation matrices. | [`specs/finops-routing.md`](specs/finops-routing.md)   |
-    | **GitHub Integration** | Webhook listeners, automated ticketing, issue labelling.   | [`specs/github-provider.md`](specs/github-provider.md) |
+    | FEAT_ID | Feature / Skill Domain | Description & Capabilities                                 | Specification File                                     |
+    | :------ | :--------------------- | :--------------------------------------------------------- | :----------------------------------------------------- |
+    | AGLF    | **Agent Lifecycle**    | Core ReAct loop mechanics, orchestration states.           | [`specs/agent-lifecycle.md`](specs/agent-lifecycle.md) |
+    | FOPS    | **FinOps Routing**     | Budget evaluation rules, cost profile evaluation matrices. | [`specs/finops-routing.md`](specs/finops-routing.md)   |
+    | GHUB    | **GitHub Integration** | Webhook listeners, automated ticketing, issue labelling.   | [`specs/github-provider.md`](specs/github-provider.md) |
     ```
 
     **The Structural Branch (Code/Skills Wiki): `src/README.md`**:
