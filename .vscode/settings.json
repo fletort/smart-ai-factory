@@ -1,5 +1,6 @@
 {
   "python.defaultInterpreterPath": "/workspaces/smart-ai-factory/.venv/bin/python",
+  "python.useEnvironmentsExtension": false,
   "editor.formatOnSave": true,
   "[python]": {
     "editor.defaultFormatter": "charliermarsh.ruff",

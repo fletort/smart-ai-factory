@@ -68,7 +68,7 @@ graph TD
 
 ## 🎛️ Governance & Routing Matrix
 
-Through `.smart.ai/config.yml`, you can toggle **Human-in-the-Loop (HITL)** gates independently for
+Through `.smart.ai/conf.yml`, you can toggle **Human-in-the-Loop (HITL)** gates independently for
 each task size. This enables teams to run fully automated production pipelines for small adjustments
 while enforcing strict human verification and high-tier models for development and code review.
 
@@ -121,12 +121,12 @@ architecture document and one unified specification per feature (index:
 ## 🚀 Quick Start
 
 1. Copy the `.continue/`, `.agents/` and `.github/` directories to the root of your project. Copy
-   the content of the `templates/` directory to the root of your project. Triage (Phase 2) will also
+   the content of the `bootstrap/` directory to the root of your project. Triage (Phase 2) will also
    require installing the CLI with `pipx install smart-ai` once it is released.
 2. Set up your local environment file by:
    1. copying `.continue/.env.template` to `.continue/.env`, `.env.template` to `.env` and adding
       your API keys.
-   2. editing `.smart.ai/config.yml` to define your workspace configuration inside this file
+   2. editing `.smart.ai/conf.yml` to define your workspace configuration inside this file
 3. Open your project using **Dev Containers** for a zero-friction, pre-configured workspace.
 4. Start with `/smart-spec` to refine your feature idea
 5. Roadmap planning is available with `/smart-plan`. Triage (Phase 2) is specified and will be

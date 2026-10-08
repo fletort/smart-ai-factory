@@ -30,7 +30,7 @@
 
   ```mermaid
   graph TD
-      START["smart-ai [options] command"] --> CFG["Load .smart.ai/config.yml"]
+      START["smart-ai [options] command"] --> CFG["Load .smart.ai/conf.yml"]
       CFG -->|missing| E2A["❌ Workspace not configured: exit 2"]
       CFG --> VAL["Validate config and environment variables"]
       VAL -->|invalid| E2B["Report the offending key: exit 2"]
@@ -69,12 +69,12 @@
   - **BR-CORE-02 (Config validation):** Pydantic validates the whole file at load time. An unknown
     alias or a missing environment variable is reported by `config check` and at startup with the
     offending key.
-  - **BR-CORE-03 (Secrets):** secrets are **never** in `config.yml`. Local: `.env`. Cloud: GitHub
+  - **BR-CORE-03 (Secrets):** secrets are **never** in `conf.yml`. Local: `.env`. Cloud: GitHub
     `secrets` mapped to the same variable names.
   - **BR-CORE-04 (Model aliases):** model aliases are the only thing the pipeline code knows.
     Switching a provider is a config edit.
-  - **BR-CORE-05 (Shared config file):** the skills ignore unknown sections of
-    `.smart.ai/config.yml`, so the file stays shared between the skills and the CLI.
+  - **BR-CORE-05 (Shared config file):** the skills ignore unknown sections of `.smart.ai/conf.yml`,
+    so the file stays shared between the skills and the CLI.
   - **BR-CORE-06 (Mode):** `--mode auto` resolves to `cloud` if `GITHUB_ACTIONS=true`, else `local`.
   - **BR-CORE-07 (Non-interactive):** `--non-interactive` never prompts; it fails with exit code 3
     if input is required.
@@ -170,7 +170,7 @@
       participant Llm as LlmClient (LiteLLM)
 
       Caller->>CLI: smart-ai [options] command
-      CLI->>CLI: Load and validate .smart.ai/config.yml
+      CLI->>CLI: Load and validate .smart.ai/conf.yml
       alt Config missing or invalid
           CLI-->>Caller: ❌[smart-ai] Workspace not configured. (exit 2)
       end
@@ -208,7 +208,7 @@ The package follows the [Native LLM Wiki](./native-llm-wiki.md) rules: each modu
 src/smart_ai/
 ├── cli/        # Typer app, one file per command group, output rendering
 ├── core/
-│   ├── config.py       # Pydantic models + loader of .smart.ai/config.yml
+│   ├── config.py       # Pydantic models + loader of .smart.ai/conf.yml
 │   ├── llm.py          # LlmClient port + LiteLLM adapter, cost accounting
 │   ├── interaction.py  # InteractionChannel port + Terminal / Suspend adapters
 │   ├── github.py       # IssueTracker + PullRequestHost ports, gh CLI adapters
@@ -226,7 +226,7 @@ src/smart_ai/
 | :------------------- | :-------------------------------------- | :------------------------------------------------------------------------------------------------ |
 | CLI framework        | **Typer** (+ **Rich** for rendering)    | Type-hint driven, auto help/completion, Rich is already its renderer.                             |
 | Config and schemas   | **Pydantic v2**                         | One validated model for config, LLM structured outputs, JSON CLI output and MCP tool schemas.     |
-| YAML                 | **ruamel.yaml**                         | Round-trip parsing keeps comments of `.smart.ai/config.yml` if the CLI ever edits it.             |
+| YAML                 | **ruamel.yaml**                         | Round-trip parsing keeps comments of `.smart.ai/conf.yml` if the CLI ever edits it.               |
 | Secrets              | **python-dotenv**                       | Loads `.env`; in CI, the same names come from `secrets`.                                          |
 | LLM access           | **LiteLLM**                             | One API for OpenRouter, Gemini, DeepSeek, Anthropic; structured output, retries, fallbacks, cost. |
 | Prompt templates     | **Jinja2**                              | Prompts are files, not strings in code; testable with Promptfoo.                                  |
@@ -249,11 +249,11 @@ Global options
   --non-interactive           Never prompt; fail with exit code 3 if input is required
   --json                      Machine-readable output on stdout (logs go to stderr)
   --dry-run                   Do everything except mutating files, version control, or GitHub
-  --config PATH               Default: .smart.ai/config.yml
+  --config PATH               Default: .smart.ai/conf.yml
   -v / -q                     Verbosity
 
 Commands
-  smart-ai config check       Validate .smart.ai/config.yml and required env variables
+  smart-ai config check       Validate .smart.ai/conf.yml and required env variables
   smart-ai triage             Triage the next eligible roadmap issues   (see triage-engine.md)
   smart-ai brainstorm         Resume a session: --issue N (comment) or --pr N (merged/closed spec PR)
   smart-ai mcp serve          Start the MCP server on stdio             (future)
@@ -292,7 +292,7 @@ single mechanism used by the cloud pipeline and the MCP adapter.
 
 ### Configuration
 
-`.smart.ai/config.yml` keeps the existing `specifications` and `roadmap` sections used by the skills
+`.smart.ai/conf.yml` keeps the existing `specifications` and `roadmap` sections used by the skills
 and gains two sections. The skills ignore unknown sections, so the file stays shared.
 
 ```yaml
@@ -464,7 +464,7 @@ payload of the interaction model.
 
 ## 4. Acceptance Criteria (QA)
 
-- [ ] **Nominal Scenario:** Given a valid `.smart.ai/config.yml` and its environment variables, when
+- [ ] **Nominal Scenario:** Given a valid `.smart.ai/conf.yml` and its environment variables, when
       `smart-ai config check` is run, then the configuration is reported valid and the exit code
       is 0.
 - [ ] **JSON Scenario:** Given `--json`, when a command ends, then stdout contains a single document
@@ -478,7 +478,7 @@ payload of the interaction model.
       one repair call is made and, if it still fails, the exit code is 5.
 - [ ] **Idempotence Scenario:** Given `add_labels` with an already present label, when it is called,
       then it is a no-op.
-- [ ] **Error Scenario:** Given a missing `.smart.ai/config.yml`, when any command is run, then the
+- [ ] **Error Scenario:** Given a missing `.smart.ai/conf.yml`, when any command is run, then the
       CLI prints exactly `❌[smart-ai] Workspace not configured.` and exits with code 2.
 - [ ] **Error Scenario (marker):** Given `update_issue` with a body without the
       `smart-ai:tracking-id` marker, when it is called, then it fails with exit code 7.

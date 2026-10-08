@@ -20,8 +20,9 @@ Phase.
 
 1. **CRITICAL PRE-CONDITION (Sequential Execution Only)**: You MUST execute this step strictly in
    isolation before evaluating any other rule, case, or file path mentioned later in this prompt.
-   - **Step 1.A (Read File)**: Read the `.smart.ai/config.yml` file.
-   - **Step 1.B (Early Exit)**: IF and ONLY IF `.smart.ai/config.yml` is missing, you MUST halt
+   - **Step 1.A (Read File)**: Check the contents of the `.smart.ai/conf.yml` file by using your
+     available file-reading tools.
+   - **Step 1.B (Early Exit)**: IF and ONLY IF `.smart.ai/conf.yml` is missing, you MUST halt
      immediately. Do NOT call any tool for any other file. Output exactly and only:
      "❌**[smart-plan] Workspace not configured.**"
    - **Step 1.C (Mode Detection)**: IF present, use its content to analyze the `roadmap`
@@ -63,9 +64,9 @@ Phase.
         - If you are in a `not versioned` `single` layout AND `roadmap.md` is missing, check the
           `./roadmap/` directory to double-check that a multi-file layout is not already hiding
           there.
-        - In the other way, if you are in a `versioned` `single` layout or all `multi` layout AND
-          the `./roadmap/` directory is missing, try to read the root `roadmap.md` file to check if
-          it exist or not.
+        - Conversely , if you are in a `versioned` `single` layout or all `multi` layout AND the
+          `./roadmap/` directory is missing, try to read the root `roadmap.md` file to check if it
+          exists or not.
 
    - **Step 3.B (Detect Layout Divergences & Arbitration)**: Reconcile the configuration with the
      final results of Step 3.A:
@@ -76,8 +77,8 @@ Phase.
      - **Case 3 (Multi-File Match)**: `roadmap.layout` is `multi` (or `auto`) AND a `README.md`
        index with separate `epic-X.md` files exists. Read the index and all relevant epic files.
      - **Case 4 (Layout Divergence - CRITICAL STOP)**: If the filesystem contents contradict
-       `.config.yml` (e.g., config says `single` but `roadmap/README.md` files exist, OR config says
-       `multi` but a single `roadmap.md` exists):
+       `.smart.ai/conf.yml` (e.g., config says `single` but `roadmap/README.md` files exist, OR
+       config says `multi` but a single `roadmap.md` exists):
        - **YOU MUST IMMEDIATELY HALT ALL TOOL INVOCATIONS.** Do NOT read any further epic files.
        - **Interactively ask the user** this exact question: _"❌ A layout divergence has been
          detected. Your configuration specifies [Insert Config] but the filesystem shows [Insert
@@ -87,7 +88,7 @@ Phase.
 
 4. **Layout Arbitration & Execution (Idempotent Update Logic)**: Process the core roadmap strategy
    by extracting the Global Vision (2-sentence summary), mapping chronological Epics, and sequencing
-   high-level Issues with unique IDs (e.g., `[ISSUE-1]`) and strict sequential dependencies
+   high-level Issues with unique IDs (e.g., `[ISSUE-1.1]`) and strict sequential dependencies
    (`Depends on: [ID]`). Analyze the `Spec Anchors` to determine if this specification has already
    been mapped to existing issues. You MUST maintain the exact same level of architectural depth,
    completeness, and granularity whether you are writing to a clean slate or synchronizing with an
@@ -95,6 +96,10 @@ Phase.
    exists.
 
    - **Strict Merge & Update Rules**:
+     1. - **Technical Enablers & Parent Context Detection**: Before sequencing tasks, you MUST check
+          if the project requires global technical enablers (e.g., framework installations, testing
+          tools, ...). Look to global technical documentation and existing roadmap to know what it
+          is needed and what it is missing.
      1. **Identification & Epic Isolation**: Compare the `Pointer` of the new specification with the
         `Spec Anchors` of all existing Epics in the roadmap.
         - IF an existing Epic already uses this exact same pointer, treat this as an **Update/Sync**
@@ -103,25 +108,34 @@ Phase.
           treat this as an **Append** operation. **You are STRICTLY FORBIDDEN from adding this new
           pointer to an existing unrelated Epic.** You MUST generate a brand-new distinct Epic block
           with its own explicit purpose and title.
-     2. **Granularity & Non-Amalgamation**: Whether appending a new Epic or updating an existing
-        one, every distinct functional requirement (e.g., frontend inputs, backend validation, image
-        processing pipelines, database updates, cloud storage links) MUST result in an independent
-        high-level Issue. You are STRICTLY FORBIDDEN from merging multiple functional blocks into a
-        single lazy ticket (e.g., do NOT bundle validation, resizing, and uploading into one issue).
-     3. **Idempotence & ID Stability**:
+     1. **Granularity & Track-Based Slicing (Non-Amalgamation)**: Whether appending a new Epic or
+        updating an existing one, you MUST segment issues according to their technical track to
+        optimize pipeline execution. You are STRICTLY FORBIDDEN from creating generic, lazy, or
+        mixed-track tickets.
+        - Enforce Atomicity: Slice issues heavily based on logical functions. One single issue
+          should target a precise, standalone, and unit-testable chunk of code.
+        - Max Scope Rule: A single code issue must never span more than 2 to 3 files or 150 lines of
+          new code. If a feature is larger, split it into sequential sub-tasks sorted by strict
+          dependency.
+        - **CRITICAL - NO ISOLATED QA ISSUES**: Testing and implementation are inseparable. You are
+          STRICTLY FORBIDDEN from creating standalone "QA-only", "Global Testing", or "Final
+          Validation" issues at the end of a roadmap. Every atomic code issue MUST natively
+          encompass both its implementation (dev) and its verification/testing scope.
+
+     1. **Idempotence & ID Stability**:
         - For historical matching issues, strictly preserve their original `[ISSUE-X.Y]` ID.
         - For entirely new requirements or new Epics, generate new sequential epic-qualified
           IDs:`[ISSUE-X.Y]` in this example X is the epic ID and Y starts at 1 in a new Epics.
           (e.g., if the new epic is the EPIC 2, the first task of this new epic MUST be named
           `[ISSUE-2.1]`).
-     4. **Additions**: For new requirements, append new sequential IDs starting strictly _after_ the
+     1. **Additions**: For new requirements, append new sequential IDs starting strictly _after_ the
         highest ID present in the epic (e.g., if max existing for the epic is `[ISSUE-3.12]`, start
         at `[ISSUE-3.13]`). When a new epic is added it must take the new sequential IDs starting
         strictly _after_ the highest epic ID already defined.
-     5. **Deletions**: If a feature is explicitly removed by the spec update, flag the issue as
+     1. **Deletions**: If a feature is explicitly removed by the spec update, flag the issue as
         `<!-- [DELETED] -->` or remove it, without shifting any other ID.
-     6. **Preserve External State**: NEVER modify user-managed checkboxes (`- [ ]` vs `- [x]`).
-     7. **Metadata Sync**: Check and the Global Vision and Epic Purpose. If the new spec alters the
+     1. **Preserve External State**: NEVER modify user-managed checkboxes (`- [ ]` vs `- [x]`).
+     1. **Metadata Sync**: Check the Global Vision and Epic Purpose. If the new spec alters the
         project's macro direction you **MUST** update it.
 
    - **Execution Authorization Rules (Model-Agnostic Routing)**:

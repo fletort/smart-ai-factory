@@ -41,7 +41,8 @@ your current file.
 - **For Autocomplete (Ghost text):** Just type normally! `Codestral` via OpenRouter runs silently in
   the background, costing fractions of a cent per session.
 - **For XS / S Tasks (Quick edits, debugging, explaining code):** Open the **Continue** side-panel,
-  select `DeepSeek-V3` in the model dropdown, and chat. It is near-instant and ultra-economic.
+  select `DeepSeek-V4.1 Flash` in the model dropdown, and chat. It is near-instant and
+  ultra-economic.
 - **For M / L Tasks (Complex algorithms, writing full unit test suites):** Switch the **Continue**
   model dropdown to `DeepSeek-R1`. Let its reasoning chain think through the logic before generating
   the code.

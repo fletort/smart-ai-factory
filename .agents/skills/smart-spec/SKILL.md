@@ -21,8 +21,8 @@ specification is complete and ready for execution planning.
 
 1. **CRITICAL PRE-CONDITION (Sequential Execution Only)**: You MUST execute this step strictly in
    isolation before evaluating any other rule, case, or file path mentioned later in this prompt.
-   - **Step 1.A (File Check)**: Check if `.smart.ai/config.yml` exists.
-   - **Step 1.B (Early Exit)**: IF and ONLY IF `.smart.ai/config.yml` is missing, you MUST halt
+   - **Step 1.A (File Check)**: Check if `.smart.ai/conf.yml` exists.
+   - **Step 1.B (Early Exit)**: IF and ONLY IF `.smart.ai/conf.yml` is missing, you MUST halt
      immediately. Do NOT call any tool for any other file. Output exactly and only:
      "❌**[smart-spec] Workspace not configured.**"
    - **Step 1.C (Mode Detection)**: IF present, read it to analyze the `specifications.templates`
@@ -62,7 +62,7 @@ specification is complete and ready for execution planning.
 ### Case 3 Execution (Writing Final Specifications)
 
 ONLY when Case 3 is activated and you have the user's permission, you MUST now read the content of
-the Markdown files located at the paths detected in Step 1 (e.g., `.smart.ai/config.yml`).
+the Markdown files located at the paths detected in Step 1 (e.g., `.smart.ai/conf.yml`).
 
 You must also check if this is a new specification or an update: for this point you MUST strictly
 rely on the workspace index located at `docs/INDEX.md`:
@@ -73,16 +73,16 @@ rely on the workspace index located at `docs/INDEX.md`:
    - If the user request matches an existing Ref (e.g., "Update billing"), identify the exact target
      file from the table and ask to read _only_ that file.
    - If it's a completely new feature, announce you will create a new entry in the index. The
-     specification fill will be created in the same directories that other listed files. If it is
-     the first specification, and nobody tell you the location, use the usual ./docs directory.
+     specification file will be created in the same directories that other listed files. If it is
+     the first specification, and nobody tells you the location, use the usual ./docs directory.
 3. **Strict Prohibition**: You are strictly forbidden from scanning the whole workspace directories.
    If the index is insufficient, ask the user.
 
-Apply changes incrementally into those exact structural skeletons according to specification mode:
+Apply changes into those exact structural skeletons according to specification mode:
 
 #### Scenario A: [UNIFIED] Mode Activated
 
-- Update or create the single specification document incrementally based on the user's request.
+- Update or create the single specification document based on the user's request.
 - Merge functional needs and technical notes into the same document sections. Keep it agile and
   concise.
 
@@ -99,8 +99,8 @@ Apply changes incrementally into those exact structural skeletons according to s
 
 Once the specification is ready and accepted by the user, write the specification file(s) and the
 index file within the SAME response. Do not ask for permission before these writes: UNIFIED mode
-requires two calls (specification and index), while MODULAR mode requires three calls (functional
-specification, technical specification, and index).
+requires at least two modifications (specification and index), while MODULAR mode requires at least
+three modifications (functional specification, technical specification, and index).
 
 #### Writing Guidelines
 

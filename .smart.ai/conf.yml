@@ -1,0 +1,39 @@
+specifications:
+  templates:
+    # Main technical document (constitution)
+    main_technical_document: bootstrap/.smart.ai/templates/main-spec.md
+    # This template can be used when your template contains functional and technical part in one
+    # unique document
+    unified: bootstrap/.smart.ai/templates/unified-spec.md
+    # Alternative modular mode:
+    # functional: bootstrap/.smart.ai/templates/functional-spec.md
+    # technical: bootstrap/.smart.ai/templates/technical-spec.md
+  paths:
+    main_technical_document: docs/architecture.md
+    main_functional_document: README.md
+    unified_spec_path: docs/specs
+    functional_spec_path: docs/specs
+    technical_spec_path: docs/specs
+
+roadmap:
+  versioned: false # Put to true to generate Versioned Directory<br/>roadmap/vX.Y/...
+  layout: auto # can be single, multi or auto
+
+
+# Used by the smart-ai Python CLI (triage). Skills ignore these sections.
+# models:
+#   # alias -> LiteLLM model string + name of the environment variable holding the API key
+#   flash_po:
+#     model: gemini/gemini-3.6-flash
+#     api_key_env: CHAT_GEMINI_API_KEY
+#   claude_sonnet:
+#     model: openrouter/anthropic/claude-sonnet-4
+#     api_key_env: CHAT_OPENROUTER_API_KEY
+#
+# triage:
+#   simple_triage_model: flash_po # alias from `models`
+#   advanced_brainstorm_model: claude_sonnet # alias from `models`
+#   auto_brainstorm: false # true = the advanced model resolves ambiguities alone
+#   hitl_during_triage: true # human approval before creating issues
+#   roadmap_writeback: pr # pr (PR, no branch-protection bypass) | direct (push, needs bypass) | off
+#   max_cost_usd_per_run: 0.50 # hard stop for a single run

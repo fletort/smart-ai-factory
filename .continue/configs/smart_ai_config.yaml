@@ -3,12 +3,17 @@ version: 1.0.0
 schema: v1
 
 models:
-  - name: DeepSeek-V3 (OpenRouter - Standard Chat & Triage)
+  - name: DeepSeek-V4.1 Flash (OpenRouter - Standard Chat & Triage)
     provider: openrouter
-    model: deepseek/deepseek-chat
+    model: deepseek/deepseek-v4.1-flash
     apiKey: ${{ secrets.CHAT_OPENROUTER_API_KEY }}
     roles:
       - chat
+    capabilities:
+      - tool_use
+    defaultCompletionOptions:
+      maxTokens: 65536
+    useLegacyCompletionsEndpoint: false # Required because OpenRouter exclusively uses the modern chat/completions API format
 
   - name: Gemini 3.6 Flash (Google AI Studio - Free Triage & Chat Alternative)
     provider: gemini
@@ -16,6 +21,8 @@ models:
     apiKey: ${{ secrets.CHAT_GEMINI_API_KEY }}
     roles:
       - chat
+    capabilities:
+      - tool_use
     # Note: Google AI Studio provides a free tier with rate limits.
     # On the free tier, your prompts and responses are used to improve Google’s products.
     # If you want more privacy, you can also use this model through
@@ -27,6 +34,8 @@ models:
     apiKey: ${{ secrets.CHAT_OPENROUTER_API_KEY }}
     roles:
       - chat
+    capabilities:
+      - tool_use
 
   - name: OpenRouter-Free (for fun)
     provider: openrouter
@@ -34,6 +43,8 @@ models:
     apiKey: ${{ secrets.CHAT_OPENROUTER_API_KEY }}
     roles:
       - chat
+    capabilities:
+      - tool_use
 
   # Use official Claude Code Extension with a valid subscription - it's cheaper!
   # - name: Claude 3.5 Sonnet (Anthropic - Ultimate Code & Archi)
@@ -49,3 +60,5 @@ models:
     apiKey: ${{ secrets.AUTOCOMPLETE_OPENROUTER_API_KEY }}
     roles:
       - autocomplete
+    capabilities:
+      - tool_use

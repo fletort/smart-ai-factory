@@ -8,7 +8,7 @@
       value:
         - read_file
     - type: equals
-      value: '.smart.ai/config.yml'
+      value: '.smart.ai/conf.yml'
       transform: |
         const args = output[0].function?.arguments;
         argsJson = typeof args === 'string' ? JSON.parse(args) : args;
@@ -17,7 +17,7 @@
 - description: Test Skill stops immediately when config file is missing
   vars:
     user_message: .
-    read_file_config_result: 'cannot access .smart.ai/config.yml: No such file or directory'
+    read_file_config_result: 'cannot access .smart.ai/conf.yml: No such file or directory'
     prompt_path: 02-get_config.chat.json
   assert:
     - type: contains

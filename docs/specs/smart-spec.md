@@ -58,7 +58,7 @@
 - **State Machine (session / ticket / workflow):** not applicable. The skill is a linear,
   conversational flow with no persisted state: the flow above is the complete behaviour.
 - **Business Rules:**
-  - **BR-SPEC-01 (Configuration pre-condition):** `.smart.ai/config.yml` is checked first and on its
+  - **BR-SPEC-01 (Configuration pre-condition):** `.smart.ai/conf.yml` is checked first and on its
     own. If it is missing, the skill halts immediately, reads nothing else and outputs exactly
     `❌**[smart-spec] Workspace not configured.**`.
   - **BR-SPEC-02 (Template mode detection):** when the configuration exists, only its
@@ -124,15 +124,15 @@
 - **Architecture & Component Interactions:**
 
   The skill lives in `.agents/skills/smart-spec/` and works only through file tools (read / write).
-  It has no business logic outside the prompt and shares `.smart.ai/config.yml` with the other
-  skills and the `smart-ai` CLI (see [CLI core](./cli-core.md#configuration)).
+  It has no business logic outside the prompt and shares `.smart.ai/conf.yml` with the other skills
+  and the `smart-ai` CLI (see [CLI core](./cli-core.md#configuration)).
 
   ```mermaid
   sequenceDiagram
       autonumber
       actor User
       participant Skill as smart-spec skill
-      participant Cfg as .smart.ai/config.yml
+      participant Cfg as .smart.ai/conf.yml
       participant Idx as docs/INDEX.md
       participant Specs as Templates and specification files
 
@@ -167,7 +167,7 @@
   - **Endpoints / Methods:** none (skill invoked from the IDE chat with `/smart-spec`; the skill
     disables model-initiated invocation to prevent cascading invocations, since spec refinement
     requires deliberate user transitions).
-  - **Payload Constraints:** configuration read from `.smart.ai/config.yml`:
+  - **Payload Constraints:** configuration read from `.smart.ai/conf.yml`:
 
     | Key                                                | Purpose                                                    |
     | :------------------------------------------------- | :--------------------------------------------------------- |
@@ -206,8 +206,8 @@
       read yet.
 - [ ] **Refinement Scenario:** Given a first draft, when it is presented, then missing information
       is flagged `⚠️ [PENDING]`, at most 3 questions are asked and the skill waits for validation.
-- [ ] **Error Scenario:** Given a workspace without `.smart.ai/config.yml`, when `/smart-spec` is
-      run, then the skill outputs exactly `❌**[smart-spec] Workspace not configured.**` and calls
-      no tool on any other file.
+- [ ] **Error Scenario:** Given a workspace without `.smart.ai/conf.yml`, when `/smart-spec` is run,
+      then the skill outputs exactly `❌**[smart-spec] Workspace not configured.**` and calls no
+      tool on any other file.
 - [ ] **Conflict Scenario:** Given a request contradicting an earlier specification, when it is
       about to be applied, then a visible technical conflict alert is raised first.

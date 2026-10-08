@@ -34,7 +34,7 @@
 
   ```mermaid
   graph TD
-      Input["👤 /smart-plan Trigger<br/>(Spec File or Chat Context)"] --> Config["⚙️ Read .smart.ai/config.yml<br/>(missing = halt)"]
+      Input["👤 /smart-plan Trigger<br/>(Spec File or Chat Context)"] --> Config["⚙️ Read .smart.ai/conf.yml<br/>(missing = halt)"]
       Config --> Source["🔍 Detect Context Source"]
 
       Source -->|File Mode| ReadFile["📄 Read Given Target Spec"]
@@ -69,7 +69,7 @@
   ```mermaid
   stateDiagram-v2
       [*] --> ConfigCheck
-      ConfigCheck --> Halted : .smart.ai/config.yml missing
+      ConfigCheck --> Halted : .smart.ai/conf.yml missing
       Halted --> [*]
       ConfigCheck --> SourceDetection : config read, versioned/layout announced
       SourceDetection --> VersionSelection : roadmap.versioned = true
@@ -87,9 +87,9 @@
   ```
 
 - **Business Rules:**
-  - **BR-PLAN-01 (Configuration pre-condition):** `.smart.ai/config.yml` is read first and on its
-    own. If it is missing, the skill halts with `❌**[smart-plan] Workspace not configured.**` and
-    reads nothing else. Otherwise it announces the detected configuration before continuing:
+  - **BR-PLAN-01 (Configuration pre-condition):** `.smart.ai/conf.yml` is read first and on its own.
+    If it is missing, the skill halts with `❌**[smart-plan] Workspace not configured.**` and reads
+    nothing else. Otherwise it announces the detected configuration before continuing:
     `[smart-ai] Roadmap Configuration detected (versioned: <true/false>, layout: <single/multi/auto>)`.
   - **BR-PLAN-02 (Context & sourcing modes):**
     - **File Mode**: triggered when a specification file exists (from `smart-spec`
@@ -164,7 +164,7 @@
       autonumber
       actor User
       participant Skill as smart-plan skill
-      participant Cfg as .smart.ai/config.yml
+      participant Cfg as .smart.ai/conf.yml
       participant FS as Roadmap files
       participant Spec as Specification file
 
@@ -301,8 +301,8 @@
       `Pointer: Current Conversation History`, and no specification file is created.
 - [ ] **New Epic Scenario:** Given a pointer unknown to the roadmap, when the plan is merged, then a
       new Epic is created with IDs continuing after the highest existing epic ID.
-- [ ] **Error Scenario (configuration):** Given no `.smart.ai/config.yml`, when `/smart-plan` is
-      run, then the skill outputs exactly `❌**[smart-plan] Workspace not configured.**` and reads
+- [ ] **Error Scenario (configuration):** Given no `.smart.ai/conf.yml`, when `/smart-plan` is run,
+      then the skill outputs exactly `❌**[smart-plan] Workspace not configured.**` and reads
       nothing else.
 - [ ] **Error Scenario (divergence):** Given `layout: single` and an existing `roadmap/README.md`,
       when `/smart-plan` is run, then the skill stops and asks whether to migrate the layout or
