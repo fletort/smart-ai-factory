@@ -51,12 +51,6 @@
   ```
 
   - **Phases 0 and 1** are implemented as pure skills (`.agents/skills/`), without Python code.
-    Phase 0 (`smart-spec`) also enforces the **documentation governance** of the repository: every
-    specification carries a unique `FEAT_ID` trigramme registered in `docs/INDEX.md`, the state of
-    the high-level documents (functional presentation and this constitution) is synchronised (or
-    explicitly declared unaffected) within the same response, and author-declared section
-    dependencies are propagated in both directions (see
-    [smart-spec.md](./specs/smart-spec.md#2-functional--ux-specifications-what)).
   - **From Phase 2**, the `smart-ai` Python CLI is the engine. It follows a ports-and-adapters
     design: application services depend only on ports (`LlmClient`, `InteractionChannel`,
     `IssueTracker`, `PullRequestHost`, `VersionControl`, `Workspace`), implemented by adapters
@@ -179,12 +173,6 @@ Files expected by the pipeline in a user's project: `.smart.ai/conf.yml`, `roadm
   - Documentation files: `kebab-case.md` under `docs/specs/`; specification templates are
     [unified-spec.md](../bootstrap/.smart.ai/templates/unified-spec.md) and
     [main-spec.md](../bootstrap/.smart.ai/templates/main-spec.md).
-  - Specification identifiers: every specification owns a unique `FEAT_ID` trigramme (3 uppercase
-    letters, e.g. `SPEC`, `TRGE`), registered in the `FEAT_ID` column of [docs/INDEX.md](./INDEX.md)
-    and never renamed once published; the reserved value `N.A.` marks a document without identifier.
-    Rules and edge cases inside a specification are prefixed `BR-<FEAT_ID>-[0-9]{2}` and
-    `EC-<FEAT_ID>-[0-9]{2}` (acceptance criteria may use `AC-<FEAT_ID>-[0-9]{2}`). See
-    [smart-spec.md](./specs/smart-spec.md) BR-SPEC-14 to BR-SPEC-18.
   - Model aliases (`flash_po`, `claude_sonnet`, ...) are the only model names known by the pipeline
     code.
 
@@ -208,14 +196,6 @@ Files expected by the pipeline in a user's project: `.smart.ai/conf.yml`, `roadm
 - **LLM Wiki**: every `src/<module>/` carries its own `README.md` code-wiki entry and is registered
   in `src/README.md`; `CLAUDE.md` / `AGENTS.md` stays under 50 lines; the code index never lists
   individual source files.
-- **Cross-section dependency alerts**: a section that is coupled to another specification declares
-  it with a hidden HTML comment placed inside that section:
-  `<!-- ⚠️ DEPENDENCY ALERT: <mode> <relative/path.md> -->` with
-  `mode ∈ {outgoing, incoming, bidirectional}`. The target is a repository-relative document path
-  **without** section number (the scope is the containing section), and the declaration is mirrored
-  on the counterpart side (`outgoing` ⟷ `incoming`, `bidirectional` ⟷ `bidirectional`), so that a
-  traversal starting from either side resolves the same pair of sections. Grammar, reciprocity and
-  propagation are specified in [smart-spec.md](./specs/smart-spec.md) BR-SPEC-21 to BR-SPEC-23.
 - **Exit codes**: errors map to a documented exit code (0 success, 1 unexpected, 2 workspace not
   configured or invalid configuration, 3 human input required, 4 roadmap layout divergence, 5 LLM
   failure, 6 budget limit, 7 GitHub failure) through the exception hierarchy in `core/errors.py`.
