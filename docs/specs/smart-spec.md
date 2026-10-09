@@ -1,8 +1,10 @@
 # Specifications: Smart-Spec (Phase 0 - Specification Refinement) (ID: SPEC)
 
-> **State**: _Implemented as a skill (only) — **revision proposed**: the `FEAT_ID` governance,
-> high-level synchronisation and impact-mapping rules are specified here but are **not** implemented
-> in the skill prompt yet._
+> **State**: _Partially implemented_ (`.agents/skills/smart-spec/`) — **revision proposed**.
+> **Implemented:** BR-SPEC-01 to BR-SPEC-13, EC-SPEC-01 to EC-SPEC-05, AC-SPEC-01 to AC-SPEC-06.
+> **Not developed:** BR-SPEC-14 to BR-SPEC-26, EC-SPEC-06 to EC-SPEC-12, AC-SPEC-07 to AC-SPEC-17
+> (`FEAT_ID` governance, delivery status, impact mapping, high-level isolation and the ADR trigger);
+> the runtime prompt is updated by a downstream implementation task.
 
 ## 1. Context & Objectives
 
@@ -27,9 +29,12 @@
     addressable by a unique identifier (`BR-<FEAT_ID>-NN`, `EC-<FEAT_ID>-NN`, `AC-<FEAT_ID>-NN`), so
     that tickets, pull requests, tests and reviews can reference the same artefact without
     ambiguity.
-  - **Zero documentation drift**: a specification change never silently invalidates the high-level
-    functional presentation or the technical constitution; both are synchronised (or explicitly
-    declared unaffected) in the same response.
+  - **Delivery honesty**: a specification never claims that a capability exists. Its header states
+    what is implemented and what is not (BR-SPEC-25), so no reader mistakes a proposal for a shipped
+    feature.
+  - **Traceable decisions**: an architectural decision that passes the justification test leaves an
+    immutable Architecture Decision Record (see [ADR](./adr.md)) instead of being silently embedded
+    in a specification or in the technical constitution.
   - **Impact awareness**: an agent about to modify a section is warned of the sections that depend
     on it, in both directions, before the modification is applied.
 - **Non-Goals (Out of Scope):**
@@ -42,6 +47,13 @@
     (see BR-SPEC-10 and BR-SPEC-21).
   - Building a global dependency graph or a static analysis engine. Impact mapping is limited to the
     explicit, author-declared dependency alerts found in the inspected sections.
+  - **Synchronising the high-level documents** (the functional presentation and the technical
+    constitution). They describe **what exists** and are updated **after development**; `smart-spec`
+    only performs their **initial provisioning** when absent (BR-SPEC-19, BR-SPEC-20).
+  - **The ADR lifecycle after creation.** `smart-spec` creates a `proposed` ADR; promotion to
+    `accepted`, deprecation and superseding happen after development (see [ADR](./adr.md)).
+  - **Editing the distribution payload** (`bootstrap/**`): a divergence found there is reported as
+    documentation debt, never fixed silently (EC-SPEC-10).
 
 ## 2. Functional & UX Specifications (What)
 
@@ -51,6 +63,9 @@ BR-SPEC-15, BR-SPEC-16) is coupled in both directions with the _Product Wiki_ ru
 [Native LLM Wiki](./native-llm-wiki.md) (BR-WIKI-03 and its §2). Any change of the registry column
 or of the index format here invalidates the wiki's feature lookup, and conversely a change
 of the Product Wiki topology invalidates the routing rules defined here. -->
+<!-- ⚠️ DEPENDENCY ALERT: bidirectional ./adr.md -->
+<!-- this section also defines the ADR trigger (BR-SPEC-26), coupled in both directions with the
+justification test and the ADR format of [ADR](./adr.md) §2. -->
 
 - **User / Process Flow:**
 
@@ -81,13 +96,14 @@ of the Product Wiki topology invalidates the routing rules defined here. -->
       Mode -->|UNIFIED| UWrite["Update Single<br/>Specification File"]
       Mode -->|MODULAR| MWrite["Step 1: Functional<br/>Step 2: Technical"]
 
-      UWrite --> Impact["🔎 Inspect write-set<br/>(dependency alerts)"]
-      MWrite --> Impact
+      UWrite --> Status["🏷️ Delivery status header<br/>(implemented vs not developed)"]
+      MWrite --> Status
+      Status --> Impact["🔎 Inspect write-set<br/>(dependency alerts)"]
       Impact --> Propagate["Propagate impacts to<br/>pointed sections"]
-      Propagate --> High{"High-level<br/>documents<br/>affected?"}
-      High -->|Yes| Sync["Sync README +<br/>docs/architecture.md"]
-      High -->|No| Trace["Trace<br/>'no change required'"]
-      Sync --> Done["✅ Specs Complete"]
+      Propagate --> Arch{"Architecture<br/>decision?<br/>(5-question test,<br/>>= 3 'yes')"}
+      Arch -->|Yes| Adr["📝 Create a<br/>'proposed' ADR"]
+      Arch -->|No| Trace["Trace<br/>'no ADR justified'"]
+      Adr --> Done["✅ Specs Complete"]
       Trace --> Done
       Done --> Plan["/smart-plan for<br/>task scheduling"]
   ```
@@ -139,8 +155,9 @@ of the Product Wiki topology invalidates the routing rules defined here. -->
   - **BR-SPEC-10 (Writes):** once the specification is accepted, the specification file(s) and the
     index file are written within the SAME response, without asking permission again (UNIFIED: two
     writes, MODULAR: three writes). The write-set is then extended, still in the same response, by
-    the impacted pointed sections (BR-SPEC-21) and by the affected high-level documents
-    (BR-SPEC-20).
+    the delivery-status header (BR-SPEC-25), the impacted pointed sections (BR-SPEC-21) and, when
+    the justification test passes, the ADR (BR-SPEC-26). The high-level documents are never part of
+    the write-set (BR-SPEC-20).
   - **BR-SPEC-11 (Template fidelity):** the layout and Markdown headers defined in the loaded
     templates are strictly reproduced.
   - **BR-SPEC-12 (Testable requirements):** requirements stay precise, factual and measurable. Vague
@@ -165,17 +182,21 @@ of the Product Wiki topology invalidates the routing rules defined here. -->
   - **BR-SPEC-18 (Identifier prefixing):** in a specification, **all** business rules are prefixed
     `BR-<FEAT_ID>-NN`, **all** edge cases `EC-<FEAT_ID>-NN` and **all** acceptance criteria
     `AC-<FEAT_ID>-NN`.
-  - **BR-SPEC-19 (High-level documents are configuration-driven):** the high-level documents to
-    inspect and synchronise are resolved from the configuration, never hard-coded:
+  - **BR-SPEC-19 (High-level document paths are configuration-driven):** the high-level document
+    locations are resolved from the configuration, never hard-coded:
     `specifications.paths.main_functional_document` (functional presentation) and
     `specifications.paths.main_technical_document` (technical constitution). The repository values
-    (`README.md`, `docs/architecture.md`) are only the usual defaults of a user's workspace.
-  - **BR-SPEC-20 (Automatic high-level synchronisation):** after the specification file(s) are
-    written, the agent evaluates the functional impact (vision, phase flow, governance matrix,
-    feature index) and the technical impact (stack, directory structure, conventions, security and
-    testing baselines). If an impact exists, the high-level document is updated **in the same
-    response**, without asking for a new permission; if no impact exists, the conclusion
-    `no change required` is traced explicitly for each high-level document in the response.
+    (`README.md`, `docs/architecture.md`) are only the usual defaults of a user's workspace. They
+    are used solely to **locate** the technical constitution for its initial provisioning
+    (BR-SPEC-20); they are never written otherwise.
+  - **BR-SPEC-20 (High-level documents are out of scope):** `smart-spec` never synchronises the
+    high-level documents. The functional presentation and the technical constitution describe **what
+    exists** and are updated **after development** (Phase 3 / maintenance), not at specification
+    time: a specification is a **proposal**, a high-level document is a **statement of fact**. The
+    single exception is **initial provisioning**: when the technical constitution file is
+    **absent**, `smart-spec` may create it from `specifications.templates.main_technical_document`.
+    An existing high-level document is never modified, and any drift observed there is reported as
+    documentation debt instead of being fixed silently.
   - **BR-SPEC-21 (Impact mapping):** every file about to be modified is inspected for hidden
     dependency markers. When a marker is found, the detected impact is recorded in the functional or
     technical section of the **pointed** specification, in addition to the current specification.
@@ -198,6 +219,34 @@ of the Product Wiki topology invalidates the routing rules defined here. -->
     section is reported to the user rather than created blindly.
   - **BR-SPEC-24 (Marker context):** another hidden HTML comment can be used after the DEPENDENCY
     ABORT one to define the context of the dependency in one or two sentences.
+  - **BR-SPEC-25 (Delivery-status header):** every specification carries a structured state header
+    at the top of the document that separates what exists from what does not:
+
+    ```text
+    > **State**: _Partially implemented_ (`path_to_dev`)
+    > **Implemented:** BR-XXX-01 to BR-XXX-13, EC-XXX-01 to EC-XXX-05, AC-XXX-01 to AC-XXX-06
+    > **Not developed:** BR-XXX-14 to BR-XXX-26, EC-XXX-06 to EC-XXX-12, AC-XXX-07 to AC-XXX-17
+    ```
+
+    - The header is **mandatory** and recomputed at **every** revision of the specification, in the
+      same response as the write.
+    - `Implemented` and `Not developed` are expressed as **ranges of identifiers** using the
+      specification's own prefixes (`BR-`, `EC-`, `AC-`); the `Not developed` line is omitted only
+      when the whole specification is implemented.
+    - Its purpose is to prevent a reader (human or downstream agent) from mistaking a **proposed**
+      rule for a **shipped** capability: a specification that claims behaviour it does not have is a
+      defect.
+
+  - **BR-SPEC-26 (Architecture Decision Record trigger):** during Case 3, each architectural or
+    structural decision identified in the specification is submitted to the **justification test**
+    of the [ADR](./adr.md) specification — the five inverted whys (cost of change, team impact,
+    lifetime, alternatives, reinterpretation risk). This covers decisions, design conventions and
+    governance **foundations** alike, with or without a competing alternative ([ADR](./adr.md)
+    BR-ADR-01, BR-ADR-02). The agent **answers the five questions itself** and states the answers
+    explicitly. When **at least 3 of the 5** answers are "yes", an ADR is justified and a
+    **`proposed`** ADR is created in the same response (see [ADR](./adr.md) BR-ADR-01 and
+    BR-ADR-07). Otherwise the conclusion `no ADR justified` is traced explicitly, together with the
+    five answers.
 - **User Stories:**
   - _As a_ developer, _I want to_ refine a raw feature idea with a co-architect _so that_ blind
     spots are surfaced before any code or ticket exists.
@@ -257,15 +306,19 @@ of the Product Wiki topology invalidates the routing rules defined here. -->
           Skill-->>User: Proud banner: document title (ID: FEAT_ID)
           Skill->>Specs: Write specification file(s) and index in the same response
           Note over Skill,Specs: The whole answer prefixes BR-/EC-/AC- with FEAT_ID
+          Skill->>Specs: Update the delivery-status header (implemented vs not developed)
           Skill->>Specs: Inspect the write-set for DEPENDENCY ALERT markers
           Skill->>Specs: Propagate impacts (and mirror markers) into the pointed sections
-          Skill->>Specs: Sync the high-level documents (or trace "no change required")
+          opt Justification test: >= 3 of 5 answers "yes"
+              Skill->>Specs: Create a proposed ADR under the configured ADR directory
+          end
           Skill-->>User: Run /smart-plan for roadmap and scheduling
       end
   ```
 
-  Impact mapping and high-level synchronisation are the trailing steps of Case 3: they run after the
-  specification and index writes, in the same response, and never require an additional approval.
+  The delivery-status header, the impact mapping and the optional ADR are the trailing steps of Case
+  3: they run after the specification and index writes, in the same response, and never require an
+  additional approval. The high-level documents are deliberately left untouched (BR-SPEC-20).
 
 - **Data Model & API Contracts:**
   - **Endpoints / Methods:** none (skill invoked from the IDE chat with `/smart-spec`; the skill
@@ -273,14 +326,15 @@ of the Product Wiki topology invalidates the routing rules defined here. -->
     requires deliberate user transitions).
   - **Payload Constraints:** configuration read from `.smart.ai/conf.yml`:
 
-    | Key                                                | Purpose                                                                   |
-    | :------------------------------------------------- | :------------------------------------------------------------------------ |
-    | `specifications.templates.unified`                 | Single template, enables **UNIFIED** mode                                 |
-    | `specifications.templates.functional/technical`    | Separate templates, enable **MODULAR** mode                               |
-    | `specifications.templates.main_technical_document` | Template of the main technical document (constitution)                    |
-    | `specifications.paths.main_functional_document`    | Target of the high-level functional presentation (BR-SPEC-19, BR-SPEC-20) |
-    | `specifications.paths.main_technical_document`     | Target of the technical constitution (BR-SPEC-19, BR-SPEC-20)             |
-    | `specifications.paths.*_spec_path`                 | Destination of the specification file(s)                                  |
+    | Key                                                | Purpose                                                                               |
+    | :------------------------------------------------- | :------------------------------------------------------------------------------------ |
+    | `specifications.templates.unified`                 | Single template, enables **UNIFIED** mode                                             |
+    | `specifications.templates.functional/technical`    | Separate templates, enable **MODULAR** mode                                           |
+    | `specifications.templates.main_technical_document` | Template of the main technical document (constitution), used for initial provisioning |
+    | `specifications.paths.main_functional_document`    | Location of the high-level functional presentation (never written, BR-SPEC-19/20)     |
+    | `specifications.paths.main_technical_document`     | Location of the technical constitution (initial provisioning only, BR-SPEC-19/20)     |
+    | `specifications.paths.adr_directory`               | Destination of the ADRs (BR-SPEC-26, [ADR](./adr.md))                                 |
+    | `specifications.paths.*_spec_path`                 | Destination of the specification file(s)                                              |
 
   - **Identifier scheme:** the `FEAT_ID` registry is the `FEAT_ID` column of `docs/INDEX.md`; the
     reserved value `N.A.` marks a document without identifier (BR-SPEC-16). Identifiers produced by
@@ -291,10 +345,11 @@ of the Product Wiki topology invalidates the routing rules defined here. -->
     follows the mirror table `outgoing ⟷ incoming` and `bidirectional ⟷ bidirectional` (BR-SPEC-22,
     BR-SPEC-23).
 
-  - **Database Updates (ERD if needed):** none. Files written: the specification file(s) and
-    `docs/INDEX.md`. A new specification is created in the same directory as the other listed files;
-    when it is the first specification and no location is given, the usual `./docs` directory is
-    used.
+  - **Database Updates (ERD if needed):** none. Files written: the specification file(s),
+    `docs/INDEX.md` and, when the justification test passes, one ADR file. The high-level documents
+    are never written (BR-SPEC-20). A new specification is created in the same directory as the
+    other listed files; when it is the first specification and no location is given, the usual
+    `./docs` directory is used.
 
 - **Edge Cases & Error Handling:**
   - **EC-SPEC-01 (Missing configuration):** halt immediately, no other file is read, exact message
@@ -316,12 +371,20 @@ of the Product Wiki topology invalidates the routing rules defined here. -->
   - **EC-SPEC-08 (Dependency marker without a resolvable counterpart section):** the mirror marker
     cannot be placed with confidence (target file absent, target section not identifiable); the
     non-resolved pair is reported to the user and **no** marker is invented (BR-SPEC-23).
-  - **EC-SPEC-09 (High-level document path not configured or file absent):** the synchronisation of
-    BR-SPEC-20 is skipped for that document, and the skip reason is traced explicitly in the
-    response; the specification and index writes are not blocked.
+  - **EC-SPEC-09 (Technical constitution absent):** when `main_technical_document` is missing,
+    `smart-spec` provisions it from the configured template (BR-SPEC-20); if the template is also
+    absent, the provisioning is skipped and the reason is traced explicitly. The specification and
+    index writes are never blocked, and an **existing** high-level document is never written.
   - **EC-SPEC-10 (Divergence inside the distribution payload):** when a rule violation is found in
     `bootstrap/**` or in a template (e.g. an edge case identifier without its `FEAT_ID` prefix), it
     is reported as a documentation debt and never fixed silently in the same pass.
+  - **EC-SPEC-11 (ADR directory absent):** the decision passes the justification test but the
+    configured ADR directory does not exist; the directory (and the numbering) is created before the
+    ADR is written and the creation is traced. A missing ADR template degrades to the minimal MADR
+    layout of [ADR](./adr.md) BR-ADR-05.
+  - **EC-SPEC-12 (Borderline justification test):** the five answers are stated explicitly in the
+    response; when fewer than 3 are "yes", no ADR is created and `no ADR justified` is traced; when
+    the user explicitly asks for an ADR, it is created even below the threshold (BR-ADR-11).
 
 ## 4. Acceptance Criteria (QA)
 
@@ -356,10 +419,11 @@ of the Product Wiki topology invalidates the routing rules defined here. -->
 - [ ] **AC-SPEC-10 — Prefix Scenario:** Given a written specification, when its rule and edge-case
       identifiers are inspected, then 100% match `(BR|EC)-<FEAT_ID>-[0-9]{2}`; acceptance criteria
       may or may not carry the `AC-<FEAT_ID>-NN` prefix (BR-SPEC-18).
-- [ ] **AC-SPEC-11 — High-level synchronisation Scenario:** Given a Case 3 write affecting a phase
-      flow or a technical convention, when the specification is written, then the functional
-      presentation and the technical constitution are updated in the same response, or each of them
-      carries an explicit `no change required` trace (BR-SPEC-19, BR-SPEC-20).
+- [ ] **AC-SPEC-11 — High-level isolation Scenario:** Given a Case 3 write that would previously
+      have changed a phase flow or a technical convention, when the specification is written, then
+      `README.md` and `docs/architecture.md` are **not** modified (the only allowed write is the
+      initial provisioning of an absent technical constitution) and the decision is routed to the
+      ADR mechanism instead (BR-SPEC-19, BR-SPEC-20, BR-SPEC-26).
 - [ ] **AC-SPEC-12 — Impact propagation Scenario:** Given a file of the write-set containing
       `<!-- ⚠️ DEPENDENCY ALERT: outgoing <target> -->` inside its section 2, when the section is
       modified, then the impact is recorded in the target document and the mirror marker
@@ -371,3 +435,13 @@ of the Product Wiki topology invalidates the routing rules defined here. -->
 - [ ] **AC-SPEC-14 — Bootstrap isolation Scenario:** Given any Case 3 execution, when the response
       is complete, then no file under `bootstrap/**` has been modified and any divergence found
       there is reported as documentation debt (Non-Goals, EC-SPEC-10).
+- [ ] **AC-SPEC-15 — Delivery-status Scenario:** Given a specification update that adds rules
+      without implementing them, when the specification is written, then its header states the
+      implemented and the not-developed identifier ranges in the same response (BR-SPEC-25).
+- [ ] **AC-SPEC-16 — ADR Scenario:** Given a Case 3 decision for which at least 3 of the 5
+      justification questions are answered "yes", when the specification is written, then a
+      `proposed` ADR is created under the configured ADR directory in the same response
+      (BR-SPEC-26).
+- [ ] **AC-SPEC-17 — No-ADR Scenario:** Given a decision for which fewer than 3 questions are
+      answered "yes", when the specification is written, then no ADR is created and the five answers
+      plus `no ADR justified` are traced explicitly (BR-SPEC-26, EC-SPEC-12).

@@ -2,6 +2,8 @@ specifications:
   templates:
     # Main technical document (constitution)
     main_technical_document: bootstrap/.smart.ai/templates/main-spec.md
+    # Architecture Decision Record template
+    adr: bootstrap/.smart.ai/templates/adr.md
     # This template can be used when your template contains functional and technical part in one
     # unique document
     unified: bootstrap/.smart.ai/templates/unified-spec.md
@@ -11,6 +13,7 @@ specifications:
   paths:
     main_technical_document: docs/architecture.md
     main_functional_document: README.md
+    adr_directory: docs/adr
     unified_spec_path: docs/specs
     functional_spec_path: docs/specs
     technical_spec_path: docs/specs
