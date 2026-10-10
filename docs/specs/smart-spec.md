@@ -84,33 +84,37 @@ justification test and the ADR format of [ADR](./adr.md) §2. -->
       Choice -->|Case 1| Issue["Add to Roadmap<br/>/smart-plan"]
       Choice -->|Case 2| Code["Code Injection<br/>@xs_coder / @s_coder"]
 
-      Large --> Case3["📄 CASE 3: Write Specs"]
+      Large --> Case3["📄 CASE 3: Prepare Specs"]
       Choice --> Case3
 
       Case3 --> FeatID["🏷️ Propose FEAT_ID<br/>(uniqueness check in docs/INDEX.md)"]
-      FeatID --> Approve{"FEAT_ID<br/>submitted and<br/>approved?"}
-      Approve -->|Renamed| FeatID
-      Approve -->|Yes| Banner["Proud banner:<br/>ID + trigram"]
+      FeatID --> Mode{UNIFIED<br/>or<br/>MODULAR?}
+      Mode -->|UNIFIED| Prepare["Prepare single-spec draft<br/>+ delivery status header"]
+      Mode -->|MODULAR| Prepare2["Prepare functional then<br/>technical draft<br/>+ delivery status header"]
 
-      Banner -->|Detect Mode| Mode{UNIFIED<br/>or<br/>MODULAR?}
-      Mode -->|UNIFIED| UWrite["Update Single<br/>Specification File"]
-      Mode -->|MODULAR| MWrite["Step 1: Functional<br/>Step 2: Technical"]
-
-      UWrite --> Status["🏷️ Delivery status header<br/>(implemented vs not developed)"]
-      MWrite --> Status
-      Status --> Impact["🔎 Inspect write-set<br/>(dependency alerts)"]
+      Prepare --> Impact["🔎 Inspect write-set<br/>(dependency alerts)"]
+      Prepare2 --> Impact
       Impact --> Propagate["Propagate impacts to<br/>pointed sections"]
       Propagate --> Arch{"Architecture<br/>decision?<br/>(5-question test,<br/>>= 3 'yes')"}
-      Arch -->|Yes| Adr["📝 Create a<br/>'proposed' ADR"]
+
+      Arch -->|Yes| Adr["📝 Propose a<br/>'proposed' ADR"]
       Arch -->|No| Trace["Trace<br/>'no ADR justified'"]
-      Adr --> Done["✅ Specs Complete"]
-      Trace --> Done
-      Done --> Plan["/smart-plan for<br/>task scheduling"]
+
+      Adr --> Gate{"Single pre-write<br/>validation?<br/>(draft + FEAT_ID + ADRs)"}
+      Trace --> Gate
+      Gate -->|"renamed / declined / reworked"| FeatID
+
+      Gate -->|Approved| Banner["Proud banner:<br/>ID + trigram"]
+      Banner --> Write["💾 Atomic batch — ONE response:<br/>spec + index + status header<br/>+ impacted sections + ADRs"]
+      Write --> Done["✅ Specs Complete"]
+      Done --> Next["/smart-plan for<br/>task scheduling"]
   ```
 
 - **State Machine (session / ticket / workflow):** not applicable. The skill is a linear,
   conversational flow with no persisted state: the flow above is the complete behaviour. The only
-  blocking gate is the `FEAT_ID` submission (BR-SPEC-15).
+  blocking gate is the single **pre-write validation** (BR-SPEC-06), during which the `FEAT_ID`
+  submission (BR-SPEC-15) and the proposed ADRs (BR-SPEC-26) are approved; every write is then
+  committed together as one atomic batch.
 - **Business Rules:**
   - **BR-SPEC-01 (Configuration pre-condition):** `.smart.ai/conf.yml` is checked first and on its
     own. If it is missing, the skill halts immediately, reads nothing else and outputs exactly
@@ -156,8 +160,10 @@ justification test and the ADR format of [ADR](./adr.md) §2. -->
     index file are written within the SAME response, without asking permission again (UNIFIED: two
     writes, MODULAR: three writes). The write-set is then extended, still in the same response, by
     the delivery-status header (BR-SPEC-25), the impacted pointed sections (BR-SPEC-21) and, when
-    the justification test passes, the ADR (BR-SPEC-26). The high-level documents are never part of
-    the write-set (BR-SPEC-20).
+    the justification test passes and the user has not declined it, the ADR (BR-SPEC-26). The whole
+    write-set lands as **one atomic batch after the single pre-write validation** (BR-SPEC-06): no
+    write is committed between the specification and the ADR, and no further permission is asked.
+    The high-level documents are never part of the write-set (BR-SPEC-20).
   - **BR-SPEC-11 (Template fidelity):** the layout and Markdown headers defined in the loaded
     templates are strictly reproduced.
   - **BR-SPEC-12 (Testable requirements):** requirements stay precise, factual and measurable. Vague
@@ -243,10 +249,13 @@ justification test and the ADR format of [ADR](./adr.md) §2. -->
     lifetime, alternatives, reinterpretation risk). This covers decisions, design conventions and
     governance **foundations** alike, with or without a competing alternative ([ADR](./adr.md)
     BR-ADR-01, BR-ADR-02). The agent **answers the five questions itself** and states the answers
-    explicitly. When **at least 3 of the 5** answers are "yes", an ADR is justified and a
-    **`proposed`** ADR is created in the same response (see [ADR](./adr.md) BR-ADR-01 and
-    BR-ADR-07). Otherwise the conclusion `no ADR justified` is traced explicitly, together with the
-    five answers.
+    explicitly. When **at least 3 of the 5** answers are "yes", an ADR is justified: its title and
+    next number are proposed as part of the draft and it joins the **same atomic batch** as the
+    specification. Like every other write of the batch, the ADR is written **in the same response**,
+    after the **single pre-write validation** the user performs on the draft — there is no separate
+    ADR gate (see [ADR](./adr.md) BR-ADR-01, BR-ADR-07 and BR-ADR-11). The user may decline the
+    threshold-qualified ADR at that gate; it is then excluded from the batch. Otherwise the
+    conclusion `no ADR justified` is traced explicitly, together with the five answers.
 - **User Stories:**
   - _As a_ developer, _I want to_ refine a raw feature idea with a co-architect _so that_ blind
     spots are surfaced before any code or ticket exists.
@@ -298,27 +307,32 @@ justification test and the ADR format of [ADR](./adr.md) §2. -->
           opt Existing feature matched
               Skill->>Specs: Read only the matching specification file
           end
-          Skill->>User: Propose a unique FEAT_ID (trigger)
+          Note over Skill: Prepare the draft — nothing is written yet
+          Skill->>User: Propose FEAT_ID + draft (status header, impacts, ADR proposals, 5 answers)
           alt Trigramme rejected or colliding
               Skill->>User: Propose an alternative FEAT_ID
           end
-          User->>Skill: FEAT_ID approved
+          User->>Skill: Single pre-write validation (FEAT_ID, ADRs: validated / declined)
           Skill-->>User: Proud banner: document title (ID: FEAT_ID)
-          Skill->>Specs: Write specification file(s) and index in the same response
-          Note over Skill,Specs: The whole answer prefixes BR-/EC-/AC- with FEAT_ID
-          Skill->>Specs: Update the delivery-status header (implemented vs not developed)
+          Note over Skill,Specs: ONE atomic batch, same response, no further approval
+          Skill->>Specs: Write specification file(s) + index
+          Skill->>Specs: Write the delivery-status header (implemented vs not developed)
           Skill->>Specs: Inspect the write-set for DEPENDENCY ALERT markers
           Skill->>Specs: Propagate impacts (and mirror markers) into the pointed sections
-          opt Justification test: >= 3 of 5 answers "yes"
-              Skill->>Specs: Create a proposed ADR under the configured ADR directory
+          opt Justification test: >= 3 of 5 answers "yes" (not declined at the gate)
+              Skill->>Specs: Write a proposed ADR under the configured ADR directory
           end
           Skill-->>User: Run /smart-plan for roadmap and scheduling
       end
   ```
 
-  The delivery-status header, the impact mapping and the optional ADR are the trailing steps of Case
-  3: they run after the specification and index writes, in the same response, and never require an
-  additional approval. The high-level documents are deliberately left untouched (BR-SPEC-20).
+  The delivery-status header, the impact mapping and the justified ADR are part of the same Case 3
+  write. They are computed from the specification and index content, then committed **together with
+  it as one atomic batch, in the same response**, after the single pre-write validation the user
+  performs on the draft (BR-SPEC-06). There is **no approval gate between the specification write
+  and the ADR write**, and nothing is written before the validation: a threshold-qualified ADR the
+  user declines at that gate is simply left out of the batch (BR-ADR-11). The high-level documents
+  are deliberately left untouched (BR-SPEC-20).
 
 - **Data Model & API Contracts:**
   - **Endpoints / Methods:** none (skill invoked from the IDE chat with `/smart-spec`; the skill
@@ -346,10 +360,11 @@ justification test and the ADR format of [ADR](./adr.md) §2. -->
     BR-SPEC-23).
 
   - **Database Updates (ERD if needed):** none. Files written: the specification file(s),
-    `docs/INDEX.md` and, when the justification test passes, one ADR file. The high-level documents
-    are never written (BR-SPEC-20). A new specification is created in the same directory as the
-    other listed files; when it is the first specification and no location is given, the usual
-    `./docs` directory is used.
+    `docs/INDEX.md` and, when the justification test passes and the user has not declined it, one
+    ADR file. The high-level documents are never written (BR-SPEC-20). All of these files are
+    committed **together, as one atomic batch, in the same response** (BR-SPEC-10). A new
+    specification is created in the same directory as the other listed files; when it is the first
+    specification and no location is given, the usual `./docs` directory is used.
 
 - **Edge Cases & Error Handling:**
   - **EC-SPEC-01 (Missing configuration):** halt immediately, no other file is read, exact message
@@ -384,7 +399,9 @@ justification test and the ADR format of [ADR](./adr.md) §2. -->
     layout of [ADR](./adr.md) BR-ADR-05.
   - **EC-SPEC-12 (Borderline justification test):** the five answers are stated explicitly in the
     response; when fewer than 3 are "yes", no ADR is created and `no ADR justified` is traced; when
-    the user explicitly asks for an ADR, it is created even below the threshold (BR-ADR-11).
+    the user explicitly asks for an ADR, it is added to the batch even below the threshold, and a
+    threshold-qualified ADR the user declines is removed from it — both before any write
+    (BR-ADR-11).
 
 ## 4. Acceptance Criteria (QA)
 
@@ -439,9 +456,10 @@ justification test and the ADR format of [ADR](./adr.md) §2. -->
       without implementing them, when the specification is written, then its header states the
       implemented and the not-developed identifier ranges in the same response (BR-SPEC-25).
 - [ ] **AC-SPEC-16 — ADR Scenario:** Given a Case 3 decision for which at least 3 of the 5
-      justification questions are answered "yes", when the specification is written, then a
-      `proposed` ADR is created under the configured ADR directory in the same response
-      (BR-SPEC-26).
+      justification questions are answered "yes" and the user has not declined the ADR at the
+      pre-write validation, when the specification is written, then a `proposed` ADR is created
+      under the configured ADR directory **in the same atomic batch and the same response** as the
+      specification (BR-SPEC-26).
 - [ ] **AC-SPEC-17 — No-ADR Scenario:** Given a decision for which fewer than 3 questions are
       answered "yes", when the specification is written, then no ADR is created and the five answers
       plus `no ADR justified` are traced explicitly (BR-SPEC-26, EC-SPEC-12).

@@ -54,14 +54,15 @@ contract defined here. The mirror marker is declared in `smart-spec.md` §2. -->
       Start["Architectural / structural decision identified"] --> Test{"Justification test<br/>(5 inverted whys)"}
 
       Test -->|"< 3 'yes'"| NoAdr["Trace: no ADR justified<br/>(state the 5 answers)"]
-      Test -->|">= 3 'yes'"| Propose["Propose ADR<br/>(title, next number)"]
+      Test -->|">= 3 'yes'"| Propose["Propose ADR in the draft<br/>(title, next number)"]
 
-      Propose --> Valid{"User validates?"}
+      Propose --> Valid{"Single pre-write validation<br/>(draft review + user permission)<br/>rename / decline / request"}
       Valid -->|"renamed / edited"| Propose
-      Valid -->|yes| Write["Write docs/adr/NNNN-slug.md<br/>status: proposed"]
+      Valid -->|declined| NoAdr
+      Valid -->|validated| Write["Write docs/adr/NNNN-slug.md<br/>status: proposed<br/>same atomic batch as the spec write<br/>(same response, no extra gate)"]
 
       Write --> Link["Link: FEAT_ID spec +<br/>constitution sections"]
-      Link --> Done["✅ ADR recorded"]
+      Link --> Done["✅ ADR recorded together<br/>with the spec + index"]
       NoAdr --> Done
       Done -.->|post development| Accept["Status -> accepted<br/>(outside Phase 0)"]
   ```
@@ -123,9 +124,14 @@ contract defined here. The mirror marker is declared in `smart-spec.md` §2. -->
     `accepted`, `rejected`, `deprecated` or `superseded by ADR-NNNN`. An ADR created at Phase 0 is
     always `proposed`.
   - **BR-ADR-07 (Authoring moment and owner):** ADRs are created as early as Phase 0 by
-    [`/smart-spec`](./smart-spec.md) (BR-SPEC-26), in the same response as the specification write.
-    The author of an ADR is the consumer of the decision, never a post-hoc editor. Promotion to
-    `accepted` happens **after development**, outside Phase 0.
+    [`/smart-spec`](./smart-spec.md) (BR-SPEC-26). The ADR is part of the **same atomic batch** of
+    writes as the specification, the index, the delivery-status header and the propagated impacts:
+    all of them are written **together, in the same response, after a single pre-write validation**
+    (BR-SPEC-06, BR-ADR-11). No approval gate is inserted **between** the specification write and
+    the ADR write — the validation the user performs is the draft/permission gate that precedes the
+    whole batch, never a step between two writes. The author of an ADR is the consumer of the
+    decision, never a post-hoc editor. Promotion to `accepted` happens **after development**,
+    outside Phase 0.
   - **BR-ADR-08 (Traceability links):** an ADR links to the `FEAT_ID` of the specification(s) it
     serves and, when relevant, to the sections of the technical constitution it affects. A
     specification that triggers an ADR references it back (BR-SPEC-26).
@@ -136,8 +142,10 @@ contract defined here. The mirror marker is declared in `smart-spec.md` §2. -->
     passing the justification test or an explicit user request; conversely, a decision that passes
     the test is never dropped silently — the five answers and the conclusion are always traced.
   - **BR-ADR-11 (User override):** the user may request an ADR for a decision below the threshold (3
-    of 5), and may decline one that reached it; the divergence is traced and the `Decision Drivers`
-    section records the actual answers.
+    of 5), and may decline one that reached it. The override is exercised at the **single pre-write
+    validation gate** (BR-ADR-07), before the atomic batch: a declined ADR is simply excluded from
+    the batch and a requested one is added to it, so **no write is ever undone after the fact**. The
+    divergence is traced and the `Decision Drivers` section records the actual answers.
 - **User Stories:**
   - _As an_ architect, _I want_ the reasons behind a structural choice recorded _so that_ a future
     reader does not mistake it for an accident.
@@ -159,16 +167,17 @@ contract defined here. The mirror marker is declared in `smart-spec.md` §2. -->
       participant Adr as ADR directory (docs/adr)
       participant Cons as Technical constitution
 
-      Spec->>Spec: Identify architectural decisions
+      Spec->>Spec: Draft the specification and identify architectural decisions
       Spec->>User: State the five justification answers
       alt At least 3 "yes" (or an explicit user request)
-          Spec->>User: Propose the ADR title and the next number
-          User->>Spec: Validation (or rename)
-          Spec->>Adr: Write NNNN-slug.md (status: proposed)
-          Spec-->>User: ADR link in the specification
+          Spec->>User: Propose the ADR title and the next number (in the draft)
       else
           Spec-->>User: Trace "no ADR justified" + the five answers
       end
+      User->>Spec: Single pre-write validation (permission, renames, declines)
+      Note over Spec: Nothing is written before this gate; all writes are one atomic batch
+      Spec->>Adr: Write NNNN-slug.md (status: proposed) — same response as the spec write
+      Spec-->>User: ADR link in the specification (spec + index + ADR written together)
       Note over Cons: Constitution untouched at Phase 0 (BR-SPEC-20);
       Note over Cons: updated after development, referencing the ADR
   ```
@@ -208,8 +217,9 @@ contract defined here. The mirror marker is declared in `smart-spec.md` §2. -->
 
 - [ ] **AC-ADR-01 — Justified Scenario:** Given a Case 3 decision with at least 3 of the 5 questions
       answered "yes", when the specification is written, then a `docs/adr/NNNN-slug.md` with
-      `Status: proposed` is created in the same response and is linked from the specification
-      (BR-ADR-01, BR-ADR-05, BR-ADR-07).
+      `Status: proposed` is created **in the same atomic batch and the same response** as the
+      specification and is linked from it, with no approval gate between the two writes (BR-ADR-01,
+      BR-ADR-05, BR-ADR-07).
 - [ ] **AC-ADR-02 — Not-justified Scenario:** Given a decision with fewer than 3 "yes", when the
       decision is evaluated, then no ADR file is created and the five answers plus
       `no ADR justified` are traced (BR-ADR-10).
@@ -225,6 +235,7 @@ contract defined here. The mirror marker is declared in `smart-spec.md` §2. -->
 - [ ] **AC-ADR-06 — Configuration Scenario:** Given `specifications.paths.adr_directory` set to a
       custom path, when an ADR is created, then it is written under that path and no ADR directory
       is hard-coded (BR-ADR-09).
-- [ ] **AC-ADR-07 — Override Scenario:** Given a user explicitly requesting an ADR below the
-      threshold, or declining one that reached it, when the decision is recorded, then the
-      divergence is traced and `Decision Drivers` records the real answers (BR-ADR-11).
+- [ ] **AC-ADR-07 — Override Scenario:** Given a user requesting an ADR below the threshold or
+      declining one that reached it, when the **pre-write validation gate** is passed (BR-ADR-07),
+      then the ADR is added to or removed from the batch before any write, the divergence is traced
+      and `Decision Drivers` records the real answers (BR-ADR-11).
