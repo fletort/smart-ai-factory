@@ -449,9 +449,9 @@
 - [ ] **AC-SPEC-09 — FEAT_ID stability Scenario:** Given an existing specification (e.g. ID `SPEC`),
       when it is updated, then its trigramme is unchanged, no new index row is created and the new
       rules continue the existing numbering (BR-SPEC-17).
-- [ ] **AC-SPEC-10 — Prefix Scenario:** Given a written specification, when its rule and edge-case
-      identifiers are inspected, then 100% match `(BR|EC)-<FEAT_ID>-[0-9]{2}`; acceptance criteria
-      may or may not carry the `AC-<FEAT_ID>-NN` prefix (BR-SPEC-18).
+- [ ] **AC-SPEC-10 — Prefix Scenario:** Given a written specification, when its rule, edge-case and
+      acceptance-criterion identifiers are inspected, then 100% match
+      `(BR|EC|AC)-<FEAT_ID>-[0-9]{2}` (BR-SPEC-18).
 - [ ] **AC-SPEC-11 — High-level isolation Scenario:** Given a Case 3 write that would previously
       have changed a phase flow or a technical convention, when the specification is written, then
       `README.md` and `docs/architecture.md` are **not** modified (the only allowed write is the

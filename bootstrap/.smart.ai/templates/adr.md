@@ -3,10 +3,10 @@
 <!--
 INSTRUCTION: An ADR is an immutable, numbered record of a significant architectural decision OR a
 foundation (a convention the project relies on). Replace NNNN with the next 4-digit sequence number
-and name the file docs/adr/NNNN-<slug>.md. Never edit the substance of a written ADR: record a
-change as a new ADR and mark the old one "superseded by ADR-NNNN". When there is no competing
-alternative (a foundation), say so in "Considered Options" and keep the section; never invent an
-alternative.
+and name the file under `specifications.paths.adr_directory` as `NNNN-<slug>.md`. Never edit the
+substance of a written ADR: record a change as a new ADR and mark the old one "superseded by
+ADR-NNNN". When there is no competing alternative (a foundation), say so in "Considered Options"
+and keep the section; never invent an alternative.
 -->
 
 ## Status

@@ -101,10 +101,11 @@
     vs async, stateful vs stateless), **documentation and governance foundations** (identifier
     schemes, source-of-truth rules, dependency-marker grammars) and any choice or convention that
     several specifications rely on.
-  - **BR-ADR-03 (Identifier and file):** an ADR is a file `docs/adr/NNNN-slug.md`, where `NNNN` is a
-    **4-digit, zero-padded, globally sequential** integer (`0001`, `0002`, …) and `slug` is a short
-    kebab-case summary. The next number is the highest existing number plus one. A number is **never
-    reused** and an ADR is **never renumbered**.
+  - **BR-ADR-03 (Identifier and file):** an ADR is a file `<adr_directory>/NNNN-slug.md`, where
+    `<adr_directory>` is resolved from `specifications.paths.adr_directory` (default `docs/adr`).
+    `NNNN` is a **4-digit, zero-padded, globally sequential** integer (`0001`, `0002`, …) and `slug`
+    is a short kebab-case summary. The next number is the highest existing number plus one. A number
+    is **never reused** and an ADR is **never renumbered**.
   - **BR-ADR-04 (Immutability):** once written, the substance of an ADR is never edited. A decision
     that changes is recorded as a **new** ADR, and the previous one is set to
     `superseded by ADR-NNNN` with a link. Only the `Status` line and additive `Links` may be updated
