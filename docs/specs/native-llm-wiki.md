@@ -32,6 +32,7 @@
   ```mermaid
   graph TD
       START["Roadmap update or feature ticket received"] --> LOOKUP["Tree lookup:<br/>router, indexes, module code-wikis"]
+
       LOOKUP --> PACK["Context packing:<br/>only the specified file paths are loaded"]
       PACK --> GATE{"Requirement found in the wiki,<br/>no conflict with constraints?"}
       GATE -->|yes| READY["Ready"]
@@ -50,6 +51,13 @@
   - **BR-WIKI-02 (System router size):** `CLAUDE.md` / `AGENTS.md` at the root must remain
     **strictly under 50 lines**, to minimise the system-prompt injection footprint of any routing
     script.
+  <!-- ⚠️ DEPENDENCY ALERT: bidirectional ./smart-spec.md#BR-SPEC-16 -->
+  <!-- The _Product Wiki_ (BR-WIKI-03, `docs/INDEX.md`) is coupled with the `FEAT_ID` registry
+  semantics of [Smart-Spec](./smart-spec.md) (BR-SPEC-16) and the routing that relies on it
+  (BR-SPEC-09, BR-SPEC-15): the `FEAT_ID` column is the uniqueness registry used by Phase 0, so any
+  change of the column set, of the `N.A.` convention or of the row format makes the collision check
+  of BR-SPEC-15 undecidable, and conversely any change of the Phase 0 routing rules invalidates the
+  feature lookup described here. -->
   - **BR-WIKI-03 (Product Wiki):** `docs/INDEX.md` maps high-level business goals, requirements and
     feature definitions. It is primarily fed by `/smart-spec` (Phase 0) and ingested by the Triage
     Script (Phase 2).
@@ -188,11 +196,11 @@
     ```markdown
     # 🗺️ Functional Specifications Index (Product Wiki)
 
-    | Feature / Skill Domain | Description & Capabilities                                 | Specification File                                     |
-    | :--------------------- | :--------------------------------------------------------- | :----------------------------------------------------- |
-    | **Agent Lifecycle**    | Core ReAct loop mechanics, orchestration states.           | [`specs/agent-lifecycle.md`](specs/agent-lifecycle.md) |
-    | **FinOps Routing**     | Budget evaluation rules, cost profile evaluation matrices. | [`specs/finops-routing.md`](specs/finops-routing.md)   |
-    | **GitHub Integration** | Webhook listeners, automated ticketing, issue labelling.   | [`specs/github-provider.md`](specs/github-provider.md) |
+    | FEAT_ID | Feature / Skill Domain | Description & Capabilities                                 | Specification File                                     |
+    | :------ | :--------------------- | :--------------------------------------------------------- | :----------------------------------------------------- |
+    | AGLF    | **Agent Lifecycle**    | Core ReAct loop mechanics, orchestration states.           | [`specs/agent-lifecycle.md`](specs/agent-lifecycle.md) |
+    | FOPS    | **FinOps Routing**     | Budget evaluation rules, cost profile evaluation matrices. | [`specs/finops-routing.md`](specs/finops-routing.md)   |
+    | GHUB    | **GitHub Integration** | Webhook listeners, automated ticketing, issue labelling.   | [`specs/github-provider.md`](specs/github-provider.md) |
     ```
 
     **The Structural Branch (Code/Skills Wiki): `src/README.md`**:
