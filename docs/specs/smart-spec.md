@@ -203,9 +203,10 @@
   - **BR-SPEC-21 (Impact mapping):** every file about to be modified is inspected for hidden
     dependency markers. When a marker is found, the detected impact is recorded on the **exact unit
     named by the marker's anchor** (BR-SPEC-22) — a `BR-`/`EC-`/`AC-<FEAT_ID>-NN` rule or a section
-    heading — in addition to the current specification. The inspection is bounded by the write-set
-    (the targeted specification file(s) and the high-level documents) and by the declared targets:
-    it is not a workspace crawl, which keeps BR-SPEC-09 valid.
+    heading — in addition to the current specification. The inspection is bounded by the targeted
+    specification file(s) and any declared dependency targets; high-level documents may be inspected
+    for drift but are read-only and never part of the write-set. It is not a workspace crawl, which
+    keeps BR-SPEC-09 valid.
   - **BR-SPEC-22 (Dependency marker grammar):** the marker is a hidden HTML comment that declares an
     edge between two **addressable units**. Grammar:
     `<!-- ⚠️ DEPENDENCY ALERT: <mode> <relative/path/to/document.md>#<anchor> -->`.
