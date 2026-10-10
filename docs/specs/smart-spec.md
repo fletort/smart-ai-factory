@@ -57,16 +57,6 @@
 
 ## 2. Functional & UX Specifications (What)
 
-<!-- ⚠️ DEPENDENCY ALERT: bidirectional ../native-llm-wiki.md -->
-<!-- this section (the `FEAT_ID` registry and the index-driven routing, BR-SPEC-09,
-BR-SPEC-15, BR-SPEC-16) is coupled in both directions with the _Product Wiki_ rules of
-[Native LLM Wiki](./native-llm-wiki.md) (BR-WIKI-03 and its §2). Any change of the registry column
-or of the index format here invalidates the wiki's feature lookup, and conversely a change
-of the Product Wiki topology invalidates the routing rules defined here. -->
-<!-- ⚠️ DEPENDENCY ALERT: bidirectional ./adr.md -->
-<!-- this section also defines the ADR trigger (BR-SPEC-26), coupled in both directions with the
-justification test and the ADR format of [ADR](./adr.md) §2. -->
-
 - **User / Process Flow:**
 
   ```mermaid
@@ -179,6 +169,13 @@ justification test and the ADR format of [ADR](./adr.md) §2. -->
     the user for approval**; it is never silently self-assigned. Uniqueness is verified first
     against the `FEAT_ID` column of `docs/INDEX.md` (the registry). On collision or rejection, the
     agent proposes an alternative trigramme and re-submits. Writing starts only after approval.
+
+  <!-- ⚠️ DEPENDENCY ALERT: bidirectional ../native-llm-wiki.md#BR-WIKI-03 -->
+  <!-- The `FEAT_ID` registry (BR-SPEC-16) and the routing that relies on it (BR-SPEC-09,
+  BR-SPEC-15) are coupled with the _Product Wiki_ rules of [Native LLM Wiki](./native-llm-wiki.md)
+  (BR-WIKI-03): any change of the registry column or of the index format invalidates the wiki's
+  feature lookup, and conversely a change of the Product Wiki topology invalidates the routing
+  rules defined here. -->
   - **BR-SPEC-16 (FEAT_ID registry semantics):** the `N.A.` value is reserved for documents that
     carry **no** `FEAT_ID` (today: the _System Architecture_ row) and is excluded from the
     uniqueness check; conversely, every row with a real trigramme is a reserved identifier.
@@ -204,27 +201,38 @@ justification test and the ADR format of [ADR](./adr.md) §2. -->
     An existing high-level document is never modified, and any drift observed there is reported as
     documentation debt instead of being fixed silently.
   - **BR-SPEC-21 (Impact mapping):** every file about to be modified is inspected for hidden
-    dependency markers. When a marker is found, the detected impact is recorded in the functional or
-    technical section of the **pointed** specification, in addition to the current specification.
-    The inspection is bounded by the write-set (the targeted specification file(s) and the
-    high-level documents) and by the declared targets: it is not a workspace crawl, which keeps
-    BR-SPEC-09 valid.
-  - **BR-SPEC-22 (Dependency marker grammar):** the marker is a hidden HTML comment, placed **inside
-    the section it qualifies**:
-    `<!-- ⚠️ DEPENDENCY ALERT: <mode> <relative/path/to/document.md> -->`.
-    - `<mode>` ∈ `outgoing`, `incoming`, `bidirectional`;
-    - the target is a repository-relative Markdown document path, **without** section number: the
-      scope is the section that contains the marker, which makes the contract robust to renumbering;
-    - **`outgoing`** declares "modifying this section impacts the target"; **`incoming`** declares
-      "this section is impacted when the target changes"; **`bidirectional`** declares both.
-  - **BR-SPEC-23 (Marker reciprocity):** declaring `outgoing` in document A towards document B is
-    equivalent to declaring `incoming` in document B towards document A. An impact propagated under
-    BR-SPEC-21 must therefore leave, on the counterpart side, the mirror marker (`outgoing` ⟷
-    `incoming`, `bidirectional` ⟷ `bidirectional`), so that a later traversal originating from
-    either side resolves the same pair of sections. A pointing marker with no resolvable counterpart
-    section is reported to the user rather than created blindly.
-  - **BR-SPEC-24 (Marker context):** another hidden HTML comment can be used after the DEPENDENCY
-    ABORT one to define the context of the dependency in one or two sentences.
+    dependency markers. When a marker is found, the detected impact is recorded on the **exact unit
+    named by the marker's anchor** (BR-SPEC-22) — a `BR-`/`EC-`/`AC-<FEAT_ID>-NN` rule or a section
+    heading — in addition to the current specification. The inspection is bounded by the write-set
+    (the targeted specification file(s) and the high-level documents) and by the declared targets:
+    it is not a workspace crawl, which keeps BR-SPEC-09 valid.
+  - **BR-SPEC-22 (Dependency marker grammar):** the marker is a hidden HTML comment that declares an
+    edge between two **addressable units**. Grammar:
+    `<!-- ⚠️ DEPENDENCY ALERT: <mode> <relative/path/to/document.md>#<anchor> -->`.
+    - **Source unit — placement is the scope.** The marker qualifies the **addressable unit
+      immediately below it**: a rule (`BR-`/`EC-`/`AC-<FEAT_ID>-NN`) or, when the edge concerns a
+      whole section, that section heading. A rule-level marker is preferred whenever the edge
+      concerns a single rule and is written **directly above that rule**, not at the top of its
+      chapter. A marker placed before anything that is neither a rule nor a heading is invalid.
+    - **Target unit — the `<anchor>` is mandatory.** It names the counterpart unit in the target
+      document using the same keys: a rule identifier (`#BR-ADR-01`) or a heading anchor
+      (`#2-functional--ux-specifications-what`). A document path alone does **not** say where in the
+      target the edge lands, which would leave the destination of the propagated impact (BR-SPEC-21)
+      and the insertion point of the mirror marker (BR-SPEC-23) undecidable.
+    - `<mode>` ∈ `outgoing`, `incoming`, `bidirectional`: **`outgoing`** declares "modifying the
+      source unit impacts the target unit"; **`incoming`** declares "the source unit is impacted
+      when the target unit changes"; **`bidirectional`** declares both.
+  - **BR-SPEC-23 (Marker reciprocity):** an edge is declared from both ends with matching anchors:
+    `outgoing A#x` in document A is mirrored by `incoming B#y` in document B, and `bidirectional` by
+    `bidirectional`. The mirror marker is placed on the counterpart unit **named by the anchor**
+    (BR-SPEC-22), so a later traversal originating from either side resolves the same pair of units.
+    If the anchored counterpart unit cannot be resolved (target file absent, or no rule/heading
+    matches the anchor), the pair is reported to the user and **no** marker is invented
+    (EC-SPEC-08).
+  - **BR-SPEC-24 (Marker context):** an optional human-readable HTML comment may follow a DEPENDENCY
+    ALERT one to explain the dependency in one or two sentences. It is **decorative**: the edge is
+    fully defined by the marker itself (mode + source unit + anchor) and is never resolved from the
+    prose of this comment.
   - **BR-SPEC-25 (Delivery-status header):** every specification carries a structured state header
     at the top of the document that separates what exists from what does not:
 
@@ -243,6 +251,10 @@ justification test and the ADR format of [ADR](./adr.md) §2. -->
       rule for a **shipped** capability: a specification that claims behaviour it does not have is a
       defect.
 
+  <!-- ⚠️ DEPENDENCY ALERT: bidirectional ./adr.md#BR-ADR-01 -->
+  <!-- The ADR trigger (BR-SPEC-26) is coupled with the justification test of [ADR](./adr.md)
+  (BR-ADR-01): any change of the test invalidates the trigger, and conversely any change of the
+  trigger changes the contract consumed there. -->
   - **BR-SPEC-26 (Architecture Decision Record trigger):** during Case 3, each architectural or
     structural decision identified in the specification is submitted to the **justification test**
     of the [ADR](./adr.md) specification — the five inverted whys (cost of change, team impact,
@@ -256,6 +268,7 @@ justification test and the ADR format of [ADR](./adr.md) §2. -->
     ADR gate (see [ADR](./adr.md) BR-ADR-01, BR-ADR-07 and BR-ADR-11). The user may decline the
     threshold-qualified ADR at that gate; it is then excluded from the batch. Otherwise the
     conclusion `no ADR justified` is traced explicitly, together with the five answers.
+
 - **User Stories:**
   - _As a_ developer, _I want to_ refine a raw feature idea with a co-architect _so that_ blind
     spots are surfaced before any code or ticket exists.
@@ -354,8 +367,10 @@ justification test and the ADR format of [ADR](./adr.md) §2. -->
     reserved value `N.A.` marks a document without identifier (BR-SPEC-16). Identifiers produced by
     the skill follow `(BR|EC|AC)-<FEAT_ID>-[0-9]{2}` with a monotonically increasing two-digit index
     per prefix.
-  - **Dependency marker contract:** `<!-- ⚠️ DEPENDENCY ALERT: <mode> <relative/path.md> -->`,
-    `mode ∈ {outgoing, incoming, bidirectional}`, placed inside the qualified section; reciprocity
+  - **Dependency marker contract:**
+    `<!-- ⚠️ DEPENDENCY ALERT: <mode> <relative/path.md>#<anchor> -->`,
+    `mode ∈ {outgoing, incoming, bidirectional}`; the marker is immediately followed by the unit it
+    qualifies (a rule, or a section heading) and the anchor names the counterpart unit; reciprocity
     follows the mirror table `outgoing ⟷ incoming` and `bidirectional ⟷ bidirectional` (BR-SPEC-22,
     BR-SPEC-23).
 
@@ -383,8 +398,8 @@ justification test and the ADR format of [ADR](./adr.md) §2. -->
   - **EC-SPEC-07 (Row without FEAT_ID or undecidable index row):** the `N.A.` value and the _System
     Architecture_ row are skipped by the uniqueness check (BR-SPEC-16). If the index is malformed,
     empty or missing, the agent asks the user instead of scanning the workspace (EC-SPEC-02).
-  - **EC-SPEC-08 (Dependency marker without a resolvable counterpart section):** the mirror marker
-    cannot be placed with confidence (target file absent, target section not identifiable); the
+  - **EC-SPEC-08 (Dependency marker with an unresolvable anchor):** the counterpart unit named by
+    the anchor cannot be resolved (target file absent, or no rule/heading matches the anchor); the
     non-resolved pair is reported to the user and **no** marker is invented (BR-SPEC-23).
   - **EC-SPEC-09 (Technical constitution absent):** when `main_technical_document` is missing,
     `smart-spec` provisions it from the configured template (BR-SPEC-20); if the template is also
@@ -442,10 +457,10 @@ justification test and the ADR format of [ADR](./adr.md) §2. -->
       initial provisioning of an absent technical constitution) and the decision is routed to the
       ADR mechanism instead (BR-SPEC-19, BR-SPEC-20, BR-SPEC-26).
 - [ ] **AC-SPEC-12 — Impact propagation Scenario:** Given a file of the write-set containing
-      `<!-- ⚠️ DEPENDENCY ALERT: outgoing <target> -->` inside its section 2, when the section is
-      modified, then the impact is recorded in the target document and the mirror marker
-      (`incoming <source>`) is present in the counterpart section (BR-SPEC-21, BR-SPEC-22,
-      BR-SPEC-23).
+      `<!-- ⚠️ DEPENDENCY ALERT: outgoing <target>#<anchor> -->` directly above a rule, when that
+      rule is modified, then the impact is recorded on the unit named by `<anchor>` and the mirror
+      marker (`incoming <source>#<rule>`) is present on that same counterpart unit (BR-SPEC-21,
+      BR-SPEC-22, BR-SPEC-23).
 - [ ] **AC-SPEC-13 — Unresolvable dependency Scenario:** Given a marker whose target document or
       target section cannot be identified, when impacts are propagated, then the unresolved pair is
       reported to the user and no marker is invented (EC-SPEC-08).

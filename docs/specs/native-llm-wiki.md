@@ -27,15 +27,6 @@
 
 ## 2. Functional & UX Specifications (What)
 
-<!-- ⚠️ DEPENDENCY ALERT: bidirectional ../smart-spec.md -->
-<!-- this section (the _Product Wiki_, BR-WIKI-03) is coupled in both directions
-with the `FEAT_ID` registry and the index-driven routing rules of
-[Smart-Spec](./smart-spec.md) (BR-SPEC-09, BR-SPEC-15, BR-SPEC-16). The `FEAT_ID` column of
-`docs/INDEX.md` is the uniqueness registry used by Phase 0: any change of the column set, of the
-`N.A.` convention or of the row format here makes the collision check of BR-SPEC-15 undecidable,
-and conversely any change of the Phase 0 routing rules invalidates the feature lookup described
-here. -->
-
 - **User / Process Flow:** wiki lookup performed by a pipeline phase.
 
   ```mermaid
@@ -60,6 +51,13 @@ here. -->
   - **BR-WIKI-02 (System router size):** `CLAUDE.md` / `AGENTS.md` at the root must remain
     **strictly under 50 lines**, to minimise the system-prompt injection footprint of any routing
     script.
+  <!-- ⚠️ DEPENDENCY ALERT: bidirectional ../smart-spec.md#BR-SPEC-16 -->
+  <!-- The _Product Wiki_ (BR-WIKI-03, `docs/INDEX.md`) is coupled with the `FEAT_ID` registry
+  semantics of [Smart-Spec](./smart-spec.md) (BR-SPEC-16) and the routing that relies on it
+  (BR-SPEC-09, BR-SPEC-15): the `FEAT_ID` column is the uniqueness registry used by Phase 0, so any
+  change of the column set, of the `N.A.` convention or of the row format makes the collision check
+  of BR-SPEC-15 undecidable, and conversely any change of the Phase 0 routing rules invalidates the
+  feature lookup described here. -->
   - **BR-WIKI-03 (Product Wiki):** `docs/INDEX.md` maps high-level business goals, requirements and
     feature definitions. It is primarily fed by `/smart-spec` (Phase 0) and ingested by the Triage
     Script (Phase 2).

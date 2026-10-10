@@ -41,12 +41,6 @@
 
 ## 2. Functional & UX Specifications (What)
 
-<!-- ⚠️ DEPENDENCY ALERT: bidirectional ./smart-spec.md -->
-<!-- this section defines the ADR justification test and the creation contract consumed by
-`smart-spec` Case 3 (BR-SPEC-26). Any change of the test or of the ADR format here invalidates the
-trigger in [Smart-Spec](./smart-spec.md) §2, and conversely a change of the trigger changes the
-contract defined here. The mirror marker is declared in `smart-spec.md` §2. -->
-
 - **User / Process Flow:**
 
   ```mermaid
@@ -82,6 +76,10 @@ contract defined here. The mirror marker is declared in `smart-spec.md` §2. -->
   ```
 
 - **Business Rules:**
+  <!-- ⚠️ DEPENDENCY ALERT: bidirectional ./smart-spec.md#BR-SPEC-26 -->
+  <!-- The justification test and the creation contract defined here (BR-ADR-01, BR-ADR-07) are
+  consumed by `smart-spec` Case 3 (BR-SPEC-26): any change of the test invalidates the trigger, and
+  conversely any change of the trigger changes the contract defined here. -->
   - **BR-ADR-01 (Justification test — the five inverted whys):** an ADR is justified when **at least
     3 of these 5 questions** are answered **"yes"**:
     1. **Cost of change** — would this decision be expensive to reverse later?
