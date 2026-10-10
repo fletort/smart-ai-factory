@@ -171,7 +171,7 @@
     against the `FEAT_ID` column of `docs/INDEX.md` (the registry). On collision or rejection, the
     agent proposes an alternative trigramme and re-submits. Writing starts only after approval.
 
-  <!-- ⚠️ DEPENDENCY ALERT: bidirectional ../native-llm-wiki.md#BR-WIKI-03 -->
+  <!-- ⚠️ DEPENDENCY ALERT: bidirectional ./native-llm-wiki.md#BR-WIKI-03 -->
   <!-- The `FEAT_ID` registry (BR-SPEC-16) and the routing that relies on it (BR-SPEC-09,
   BR-SPEC-15) are coupled with the _Product Wiki_ rules of [Native LLM Wiki](./native-llm-wiki.md)
   (BR-WIKI-03): any change of the registry column or of the index format invalidates the wiki's

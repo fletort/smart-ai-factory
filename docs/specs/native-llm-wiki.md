@@ -51,7 +51,7 @@
   - **BR-WIKI-02 (System router size):** `CLAUDE.md` / `AGENTS.md` at the root must remain
     **strictly under 50 lines**, to minimise the system-prompt injection footprint of any routing
     script.
-  <!-- ⚠️ DEPENDENCY ALERT: bidirectional ../smart-spec.md#BR-SPEC-16 -->
+  <!-- ⚠️ DEPENDENCY ALERT: bidirectional ./smart-spec.md#BR-SPEC-16 -->
   <!-- The _Product Wiki_ (BR-WIKI-03, `docs/INDEX.md`) is coupled with the `FEAT_ID` registry
   semantics of [Smart-Spec](./smart-spec.md) (BR-SPEC-16) and the routing that relies on it
   (BR-SPEC-09, BR-SPEC-15): the `FEAT_ID` column is the uniqueness registry used by Phase 0, so any
