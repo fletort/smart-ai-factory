@@ -68,7 +68,8 @@ capability.
 ### Positive
 
 - High-level documents only ever describe what exists.
-- The write-set of Phase 0 is bounded to specifications, the index and ADRs.
+- The write-set of Phase 0 is bounded to specifications, the index, ADRs and — **only when the
+  technical constitution is absent** — its initial provisioning (BR-SPEC-20).
 
 ### Negative
 

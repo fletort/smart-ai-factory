@@ -146,14 +146,15 @@
     workspace index `docs/INDEX.md` (see [Native LLM Wiki](./native-llm-wiki.md)). The skill is
     forbidden from scanning the whole workspace directories; if the index is insufficient, it asks
     the user.
-  - **BR-SPEC-10 (Writes):** once the specification is accepted, the specification file(s) and the
-    index file are written within the SAME response, without asking permission again (UNIFIED: two
-    writes, MODULAR: three writes). The write-set is then extended, still in the same response, by
-    the delivery-status header (BR-SPEC-25), the impacted pointed sections (BR-SPEC-21) and, when
-    the justification test passes and the user has not declined it, the ADR (BR-SPEC-26). The whole
-    write-set lands as **one atomic batch after the single pre-write validation** (BR-SPEC-06): no
-    write is committed between the specification and the ADR, and no further permission is asked.
-    The high-level documents are never part of the write-set (BR-SPEC-20).
+  - **BR-SPEC-10 (Writes):** once the specification is accepted, the whole write-set is committed in
+    the SAME response, as **one atomic batch, without asking permission again** (BR-SPEC-06). The
+    write-set comprises the specification file(s) and the index file (UNIFIED: two files, MODULAR:
+    three files), the delivery-status header (BR-SPEC-25), the impacted pointed sections propagated
+    from the dependency markers (BR-SPEC-21) and, when the justification test passes and the user
+    has not declined it, the ADR (BR-SPEC-26). The set is assembled **before the first write** — the
+    dependency markers are inspected and their impacts resolved while drafting — so no write is
+    committed between the specification and the ADR. The high-level documents are never part of the
+    write-set (BR-SPEC-20).
   - **BR-SPEC-11 (Template fidelity):** the layout and Markdown headers defined in the loaded
     templates are strictly reproduced.
   - **BR-SPEC-12 (Testable requirements):** requirements stay precise, factual and measurable. Vague
@@ -322,6 +323,8 @@
               Skill->>Specs: Read only the matching specification file
           end
           Note over Skill: Prepare the draft — nothing is written yet
+          Skill->>Specs: Read the write-set files for DEPENDENCY ALERT markers
+          Note over Skill: Propagate impacts (and mirror markers) into the draft
           Skill->>User: Propose FEAT_ID + draft (status header, impacts, ADR proposals, 5 answers)
           alt Trigramme rejected or colliding
               Skill->>User: Propose an alternative FEAT_ID
@@ -331,8 +334,7 @@
           Note over Skill,Specs: ONE atomic batch, same response, no further approval
           Skill->>Specs: Write specification file(s) + index
           Skill->>Specs: Write the delivery-status header (implemented vs not developed)
-          Skill->>Specs: Inspect the write-set for DEPENDENCY ALERT markers
-          Skill->>Specs: Propagate impacts (and mirror markers) into the pointed sections
+          Skill->>Specs: Write the propagated impacts (and mirror markers)
           opt Justification test: >= 3 of 5 answers "yes" (not declined at the gate)
               Skill->>Specs: Write a proposed ADR under the configured ADR directory
           end
@@ -462,9 +464,9 @@
       rule is modified, then the impact is recorded on the unit named by `<anchor>` and the mirror
       marker (`incoming <source>#<rule>`) is present on that same counterpart unit (BR-SPEC-21,
       BR-SPEC-22, BR-SPEC-23).
-- [ ] **AC-SPEC-13 — Unresolvable dependency Scenario:** Given a marker whose target document or
-      target section cannot be identified, when impacts are propagated, then the unresolved pair is
-      reported to the user and no marker is invented (EC-SPEC-08).
+- [ ] **AC-SPEC-13 — Unresolvable dependency Scenario:** Given a marker whose target file or anchor
+      cannot be resolved, when impacts are propagated, then the unresolved pair is reported to the
+      user and no marker is invented (EC-SPEC-08).
 - [ ] **AC-SPEC-14 — Bootstrap isolation Scenario:** Given any Case 3 execution, when the response
       is complete, then no file under `bootstrap/**` has been modified and any divergence found
       there is reported as documentation debt (Non-Goals, EC-SPEC-10).
