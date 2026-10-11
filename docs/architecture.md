@@ -257,5 +257,10 @@ Files expected by the pipeline in a user's project: `.smart.ai/conf.yml`, `roadm
 - **Static Checks**: Ruff, Prettier, markdownlint, `actionlint`, `zizmor` and `codespell` through
   Lefthook (pre-commit auto-fix and `lint-all` check-only), replayed by the `Lint All` GitHub
   Actions workflow (see [linting-formatting.md](./dev/linting-formatting.md)).
+- **Traceability**: a test is linked to the acceptance criterion it verifies by a stable identifier
+  (`AC-<FEAT_ID>-NN`), checked in both directions (every implemented criterion covered, every cited
+  identifier resolved). The decision and its rationale are recorded in
+  [ADR-0006](./adr/0006-trace-tests-to-acceptance-criteria.md); the per-runner syntax and the
+  checker belong to the future development/testing specification.
 - **Coverage Expectation**: no numeric threshold is defined yet; it is to be set when the
   `src/smart_ai` package is created.

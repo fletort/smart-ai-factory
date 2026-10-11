@@ -1,4 +1,4 @@
-- description: Test that Skill reads the config file first
+- description: '[BR-SPEC-01 | BR-PLAN-01] Test that Skill reads the config file first'
   vars:
     user_message: .
     prompt_path: 01-first_message.txt
@@ -14,7 +14,7 @@
         argsJson = typeof args === 'string' ? JSON.parse(args) : args;
         return argsJson.path
 
-- description: Test Skill stops immediately when config file is missing
+- description: '[AC-SPEC-05 | AC-PLAN-05] Test Skill stops immediately when config file is missing'
   vars:
     user_message: .
     read_file_config_result: 'cannot access .smart.ai/conf.yml: No such file or directory'

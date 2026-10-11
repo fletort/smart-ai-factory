@@ -1,7 +1,7 @@
 # Specifications: Smart-Plan (Phase 1 - Roadmap & Scheduling) (ID: PLAN)
 
-> **State**: _Proposed specification_ (the `smart-plan` skill exists in
-> `.agents/skills/smart-plan/`)
+> **State**: _Implemented_ (`smart-plan` skill in `.agents/skills/smart-plan/`). **Implemented:**
+> BR-PLAN-01 to BR-PLAN-13, EC-PLAN-01 to EC-PLAN-06, AC-PLAN-01 to AC-PLAN-06.
 
 ## 1. Context & Objectives
 
@@ -289,21 +289,22 @@
 
 ## 4. Acceptance Criteria (QA)
 
-- [ ] **Nominal Scenario (clean slate):** Given a configured workspace with no roadmap, when
-      `/smart-plan` is run with a specification file, then the roadmap file(s) of the resolved
+- [ ] **AC-PLAN-01 — Nominal Scenario (clean slate):** Given a configured workspace with no roadmap,
+      when `/smart-plan` is run with a specification file, then the roadmap file(s) of the resolved
       layout are written directly, with a Global Vision, Epics anchored to the file pointer and
       issues with IDs and `Depends on:` tags.
-- [ ] **Nominal Scenario (update):** Given an existing roadmap and a specification already mapped to
-      an Epic, when `/smart-plan` is run, then a comparison table and the confirmation phrase are
-      shown, nothing is written before `yes`, and existing IDs and checkboxes are preserved.
-- [ ] **Context Mode Scenario:** Given a small feature from the chat, when `/smart-plan` is run,
-      then the issue is appended with `Source Type: Conversation Context` and
+- [ ] **AC-PLAN-02 — Nominal Scenario (update):** Given an existing roadmap and a specification
+      already mapped to an Epic, when `/smart-plan` is run, then a comparison table and the
+      confirmation phrase are shown, nothing is written before `yes`, and existing IDs and
+      checkboxes are preserved.
+- [ ] **AC-PLAN-03 — Context Mode Scenario:** Given a small feature from the chat, when
+      `/smart-plan` is run, then the issue is appended with `Source Type: Conversation Context` and
       `Pointer: Current Conversation History`, and no specification file is created.
-- [ ] **New Epic Scenario:** Given a pointer unknown to the roadmap, when the plan is merged, then a
-      new Epic is created with IDs continuing after the highest existing epic ID.
-- [ ] **Error Scenario (configuration):** Given no `.smart.ai/conf.yml`, when `/smart-plan` is run,
-      then the skill outputs exactly `❌**[smart-plan] Workspace not configured.**` and reads
-      nothing else.
-- [ ] **Error Scenario (divergence):** Given `layout: single` and an existing `roadmap/README.md`,
-      when `/smart-plan` is run, then the skill stops and asks whether to migrate the layout or
-      update the configuration.
+- [ ] **AC-PLAN-04 — New Epic Scenario:** Given a pointer unknown to the roadmap, when the plan is
+      merged, then a new Epic is created with IDs continuing after the highest existing epic ID.
+- [ ] **AC-PLAN-05 — Error Scenario (configuration):** Given no `.smart.ai/conf.yml`, when
+      `/smart-plan` is run, then the skill outputs exactly
+      `❌**[smart-plan] Workspace not configured.**` and reads nothing else.
+- [ ] **AC-PLAN-06 — Error Scenario (divergence):** Given `layout: single` and an existing
+      `roadmap/README.md`, when `/smart-plan` is run, then the skill stops and asks whether to
+      migrate the layout or update the configuration.
