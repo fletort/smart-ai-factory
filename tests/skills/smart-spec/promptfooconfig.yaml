@@ -50,7 +50,7 @@ tests:
         The file name is 'index.html' and located at the root of the workspace.
         No CSS is needed. It is a simple and easy task.
         It should be considered as a SMALL scope.
-      read_file_config_result: 'specifications:\ntemplat ied:".templates/unified_spec.md'
+      read_file_config_result: 'specifications:\ntemplates:\n unified:".templates/unified_spec.md'
       prompt_path: 02-get_config.chat.json
     assert:
       - type: contains
