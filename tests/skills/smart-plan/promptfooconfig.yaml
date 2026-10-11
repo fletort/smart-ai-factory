@@ -37,7 +37,7 @@ tests:
   - file://../configs/tests/read_config_first.yml
 
   - description: |
-      Discovery & Reconciliation
+      [AC-PLAN-01] Discovery & Reconciliation
       [Test 1.1] Mode Single-File + Clean Slate (No versioning)
       Given:
        - config: Single file layout + no versioning
@@ -66,7 +66,7 @@ tests:
             - 'docs/spec.md'
 
   - description: |
-      Discovery & Reconciliation
+      [AC-PLAN-01] Discovery & Reconciliation
       [Test 1.2] Mode Single-File + Clean Slate (No versioning)
       Given:
        - config: Single file layout + no versioning
@@ -100,7 +100,7 @@ tests:
             - 'roadmap'
 
   - description: |
-      Discovery & Reconciliation
+      [AC-PLAN-01] Discovery & Reconciliation
       [Test 1.3] Mode Single-File + Clean Slate (No versioning)
       Given:
        - config: Single file layout + no versioning
@@ -166,7 +166,7 @@ tests:
         transform: *get-roadmap-content
 
   - description: |
-      Discovery & Reconciliation
+      [AC-PLAN-06] Discovery & Reconciliation
       [Test 2] Critical divergences
       Given:
        - config: Single file layout + no versioning
@@ -201,7 +201,7 @@ tests:
           if he wants to perform a layout migration or update the configuration.
 
   - description: |
-      Merge and Idempotent Update Logic
+      [AC-PLAN-02][AC-PLAN-04] Merge and Idempotent Update Logic
       [Test 3] Independent Additions
       Given:
        - config: Single file layout + no versioning
@@ -237,7 +237,7 @@ tests:
           The output does not modify existing ISSUE.
 
   - description: |
-      Merge and Idempotent Update Logic
+      [AC-PLAN-02] Merge and Idempotent Update Logic
       [Test 4] Specification update and sync
       Given:
        - config: Single file layout + no versioning
@@ -270,7 +270,7 @@ tests:
           them or generating an entirely new Epic from scratch.
 
   - description: |
-      Auto File Layout
+      [BR-PLAN-04][AC-PLAN-01] Auto File Layout
       [Test 5] Auto File Layout + Clean Slate
       Given:
        - config: Auto file layout + no versioning
@@ -340,7 +340,7 @@ tests:
           value: '[ISSUE-1]'
 
   - description: |
-      Versioning
+      [BR-PLAN-03] Versioning
       [Test 6] Versioning activated
       Given:
        - config: Single file layout + versioning

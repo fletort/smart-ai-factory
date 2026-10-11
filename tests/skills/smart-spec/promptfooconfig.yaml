@@ -39,7 +39,8 @@ defaultTest:
 tests:
   - file://../configs/tests/read_config_first.yml
 
-  - description: Test Skill detects small scope and ask for the corresponding next steps
+  - description:
+      '[AC-SPEC-02] Test Skill detects small scope and ask for the corresponding next steps'
     providers:
       - gemini
       - openrouter:*
@@ -49,7 +50,7 @@ tests:
         The file name is 'index.html' and located at the root of the workspace.
         No CSS is needed. It is a simple and easy task.
         It should be considered as a SMALL scope.
-      read_file_config_result: 'specifications:\ntemplates:\n unified:".templates/unified_spec.md'
+      read_file_config_result: 'specifications:\ntemplat ied:".templates/unified_spec.md'
       prompt_path: 02-get_config.chat.json
     assert:
       - type: contains
@@ -61,7 +62,9 @@ tests:
           The output must explicitly engage in a conversation or guide the user towards an immediate action track for a SMALL scope.
           It should ask a question or present choices (Case 1, Case 2, Case 3).
 
-  - description: Test Skill does not evaluate scope (or LARGE) and detect UNIFIED template mode
+  - description:
+      '[AC-SPEC-03][AC-SPEC-04] Test Skill does not evaluate scope (or LARGE) and detect UNIFIED
+      template mode'
     providers:
       - gemini
       - openrouter:*
@@ -87,7 +90,9 @@ tests:
           maximum of 3 high-impact questions MUST be asked at the end of the prompt.
           The specification scope is not yet evaluated or evaluated as LARGE.
 
-  - description: Test Skill does not evaluate scope (or LARGE) and detect MODULAR template mode
+  - description:
+      '[BR-SPEC-02][AC-SPEC-04] Test Skill does not evaluate scope (or LARGE) and detect MODULAR
+      template mode'
     providers:
       - gemini
       - openrouter:*
@@ -115,7 +120,7 @@ tests:
           maximum of 3 high-impact questions MUST be asked at the end of the prompt.
           The specification scope is not yet evaluated or evaluated as LARGE.
 
-  - description: Test Skill reads the template when spec is ready
+  - description: '[BR-SPEC-11] Test Skill reads the template when spec is ready'
     providers:
       - gemini
       - openrouter:*
@@ -134,7 +139,7 @@ tests:
         value: '.templates/unified_spec.md'
 
   # TODO: Test when template is not available
-  - description: Test Skill writes specification and index when spec is validated
+  - description: '[AC-SPEC-01] Test Skill writes specification and index when spec is validated'
     providers:
       - gemini
       - openrouter:*
