@@ -1,7 +1,8 @@
 # Specifications: Smart-Plan (Phase 1 - Roadmap & Scheduling) (ID: PLAN)
 
-> **State**: _Implemented_ (`smart-plan` skill in `.agents/skills/smart-plan/`). **Implemented:**
-> BR-PLAN-01 to BR-PLAN-13, EC-PLAN-01 to EC-PLAN-06, AC-PLAN-01 to AC-PLAN-06.
+> **State**: _Partially implemented_ (`.agents/skills/smart-plan/`) — **revision proposed**.
+> **Implemented:** BR-PLAN-01 to BR-PLAN-13, EC-PLAN-01 to EC-PLAN-06, AC-PLAN-01 to AC-PLAN-06.
+> **Not developed:** BR-PLAN-14 to BR-PLAN-17, EC-PLAN-07 to EC-PLAN-09, AC-PLAN-07 to AC-PLAN-11.
 
 ## 1. Context & Objectives
 
@@ -21,6 +22,9 @@
     execute multiple runs without context crowding.
   - Keep roadmap identifiers stable over time so that downstream links (`(#N)` ticket references)
     survive a re-planning.
+  - **Revision traceability (delta hand-off)**: every Epic records the exact specification revision
+    it was built from, so a later run can compute **what changed since the last planning** and plan
+    only the delta, instead of re-reading the whole specification and re-inferring what is new.
 - **Non-Goals (Out of Scope):**
   - Detailed technical descriptions, implementation or coding steps, acceptance / QA criteria and
     code scripts. The output focuses on _what_ issues need to be created, not _how_ to code them;
@@ -53,16 +57,24 @@
       Multi --> Discover
       MultiVer --> Discover
 
-      Discover --> Process["🏗️ Build / Merge Roadmap Strategy"]
+      Discover --> Rev{"Revision baseline<br/>of the Epic?"}
+
+      Rev -->|no or stale| Process["🏗️ Build / Merge Roadmap Strategy<br/>(delta from Base-Commit, else fallback)"]
+      Rev -->|"hash up to date"| UTD["✅ Epic up to date<br/>(no delta)"]
 
       Process -->|Step 1| Vision["🎯 Extract Global Vision<br/>(2-Sentence Summary)"]
       Vision -->|Step 2| Epics["📊 Map Epics"]
       Epics -->|Step 3| Issues["🎫 Sequence High-Level Issues<br/>(With Short IDs & Deps)"]
 
-      Issues -->|Clean slate| Output["✅ Write To Workspace"]
+      Issues -->|Clean slate| Output["✅ Write To Workspace<br/>(+ refreshed Revision)"]
       Issues -->|Existing roadmap| Confirm["🧾 Diff Table + User Confirmation"]
       Confirm -->|yes| Output
+      UTD --> Output
   ```
+
+  _Note: the `Revision` baseline (BR-PLAN-14) is refreshed in the roadmap Spec Anchors when the
+  delta is merged; a `Conversation Context` anchor has no revision and always follows the merge
+  path._
 
 - **State Machine (session / ticket / workflow):**
 
@@ -78,7 +90,9 @@
       Discovery --> Divergence : filesystem contradicts config layout
       Divergence --> Discovery : user decides migrate layout or update config
       Discovery --> CleanSlate : no roadmap found
-      Discovery --> Reconciliation : existing roadmap read
+      Discovery --> RevisionCheck : existing roadmap read
+      RevisionCheck --> Written : recorded Revision equals the current hash, no delta
+      RevisionCheck --> Reconciliation : no baseline, or a different content hash
       CleanSlate --> Written : direct write, no question
       Reconciliation --> AwaitingConfirmation : diff table displayed
       AwaitingConfirmation --> Written : user types yes
@@ -139,6 +153,63 @@
   - **BR-PLAN-13 (User-managed state):** checkboxes (`- [ ]` vs `- [x]`) are never modified. The
     Global Vision and the Epic Purpose are checked and updated if the new specification alters the
     project's macro direction.
+  <!-- ⚠️ DEPENDENCY ALERT: outgoing ./triage-engine.md#roadmap-discovery--parsing -->
+  <!-- The revision baseline (`Revision`, `Base-Commit`) written into the Spec Anchors is part of the
+  roadmap/triage format contract (BR-TRGE-04). Any change of these anchor fields requires the roadmap
+  parser of the triage engine to tolerate them (BR-TRGE-19); the mirror marker is declared on the
+  "Roadmap discovery & parsing" section of triage-engine.md. -->
+  - **BR-PLAN-14 (Revision baseline in the Spec Anchor):** each Epic's `📋 Spec Anchors` records the
+    revision of its pointed specification **at the time the roadmap was last built from it**, as two
+    optional lines:
+
+    ```markdown
+    - **📋 Spec Anchors:**
+      - **Source Type:** File
+      - **Pointer:** `docs/specs/smart-spec.md`
+      - **Revision:** sha256:9f2c4a1b… # content hash of the pointed file
+      - **Base-Commit:** 4a1b7c9 # last base-branch commit touching the file
+    ```
+
+    - **`Revision`** is a **content hash**: `sha256` of the pointed file, lower-case hexadecimal,
+      prefixed `sha256:`, with line endings normalised to LF. It is independent of the git topology
+      (squash, rebase, cherry-pick, merge), so it stays valid across the merge strategies of the
+      base branch.
+    - **`Base-Commit`** is the **last commit of the base branch that touched the pointed file**, a
+      convenience pointer used only to recover the previous blob (to display a diff). The **base
+      branch** is the branch the roadmap is planned against — by default the repository's default
+      branch, overridable through the `roadmap.base_branch` configuration key. The line is written
+      **only when the pointed file is unmodified in the current branch and in the working tree**
+      (clean state); otherwise it is omitted.
+    - Both lines are written **by `smart-plan` (the consumer)**, never by the specification author:
+      a baseline written inside the pointed file itself would be self-referential and stale as soon
+      as it is committed.
+    - This concerns **`Source Type: File`** anchors only; a `Conversation Context` anchor carries no
+      `Revision`.
+    - The design of this baseline — a content hash rather than a commit SHA, with a non-blocking
+      fallback — is recorded in [ADR-0007](../adr/0007-record-spec-revision-baseline-in-roadmap.md).
+
+  - **BR-PLAN-15 (Delta detection on re-planning):** before merging, the skill computes
+    `H_now = hash(pointer)` and compares it to the recorded `Revision`:
+    1. no `Revision` recorded (legacy roadmap): the baseline is established and the normal
+       BR-PLAN-07 merge runs;
+    2. `H_now == Revision`: the delta is **empty**, traced explicitly as `up to date` for that Epic;
+       no issue is added or modified by this run;
+    3. `H_now != Revision` (or the file is new): the delta since the last planning is determined —
+       from the `Base-Commit` blob when it is reachable, otherwise by treating the **current content
+       as the novelty** (fallback). After a successful merge, the `Revision` and `Base-Commit` of
+       the affected Epics are refreshed. The delta is a **best-effort hint** — a textual comparison
+       of the pointed file's previous and current content, used to prioritise which requirements are
+       re-mapped; it never replaces the mapping, which still follows BR-PLAN-07.
+  - **BR-PLAN-16 (Delta source and fallback):** the delta is best-effort and never blocking.
+    - `Base-Commit` reachable: the previous content is recovered
+      (`git show <Base-Commit>:<pointer>`) and the delta is the comparison against the current
+      content.
+    - `Base-Commit` absent, unreachable (history rewritten or garbage-collected) or the file is
+      dirty: no diff is displayed, a non-blocking notice is emitted, and the current content is
+      treated as the novelty.
+  - **BR-PLAN-17 (Baseline scope):** only the **`planned`** baseline is written by this phase. The
+    `triaged` (Phase 2) and `implemented` (Phase 3) baselines are explicitly out of scope here and
+    reserved for later increments.
 - **User Stories:**
   - _As a_ developer, _I want to_ turn a validated specification into a roadmap of high-level issues
     _so that_ the triage can create the detailed tickets automatically.
@@ -149,14 +220,19 @@
   - _As a_ project lead, _I want to_ review a diff before an existing roadmap is modified _so that_
     no unwanted change is applied.
   - _As a_ FinOps owner, _I want_ a lightweight roadmap _so that_ downstream triage runs stay cheap.
+  - _As a_ project lead, _I want_ each Epic to record the specification revision it was built from
+    _so that_ a later run plans only the delta instead of guessing what changed.
 
 ## 3. Technical Specifications (How)
 
 - **Architecture & Component Interactions:**
 
-  The skill lives in `.agents/skills/smart-plan/` and only uses file tools. Its output is consumed
-  by the `smart-ai triage` command, which reads **exactly the format written by `smart-plan`**: any
-  change to that format must be reflected in the
+  The skill lives in `.agents/skills/smart-plan/`. It reads and writes the roadmap and specification
+  files through file tools, and relies on a **baseline helper** provided by the host (`smart-ai`)
+  for the two non-file operations of the revision baseline: computing the `sha256` content hash of a
+  file and resolving `git show <Base-Commit>:<pointer>` (BR-PLAN-14, BR-PLAN-16). Its output is
+  consumed by the `smart-ai triage` command, which reads **exactly the format written by
+  `smart-plan`**: any change to that format must be reflected in the
   [triage engine](./triage-engine.md#roadmap-discovery--parsing).
 
   ```mermaid
@@ -186,10 +262,14 @@
           Skill-->>User: Migrate the layout or update the configuration?
           User->>Skill: Decision
       end
+      opt Baseline check
+          Skill->>Spec: hash(pointer) compared to the recorded Revision
+          Skill->>FS: refresh Revision / Base-Commit on merge
+      end
       alt Clean slate
           Skill->>FS: Write directly
       else Existing roadmap
-          Skill-->>User: Comparison table + confirmation phrase
+          Skill-->>User: Comparison table (delta) + confirmation phrase
           User->>Skill: yes
           Skill->>FS: Write the merged roadmap
       end
@@ -199,8 +279,9 @@
   - **Endpoints / Methods:** skill invoked with `/smart-plan` from the IDE chat; inputs are a
     specification file path or the conversation context.
   - **Payload Constraints:**
-    - Configuration keys: `roadmap.versioned` (boolean, `true` generates `roadmap/vX.Y/...`) and
-      `roadmap.layout` (`single`, `multi` or `auto`).
+    - Configuration keys: `roadmap.versioned` (boolean, `true` generates `roadmap/vX.Y/...`),
+      `roadmap.layout` (`single`, `multi` or `auto`) and `roadmap.base_branch` (optional, the branch
+      the revision baseline is computed against; default = the repository's default branch).
     - Output locations:
 
       | versioned | layout   | Files written                                      |
@@ -232,6 +313,9 @@
     - **📋 Spec Anchors:**
       - **Source Type:** [File / Conversation Context]
       - **Pointer:** [e.g., `docs/specs/[file-name].md` OR `Current Conversation History`]
+      - **Revision:** [sha256:<hex> — omitted for a Conversation Context anchor]
+      - **Base-Commit:** [last base-branch commit touching the pointer — omitted if the file is
+        modified locally]
 
     #### Target Issues List
 
@@ -264,6 +348,8 @@
     - **📋 Spec Anchors:**
       - **Source Type:** [File / Conversation Context]
       - **Pointer:** [e.g., `docs/specs/[file-name].md`]
+      - **Revision:** [sha256:<hex>]
+      - **Base-Commit:** [last base-branch commit touching the pointer]
 
     ## Target Issues List
 
@@ -286,6 +372,16 @@
     removed, without shifting any other ID.
   - **EC-PLAN-06 (Existing roadmap, no confirmation):** nothing is written until the user types
     `yes`; adjustments can be specified instead.
+  - **EC-PLAN-07 (Legacy roadmap without `Revision`):** the baseline is established during the merge
+    and the `Revision`/`Base-Commit` lines are added; the existing issues are left untouched
+    (BR-PLAN-15, step 1).
+  - **EC-PLAN-08 (`Base-Commit` absent or unreachable):** the previous blob cannot be recovered
+    (history rewritten, garbage-collected, or the pointed file is modified in the working tree); the
+    diff is skipped, a non-blocking notice is emitted and the current content is treated as the
+    novelty (BR-PLAN-16).
+  - **EC-PLAN-09 (Pointed specification file missing at re-planning):** the Epic keeps its anchor
+    but the revision check is skipped and reported; the skill never invents a hash and asks the user
+    whether the Epic should be deleted (BR-PLAN-05, BR-PLAN-15).
 
 ## 4. Acceptance Criteria (QA)
 
@@ -308,3 +404,20 @@
 - [ ] **AC-PLAN-06 — Error Scenario (divergence):** Given `layout: single` and an existing
       `roadmap/README.md`, when `/smart-plan` is run, then the skill stops and asks whether to
       migrate the layout or update the configuration.
+- [ ] **AC-PLAN-07 — Baseline Scenario:** Given a File-anchor Epic written or merged, when the
+      roadmap is committed, then its `📋 Spec Anchors` record `Revision: sha256:<hex>` of the
+      pointed file and a `Base-Commit` line only when that file is unmodified in the branch and
+      working tree (BR-PLAN-14).
+- [ ] **AC-PLAN-08 — Up-to-date Scenario:** Given an Epic whose recorded `Revision` equals the
+      current `hash(pointer)`, when `/smart-plan` is run, then the run traces `up to date` for that
+      Epic and no issue of that Epic is added, modified or deleted (BR-PLAN-15).
+- [ ] **AC-PLAN-09 — Delta Fallback Scenario:** Given an Epic whose `Base-Commit` is absent,
+      unreachable or whose pointed file is dirty, when the delta is computed, then no diff is
+      displayed, a non-blocking notice is emitted and the current content is treated as the novelty
+      (BR-PLAN-16).
+- [ ] **AC-PLAN-10 — Legacy Baseline Scenario:** Given a roadmap without any `Revision`, when it is
+      re-planned, then the baseline is established and the existing issues are left untouched
+      (EC-PLAN-07, BR-PLAN-15 step 1).
+- [ ] **AC-PLAN-11 — Baseline Scope Scenario:** Given any roadmap write, when the anchors are
+      refreshed, then only the `planned` baseline is written; no `triaged` or `implemented` baseline
+      appears (BR-PLAN-17).
