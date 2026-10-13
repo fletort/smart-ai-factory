@@ -1,6 +1,7 @@
 # Specifications: `smart-ai` Python CLI Core (ID: CORE)
 
-> **State**: _Proposed specification (The specified files may not exist yet.)_
+> **State**: _Not implemented_ (proposed specification; the specified files may not exist yet).
+> **Not developed:** BR-CORE-01 to BR-CORE-14, EC-CORE-01 to EC-CORE-10, AC-CORE-01 to AC-CORE-08.
 
 ## 1. Context & Objectives
 
@@ -464,23 +465,25 @@ payload of the interaction model.
 
 ## 4. Acceptance Criteria (QA)
 
-- [ ] **Nominal Scenario:** Given a valid `.smart.ai/conf.yml` and its environment variables, when
-      `smart-ai config check` is run, then the configuration is reported valid and the exit code
-      is 0.
-- [ ] **JSON Scenario:** Given `--json`, when a command ends, then stdout contains a single document
-      with `schema_version`, `status`, `results`, `needs_input` and `usage`, and logs go to stderr.
-- [ ] **Suspension Scenario:** Given a cloud run needing a human answer, when the step returns
-      `NeedsInput`, then the state is serialised, the question is published to the GitHub issue and
-      the exit code is 3.
-- [ ] **Budget Scenario:** Given `max_cost_usd_per_run: 0.50`, when the worst-case cost of the next
-      call would breach it, then the call is aborted and the exit code is 6.
-- [ ] **Structured Output Scenario:** Given an invalid structured reply, when it is validated, then
-      one repair call is made and, if it still fails, the exit code is 5.
-- [ ] **Idempotence Scenario:** Given `add_labels` with an already present label, when it is called,
-      then it is a no-op.
-- [ ] **Error Scenario:** Given a missing `.smart.ai/conf.yml`, when any command is run, then the
-      CLI prints exactly `❌[smart-ai] Workspace not configured.` and exits with code 2.
-- [ ] **Error Scenario (marker):** Given `update_issue` with a body without the
+- [ ] **AC-CORE-01 — Nominal Scenario:** Given a valid `.smart.ai/conf.yml` and its environment
+      variables, when `smart-ai config check` is run, then the configuration is reported valid and
+      the exit code is 0.
+- [ ] **AC-CORE-02 — JSON Scenario:** Given `--json`, when a command ends, then stdout contains a
+      single document with `schema_version`, `status`, `results`, `needs_input` and `usage`, and
+      logs go to stderr.
+- [ ] **AC-CORE-03 — Suspension Scenario:** Given a cloud run needing a human answer, when the step
+      returns `NeedsInput`, then the state is serialised, the question is published to the GitHub
+      issue and the exit code is 3.
+- [ ] **AC-CORE-04 — Budget Scenario:** Given `max_cost_usd_per_run: 0.50`, when the worst-case cost
+      of the next call would breach it, then the call is aborted and the exit code is 6.
+- [ ] **AC-CORE-05 — Structured Output Scenario:** Given an invalid structured reply, when it is
+      validated, then one repair call is made and, if it still fails, the exit code is 5.
+- [ ] **AC-CORE-06 — Idempotence Scenario:** Given `add_labels` with an already present label, when
+      it is called, then it is a no-op.
+- [ ] **AC-CORE-07 — Error Scenario:** Given a missing `.smart.ai/conf.yml`, when any command is
+      run, then the CLI prints exactly `❌[smart-ai] Workspace not configured.` and exits with
+      code 2.
+- [ ] **AC-CORE-08 — Error Scenario (marker):** Given `update_issue` with a body without the
       `smart-ai:tracking-id` marker, when it is called, then it fails with exit code 7.
 
 ### Test strategy
