@@ -1,6 +1,7 @@
 # Specifications: Local Triage & Interactive Brainstorming (ID: TLOC)
 
-> **State**: _Proposed specification (The specified files may not exist yet.)_
+> **State**: _Not implemented_ (proposed specification; the specified files may not exist yet).
+> **Not developed:** BR-TLOC-01 to BR-TLOC-15, EC-TLOC-01 to EC-TLOC-07, AC-TLOC-01 to AC-TLOC-08.
 
 ## 1. Context & Objectives
 
@@ -261,22 +262,22 @@
 
 ## 4. Acceptance Criteria (QA)
 
-- [ ] **Nominal Scenario:** Given a clear specification and `hitl_during_triage: true`, when the
-      developer answers `y` on the preview card, then `gh issue create` is executed with the size
-      label and `(#N)` is added to the matching local roadmap line only.
-- [ ] **Brainstorm Scenario (manual):** Given `unclear_specification` and `auto_brainstorm: false`,
-      when the developer chooses option 1 and types the missing logic, then the low-cost model is
-      re-invoked with it and the specification is updated.
-- [ ] **Brainstorm Scenario (advanced):** Given option 2, when the advanced model proposes file
-      changes, then they are shown, require confirmation before being written, and the triage is
-      then repeated.
-- [ ] **Edit Scenario:** Given the preview card, when the developer answers `edit`, then the
-      adjustment is fed to the Triage LLM and a new card is displayed.
-- [ ] **Dry-run Scenario:** Given `--dry-run`, when the triage runs, then the issue payload and the
-      roadmap diff are shown and nothing is created or written.
-- [ ] **Error Scenario:** Given `--non-interactive` and a required answer, when the triage runs,
-      then it exits with code 3.
-- [ ] **Error Scenario (cap):** Given a stuck brainstorm, when `max_brainstorm_turns` is reached,
-      then the issue stays untriaged and the reason is displayed.
-- [ ] **Refusal Scenario:** Given the preview card, when the developer answers `n`, then no ticket
-      is created and the Git state is untouched.
+- [ ] **AC-TLOC-01 — Nominal Scenario:** Given a clear specification and `hitl_during_triage: true`,
+      when the developer answers `y` on the preview card, then `gh issue create` is executed with
+      the size label and `(#N)` is added to the matching local roadmap line only.
+- [ ] **AC-TLOC-02 — Brainstorm Scenario (manual):** Given `unclear_specification` and
+      `auto_brainstorm: false`, when the developer chooses option 1 and types the missing logic,
+      then the low-cost model is re-invoked with it and the specification is updated.
+- [ ] **AC-TLOC-03 — Brainstorm Scenario (advanced):** Given option 2, when the advanced model
+      proposes file changes, then they are shown, require confirmation before being written, and the
+      triage is then repeated.
+- [ ] **AC-TLOC-04 — Edit Scenario:** Given the preview card, when the developer answers `edit`,
+      then the adjustment is fed to the Triage LLM and a new card is displayed.
+- [ ] **AC-TLOC-05 — Dry-run Scenario:** Given `--dry-run`, when the triage runs, then the issue
+      payload and the roadmap diff are shown and nothing is created or written.
+- [ ] **AC-TLOC-06 — Error Scenario:** Given `--non-interactive` and a required answer, when the
+      triage runs, then it exits with code 3.
+- [ ] **AC-TLOC-07 — Error Scenario (cap):** Given a stuck brainstorm, when `max_brainstorm_turns`
+      is reached, then the issue stays untriaged and the reason is displayed.
+- [ ] **AC-TLOC-08 — Refusal Scenario:** Given the preview card, when the developer answers `n`,
+      then no ticket is created and the Git state is untouched.
