@@ -244,7 +244,7 @@ Recognised patterns (line based):
 - **Source Type:** File | Conversation Context
 - **Pointer:** `docs/specs/file.md` | `Current Conversation History`
 - **Revision:** sha256:<hex>                   # optional, planned baseline (BR-PLAN-14)
-- **Base-Commit:** <sha>                        # optional, last base-branch commit of the pointer
+- **Base-Commit:** <sha>                        # optional, base-branch commit reproducing the Revision
 ```
 
 A line that looks like an issue but does not match is reported as a warning and never silently

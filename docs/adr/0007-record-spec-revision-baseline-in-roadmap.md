@@ -51,10 +51,10 @@ needs a recorded baseline so a later run can plan only the delta.
 **Pros:**
 
 - A content hash is **topology-independent**, so it stays valid across every merge strategy.
-- A companion `Base-Commit` (last base-branch commit that touched the file) allows a readable diff
-  when it is reachable.
-- The commit pointer is written only when the file is clean and omitted otherwise, so the mechanism
-  degrades gracefully.
+- A companion `Base-Commit` (the newest base-branch commit whose pointed-file blob reproduces the
+  content hash) allows a readable diff when it is reachable.
+- The commit pointer is written only when such a commit exists and the file is clean, and omitted
+  otherwise: the mechanism degrades gracefully and never records an inconsistent baseline.
 
 **Cons:**
 
@@ -67,8 +67,9 @@ needs a recorded baseline so a later run can plan only the delta.
 
 1. The content hash is the only baseline that remains valid across the base branch's merge
    strategies, which the project uses.
-2. The commit pointer is a pure convenience: when it is absent or unreachable, the skill falls back
-   to treating the current content as the novelty, so the mechanism is never blocking.
+2. The commit pointer is a pure convenience: when it is absent, unreachable or does not reproduce
+   the recorded hash, the skill falls back to treating the current content as the novelty, so the
+   mechanism is never blocking.
 3. The triage parser tolerates the optional fields as metadata only, so the roadmap/triage format
    contract stays backward-compatible and a legacy roadmap remains valid.
 
