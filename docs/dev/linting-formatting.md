@@ -11,6 +11,12 @@ and formatting tasks. It operates in two distinct modes:
 1. **Pre-commit mode** (local development): Auto-fix/format mode
 2. **Lint-all mode** (CI/CD and manual audits): Check-only mode
 
+## Automation
+
+Automated formatting can reduce agent work when VS Code on-save actions or Lefthook pre-commit hooks
+are enabled. VS Code on-save actions are enabled by default in the devcontainer environment.
+Otherwise, run the documented checks manually; `lint-all` is check-only and does not fix files.
+
 ## Tool Selection & Rationale
 
 ### Python
