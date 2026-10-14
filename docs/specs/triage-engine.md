@@ -221,8 +221,8 @@ Inputs: `roadmap.versioned` and `roadmap.layout` from the config.
 class SpecAnchor(BaseModel):
     source_type: Literal["File", "Conversation Context"]  # values emitted by smart-plan
     pointer: str                      # "docs/specs/x.md" or "Current Conversation History"
-    revision: str | None              # "sha256:<hex>" planned baseline, None if absent
-    base_commit: str | None           # base-branch commit of the pointer, None if omitted
+    revision: str | None = None       # "sha256:<hex>" planned baseline, None if absent
+    base_commit: str | None = None    # base-branch commit of the pointer, None if omitted
 
 class RoadmapIssue(BaseModel):
     id: str                           # "ISSUE-2.1" (stable, never renumbered)
