@@ -2,9 +2,9 @@
 
 > **State**: _Partially implemented_ (`.agents/skills/smart-spec/`) — **revision proposed**.
 > **Implemented:** BR-SPEC-01 to BR-SPEC-13, EC-SPEC-01 to EC-SPEC-05, AC-SPEC-01 to AC-SPEC-06.
-> **Not developed:** BR-SPEC-14 to BR-SPEC-26, EC-SPEC-06 to EC-SPEC-12, AC-SPEC-07 to AC-SPEC-17
-> (`FEAT_ID` governance, delivery status, impact mapping, high-level isolation and the ADR trigger);
-> the runtime prompt is updated by a downstream implementation task.
+> **Not developed:** BR-SPEC-14 to BR-SPEC-27, EC-SPEC-06 to EC-SPEC-13, AC-SPEC-07 to AC-SPEC-18
+> (`FEAT_ID` governance, delivery status, impact mapping, high-level isolation, the ADR trigger and
+> status re-baselining); the runtime prompt is updated by a downstream implementation task.
 
 ## 1. Context & Objectives
 
@@ -270,6 +270,15 @@
     ADR gate (see [ADR](./adr.md) BR-ADR-01, BR-ADR-07 and BR-ADR-11). The user may decline the
     threshold-qualified ADR at that gate; it is then excluded from the batch. Otherwise the
     conclusion `no ADR justified` is traced explicitly, together with the five answers.
+  - **BR-SPEC-27 (Status validity versus content change):** a delivery status (BR-SPEC-25) is
+    meaningful **only for a given content version** of the rule it annotates. Because a rule keeps
+    its identifier when it is revised (BR-SPEC-17), a **substantive** in-place change to a rule
+    **invalidates** its previous status: in the same revision the rule is **re-baselined** — either
+    re-checked and moved back to `Not developed`, or recorded under a **new identifier** (the
+    previous one left in place and superseded). A status is therefore never carried over unchanged
+    across a substantive modification; a purely editorial change (typo, wording, formatting) does
+    not invalidate it. This defines what the "recomputed at every revision" of BR-SPEC-25 must mean
+    for a rule whose substance changed.
 
 - **User Stories:**
   - _As a_ developer, _I want to_ refine a raw feature idea with a co-architect _so that_ blind
@@ -420,6 +429,10 @@
     the user explicitly asks for an ADR, it is added to the batch even below the threshold, and a
     threshold-qualified ADR the user declines is removed from it — both before any write
     (BR-ADR-11).
+  - **EC-SPEC-13 (In-place change of an implemented rule):** the user asks to change the substance
+    of a rule already marked `Implemented` (e.g. one currently being built); the change **reopens**
+    the rule: the agent flags it, proposes either to demote it to `Not developed` or to record the
+    change under a new identifier, and never silently keeps the pre-change status (BR-SPEC-27).
 
 ## 4. Acceptance Criteria (QA)
 
@@ -481,3 +494,7 @@
 - [ ] **AC-SPEC-17 — No-ADR Scenario:** Given a decision for which fewer than 3 questions are
       answered "yes", when the specification is written, then no ADR is created and the five answers
       plus `no ADR justified` are traced explicitly (BR-SPEC-26, EC-SPEC-12).
+- [ ] **AC-SPEC-18 — Status-invalidation Scenario:** Given a rule annotated `Implemented` or
+      `Not developed` whose substance is modified in place, when the specification is revised, then
+      its status is re-baselined in the same response — demoted to `Not developed` or re-issued
+      under a new identifier — and never left claiming the pre-change status (BR-SPEC-27).
