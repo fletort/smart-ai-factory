@@ -21,4 +21,12 @@ This repo is BOTH the framework source AND its own first user.
 ## Which skill is authoritative?
 
 - Runtime skill sources: `.agents/skills/<name>/SKILL.md` (+ mirrored Continue prompts). They are
-  only on skill source. Used locally and also dsitribued with the payload.
+  only on skill source. Used locally and also dsitribued with the payload. sss
+
+## Code Quality Workflow
+
+- **Editor:** VS Code (handles ESLint and Prettier automatically on save).
+- **Git Hooks:** Lefthook is configured to lint and format on commit (when enabled).
+- **AI Instructions:** Do not waste tokens or time manually formatting code, fixing spaces, or
+  adjusting style in your code blocks. The development environment fully handles this. Focus
+  exclusively on business logic, performance, edge cases, and robustness.

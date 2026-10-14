@@ -11,6 +11,9 @@ and formatting tasks. It operates in two distinct modes:
 1. **Pre-commit mode** (local development): Auto-fix/format mode
 2. **Lint-all mode** (CI/CD and manual audits): Check-only mode
 
+These automatic feature is a FinOps opportunity for Agentic Development. LLM does not need to check
+for lint and prettier step. It is automatically done at different step of the dev workflow.
+
 ## Tool Selection & Rationale
 
 ### Python
