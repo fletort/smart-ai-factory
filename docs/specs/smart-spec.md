@@ -2,7 +2,7 @@
 
 > **State**: _Partially implemented_ (`.agents/skills/smart-spec/`) — **revision proposed**.
 > **Implemented:** BR-SPEC-01 to BR-SPEC-13, EC-SPEC-01 to EC-SPEC-05, AC-SPEC-01 to AC-SPEC-06.
-> **Not developed:** BR-SPEC-14 to BR-SPEC-27, EC-SPEC-06 to EC-SPEC-13, AC-SPEC-07 to AC-SPEC-18
+> **Not developed:** BR-SPEC-14 to BR-SPEC-27, EC-SPEC-06 to EC-SPEC-13, AC-SPEC-07 to AC-SPEC-19
 > (`FEAT_ID` governance, delivery status, impact mapping, high-level isolation, the ADR trigger and
 > status re-baselining); the runtime prompt is updated by a downstream implementation task.
 
@@ -212,10 +212,14 @@
     edge between two **addressable units**. Grammar:
     `<!-- ⚠️ DEPENDENCY ALERT: <mode> <relative/path/to/document.md>#<anchor> -->`.
     - **Source unit — placement is the scope.** The marker qualifies the **addressable unit
-      immediately below it**: a rule (`BR-`/`EC-`/`AC-<FEAT_ID>-NN`) or, when the edge concerns a
-      whole section, that section heading. A rule-level marker is preferred whenever the edge
-      concerns a single rule and is written **directly above that rule**, not at the top of its
-      chapter. A marker placed before anything that is neither a rule nor a heading is invalid.
+      immediately below it**, once the contiguous block of markers (and their optional context
+      comments) that precedes that unit is skipped: a rule (`BR-`/`EC-`/`AC-<FEAT_ID>-NN`) or, when
+      the edge concerns a whole section, that section heading. A rule-level marker is preferred
+      whenever the edge concerns a single rule and is written **directly above that rule**, not at
+      the top of its chapter. A unit may carry **several edges**: its markers then form a single
+      **consecutive block** directly above it and **each** of them qualifies that same unit. A
+      marker placed before anything that is neither a rule, a heading, nor another marker of the
+      same block is invalid.
     - **Target unit — the `<anchor>` is mandatory.** It names the counterpart unit in the target
       document using the same keys: a rule identifier (`#BR-ADR-01`) or a heading anchor
       (`#2-functional--ux-specifications-what`). A document path alone does **not** say where in the
@@ -230,11 +234,17 @@
     (BR-SPEC-22), so a later traversal originating from either side resolves the same pair of units.
     If the anchored counterpart unit cannot be resolved (target file absent, or no rule/heading
     matches the anchor), the pair is reported to the user and **no** marker is invented
-    (EC-SPEC-08).
+    (EC-SPEC-08). When the counterpart unit already carries one or more markers, the mirror marker
+    simply **joins their block** (BR-SPEC-22).
   - **BR-SPEC-24 (Marker context):** an optional human-readable HTML comment may follow a DEPENDENCY
     ALERT one to explain the dependency in one or two sentences. It is **decorative**: the edge is
     fully defined by the marker itself (mode + source unit + anchor) and is never resolved from the
     prose of this comment.
+
+  <!-- ⚠️ DEPENDENCY ALERT: outgoing ./smart-plan.md#BR-PLAN-14 -->
+  <!-- The delivery-status header defined here is excluded from the revision baseline that
+  `smart-plan` records (BR-PLAN-14): a change of its format must be reflected in that exclusion
+  rule, which is why the two rules are coupled. -->
   - **BR-SPEC-25 (Delivery-status header):** every specification carries a structured state header
     at the top of the document that separates what exists from what does not:
 
@@ -252,6 +262,9 @@
     - Its purpose is to prevent a reader (human or downstream agent) from mistaking a **proposed**
       rule for a **shipped** capability: a specification that claims behaviour it does not have is a
       defect.
+    - It is **derived status metadata**, not specification content: the revision baselines that
+      downstream phases record exclude it (BR-PLAN-14), so a status-only edit — a requirement
+      flipped to `Implemented` after delivery — never invalidates a roadmap's recorded revision.
 
   <!-- ⚠️ DEPENDENCY ALERT: bidirectional ./adr.md#BR-ADR-01 -->
   <!-- The ADR trigger (BR-SPEC-26) is coupled with the justification test of [ADR](./adr.md)
@@ -381,10 +394,10 @@
     per prefix.
   - **Dependency marker contract:**
     `<!-- ⚠️ DEPENDENCY ALERT: <mode> <relative/path.md>#<anchor> -->`,
-    `mode ∈ {outgoing, incoming, bidirectional}`; the marker is immediately followed by the unit it
-    qualifies (a rule, or a section heading) and the anchor names the counterpart unit; reciprocity
-    follows the mirror table `outgoing ⟷ incoming` and `bidirectional ⟷ bidirectional` (BR-SPEC-22,
-    BR-SPEC-23).
+    `mode ∈ {outgoing, incoming, bidirectional}`; the marker block is immediately followed by the
+    unit it qualifies (a rule, or a section heading) and the anchor names the counterpart unit;
+    reciprocity follows the mirror table `outgoing ⟷ incoming` and `bidirectional ⟷ bidirectional`
+    (BR-SPEC-22, BR-SPEC-23).
 
   - **Database Updates (ERD if needed):** none. Files written: the specification file(s),
     `docs/INDEX.md` and, when the justification test passes and the user has not declined it, one
@@ -498,3 +511,7 @@
       `Not developed` whose substance is modified in place, when the specification is revised, then
       its status is re-baselined in the same response — demoted to `Not developed` or re-issued
       under a new identifier — and never left claiming the pre-change status (BR-SPEC-27).
+- [ ] **AC-SPEC-19 — Multi-edge Scenario:** Given a rule that already carries a `DEPENDENCY ALERT`
+      marker, when a second edge on that same rule is declared, then the two markers form one
+      **consecutive block** directly above the rule and both edges resolve to that rule
+      (BR-SPEC-22); the mirror markers join the counterpart blocks (BR-SPEC-23).
