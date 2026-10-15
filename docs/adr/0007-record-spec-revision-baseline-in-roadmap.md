@@ -51,14 +51,19 @@ needs a recorded baseline so a later run can plan only the delta.
 **Pros:**
 
 - A content hash is **topology-independent**, so it stays valid across every merge strategy.
-- A companion `Base-Commit` (the newest base-branch commit whose pointed-file blob reproduces the
-  content hash) allows a readable diff when it is reachable.
+- A companion `Base-Commit` (the newest base-branch commit at which the pointed file's **content**,
+  re-hashed with the exact algorithm that produced the content hash, reproduces it) allows a
+  readable diff when it is reachable.
+- The candidate is matched by **re-hashing its content**, never by comparing Git object IDs: a
+  blob's object ID hashes a `blob <size>\0` header together with the raw content (and may be SHA-1),
+  so it can never equal the SHA-256 of the normalised content.
 - The commit pointer is written only when such a commit exists and the file is clean, and omitted
   otherwise: the mechanism degrades gracefully and never records an inconsistent baseline.
 
 **Cons:**
 
-- Needs a hashing and a git-blob helper, so `smart-plan` is no longer "file tools only".
+- Needs a hashing and a git-history helper (to read a file's content at a commit), so `smart-plan`
+  is no longer "file tools only".
 - A textual specification diff still requires the skill to map changes to issues (best-effort).
 
 ## Decision
@@ -83,8 +88,8 @@ needs a recorded baseline so a later run can plan only the delta.
 
 ### Negative
 
-- `smart-plan` can no longer claim to use "file tools only": computing a `sha256` and reading a git
-  blob requires a host helper.
+- `smart-plan` can no longer claim to use "file tools only": computing a `sha256` and reading a
+  file's content at a commit requires a host helper.
 - A textual specification diff does not by itself say which issues changed; the issue mapping
   remains best-effort.
 - The baseline must be refreshed on every merge, or it silently drifts.

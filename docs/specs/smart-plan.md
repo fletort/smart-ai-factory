@@ -1,11 +1,11 @@
 # Specifications: Smart-Plan (Phase 1 - Roadmap & Scheduling) (ID: PLAN)
 
 > **State**: _Partially implemented_ (`.agents/skills/smart-plan/`) — **revision proposed**.
-> **Implemented:** BR-PLAN-01 to BR-PLAN-07, BR-PLAN-09, BR-PLAN-11 to BR-PLAN-13, EC-PLAN-01 to
-> EC-PLAN-06, AC-PLAN-01 to AC-PLAN-06.
+> **Implemented:** BR-PLAN-01 to BR-PLAN-06, BR-PLAN-11 to BR-PLAN-13, EC-PLAN-01 to EC-PLAN-06,
+> AC-PLAN-01 to AC-PLAN-06.
 >
-> **Not developed:** BR-PLAN-08, BR-PLAN-10, BR-PLAN-14 to BR-PLAN-20, EC-PLAN-07 to EC-PLAN-14,
-> AC-PLAN-07 to AC-PLAN-18.
+> **Not developed:** BR-PLAN-07 to BR-PLAN-10, BR-PLAN-14 to BR-PLAN-20, EC-PLAN-07 to EC-PLAN-15,
+> AC-PLAN-07 to AC-PLAN-19.
 
 ## 1. Context & Objectives
 
@@ -71,8 +71,9 @@
 
       Discover --> Rev{"Revision baseline<br/>of the Epic?"}
 
-      Rev -->|no or stale| Process["🏗️ Build / Merge Roadmap Strategy<br/>(delta from Base-Commit, else fallback)"]
-      Rev -->|"hash up to date"| UTD["✅ Epic up to date<br/>(no delta — no write)"]
+      Rev -->|"no or stale"| Process["🏗️ Build / Merge Roadmap Strategy<br/>(delta from Base-Commit, else fallback)"]
+      Rev -->|"up to date, eligible finalization"| Confirm
+      Rev -->|"up to date, nothing to finalize"| UTD["✅ Epic up to date<br/>(no delta — no write)"]
 
       Process -->|Step 1| Vision["🎯 Extract Global Vision<br/>(2-Sentence Summary)"]
       Vision -->|Step 2| Epics["📊 Map Epics<br/>(+ functional Scope)"]
@@ -85,11 +86,12 @@
 
   _Note: the `Revision` baseline (BR-PLAN-14) is refreshed in the roadmap Spec Anchors when the
   delta is merged; a `Conversation Context` anchor has no revision and always follows the merge
-  path. A run whose anchored Epics are **all up to date** (no delta) completes **without writing**
-  (no issue change, no metadata refresh). An Epic is **finalized** only when all its issues are
-  checked and its `Revision` is current (BR-PLAN-20); its `Scope:` line is then renamed `Delivered:`
-  and frozen — finalization is **terminal**, so a later specification change opens a **new
-  generation** (BR-PLAN-07) rather than reopening the closed Epic._
+  path. A run writes nothing only when there is no delta **and** nothing to finalize; a proposal to
+  finalize an eligible Epic is a metadata-only change that goes through the confirmation like any
+  other (BR-PLAN-09). An Epic is **finalized** only when all its issues are checked and its
+  `Revision` is current (BR-PLAN-20); its `Scope:` line is then renamed `Delivered:` and frozen —
+  finalization is **terminal**, so a later specification change opens a **new generation**
+  (BR-PLAN-07) rather than reopening the closed Epic._
 
 - **State Machine (session / ticket / workflow):**
 
@@ -106,8 +108,8 @@
       Divergence --> Discovery : user decides migrate layout or update config
       Discovery --> CleanSlate : no roadmap found
       Discovery --> RevisionCheck : existing roadmap read
-      RevisionCheck --> UPD : every recorded Revision matches its current hash (no delta)
-      RevisionCheck --> Reconciliation : no baseline, or a different content hash
+      RevisionCheck --> UPD : every open Epic up to date and nothing to finalize
+      RevisionCheck --> Reconciliation : no baseline, a different hash, or an eligible finalization
       CleanSlate --> Written : direct write, no question
       Reconciliation --> AwaitingConfirmation : diff table displayed
       AwaitingConfirmation --> Written : user types yes
@@ -164,9 +166,12 @@
     `Scope:`.
   - **BR-PLAN-09 (Confirmation):** a clean slate is written directly, without question. For an
     existing roadmap, the skill shows a comparison table (modified, added, deleted, metadata) and
-    writes only after the user types `yes`. A run whose anchored Epics are all up to date
-    (BR-PLAN-15) writes nothing — not even metadata: the baseline is refreshed only when a delta is
-    merged.
+    writes only after the user types `yes`. A run writes nothing — not even metadata — **only when
+    it has no change to apply**: every anchored **open** Epic is up to date (BR-PLAN-15) **and** no
+    Epic is eligible for finalization (BR-PLAN-20). A run whose only change is one or more
+    finalizations still goes through the comparison table and the `yes` confirmation. The baseline
+    (`Revision`/`Base-Commit`) is refreshed **only when a delta is merged** — a finalization never
+    refreshes it.
   - **BR-PLAN-10 (Implementation-agnostic scope boundary):** the plan stays **implementation-
     agnostic**: no source code, no algorithm, no data-structure or schema detail, no acceptance
     criteria and no step-by-step. Using the specification's **target architecture** (its components,
@@ -184,35 +189,43 @@
     Global Vision and the Epic Purpose are checked and updated if the new specification alters the
     project's macro direction.
   <!-- ⚠️ DEPENDENCY ALERT: outgoing ./triage-engine.md#roadmap-discovery--parsing -->
-  <!-- The revision baseline (`Revision`, `Base-Commit`) written into the Spec Anchors is part of the
-  roadmap/triage format contract (BR-TRGE-04). Any change of these anchor fields requires the roadmap
-  parser of the triage engine to tolerate them (BR-TRGE-19); the mirror marker is declared on the
-  "Roadmap discovery & parsing" section of triage-engine.md. -->
-  - **BR-PLAN-14 (Revision baseline in the Spec Anchor):** each Epic's `📋 Spec Anchors` records the
-    revision of its pointed specification **at the time the roadmap was last built from it**, as two
-    optional lines:
+  <!-- The anchor block written by `smart-plan` is part of the roadmap/triage format contract
+  (BR-TRGE-04): the revision baseline (`Revision`, `Base-Commit`) and the Epic annotations
+  (`Scope:`Delivered:`, `Decisions:`). Any change of these anchor fields requires the roadmap
+  parser of the triage engine to tolerate them as metadata only (BR-TRGE-19); the mirror marker is
+  declared on the "Roadmap discovery & parsing" section of triage-engine.md. -->
+  - **BR-PLAN-14 (Revision baseline in the Spec Anchor):** when a File-anchor Epic is written or
+    merged, its `📋 Spec Anchors` records the revision of its pointed specification **at the time
+    the roadmap was last built from it** in a required `Revision` line and, when available, an
+    optional `Base-Commit` line. Legacy anchors without a baseline remain valid;
+    `Conversation Context` anchors carry neither line:
 
     ```markdown
     - **📋 Spec Anchors:**
       - **Source Type:** File
-      - **Pointer:** `docs/specs/smart-spec.md`
+      - **Pointer:** `docs/specs/smart-plan.md`
       - **Revision:** sha256:9f2c4a1b… # content hash of the pointed file
-      - **Base-Commit:** 4a1b7c9 # newest base-branch commit whose blob == Revision
-      - **Decisions:** [ADR-0007](../adr/0007-record-spec-revision-baseline-in-roadmap.md)
+      - **Base-Commit:** 4a1b7c9 # newest base-branch commit whose normalized content hash equals
+        Revision
+      - **Decisions:** [ADR-0007](docs/adr/0007-record-spec-revision-baseline-in-roadmap.md)
     ```
 
     - **`Revision`** is a **content hash**: `sha256` of the pointed file, lower-case hexadecimal,
       prefixed `sha256:`, with line endings normalised to LF. It is independent of the git topology
       (squash, rebase, cherry-pick, merge), so it stays valid across the merge strategies of the
       base branch.
-    - **`Base-Commit`** is the **most recent commit of the base branch whose pointed-file blob
-      hashes to `Revision`** — a convenience pointer used only to recover the previous blob (to
+    - **`Base-Commit`** is the **most recent commit of the base branch at which the pointed file
+      reproduces `Revision`** — a convenience pointer used only to recover the previous content (to
       display a diff). It is deliberately **not** "the last commit that touched the file": the base
       branch may have advanced the file after the current branch diverged, so that commit could
-      carry a different blob and record an inconsistent baseline. The candidate is the newest
-      base-branch commit that **reproduces the exact content the roadmap was built from**
-      (`git log <base> -- <pointer>`, newest to oldest, first blob whose hash equals `Revision`).
-      The **base branch** is the branch the roadmap is planned against — by default the repository's
+      carry different content and record an inconsistent baseline. The check **never compares Git
+      object IDs**: a Git blob's object ID hashes a `blob <size>\0` header together with the raw
+      content (and may be SHA-1), so it can never equal `Revision`. For each candidate commit
+      (`git log <base> -- <pointer>`, newest to oldest) the file content is extracted
+      (`git show <commit>:<pointer>`), then **line endings are normalised to LF and the result is
+      hashed with the exact algorithm that produced `Revision`** (`sha256` of the normalised
+      content); the newest commit whose content hash equals `Revision` is the `Base-Commit`. The
+      **base branch** is the branch the roadmap is planned against — by default the repository's
       default branch, overridable through the `roadmap.base_branch` configuration key. The line is
       written **only when such a commit exists** _and_ the pointed file is unmodified in the current
       branch and in the working tree (clean state — a secondary guard); otherwise it is omitted and
@@ -226,7 +239,9 @@
       fallback — is recorded in [ADR-0007](../adr/0007-record-spec-revision-baseline-in-roadmap.md).
 
   - **BR-PLAN-15 (Delta detection on re-planning):** before merging, the skill computes
-    `H_now = hash(pointer)` and compares it to the recorded `Revision`:
+    `H_now = hash(pointer)` and compares it to the recorded `Revision`. This per-Epic check applies
+    to **open** Epics only — a **finalized** Epic is terminal and is never re-planned (BR-PLAN-20);
+    a change to its pointer opens a **new generation** (BR-PLAN-07):
     1. no `Revision` recorded (legacy roadmap): no delta can be computed, so the **current content
        is treated as the novelty** (as in the fallback) and the normal BR-PLAN-07 merge reconciles
        the Epic through the existing-roadmap confirmation (BR-PLAN-09). The `Revision`/`Base-Commit`
@@ -236,26 +251,40 @@
        no issue is added or modified by this run. The specification hash also covers the cited ADRs
        (BR-PLAN-19), so no separate ADR baseline is needed;
     3. `H_now != Revision` (or the file is new): the delta since the last planning is determined —
-       from the `Base-Commit` blob when it is reachable, otherwise by treating the **current content
-       as the novelty** (fallback). After a successful merge, the `Revision` and `Base-Commit` of
-       the affected Epics are refreshed. The delta is a **best-effort hint** — a textual comparison
-       of the pointed file's previous and current content, used to prioritise which requirements are
-       re-mapped; it never replaces the mapping, which still follows BR-PLAN-07.
+       from the content at `Base-Commit` when it is reachable, otherwise by treating the **current
+       content as the novelty** (fallback). After a successful merge, the `Revision` and
+       `Base-Commit` of the affected **open** Epics are refreshed. The delta is a **best-effort
+       hint** — a textual comparison of the pointed file's previous and current content, used to
+       prioritise which requirements are re-mapped; it never replaces the mapping, which still
+       follows BR-PLAN-07.
 
-    When a re-plan targets a pointer whose matching Epics are **all finalized** (BR-PLAN-07), the
-    new Epic is a **new generation**: its delta is seeded from the **`Revision` of the last
-    finalized Epic** of that pointer (never from the whole specification), so its `Scope:` records
-    only the requirements that changed since that generation and the already-delivered requirements
-    are not re-issued as new work. The new Epic then records its own `Revision` = current `H_now`,
-    and its predecessors keep their frozen `Delivered:` (BR-PLAN-20).
+    When a re-plan targets a pointer whose matching Epics are **all finalized** (BR-PLAN-07), no
+    open Epic can absorb the change: a **new generation** Epic is created, seeded from the
+    **`Revision` of the last finalized Epic** of that pointer (never from the whole specification).
+    Whether its `Scope:` can be narrowed to the changed requirements depends on the **same
+    best-effort delta as BR-PLAN-16**:
+    - **previous content recovered and verified** (`Base-Commit` reachable and its content hashing
+      to that `Revision`): the delta is computed, so the new Epic's `Scope:` records **only the
+      requirements that changed** since that generation and the already-delivered requirements are
+      not re-issued as new work;
+    - **previous content unavailable** (`Base-Commit` absent, unreachable, inconsistent with
+      `Revision`, or the file dirty — BR-PLAN-16, EC-PLAN-08): the current specification is treated
+      as the novelty, so the new Epic's `Scope:` covers the **full anchored scope** of the current
+      specification and the fallback is traced — the already-delivered requirements may be
+      re-listed, a limitation accepted rather than guessed. The new Epic then records its own
+      `Revision` = current `H_now`, and its predecessors keep their frozen `Delivered:`
+      (BR-PLAN-20).
 
-  - **BR-PLAN-16 (Delta source and fallback):** the delta is best-effort and never blocking.
-    - `Base-Commit` reachable: the previous content is recovered
-      (`git show <Base-Commit>:<pointer>`) and the delta is the comparison against the current
-      content.
+  - **BR-PLAN-16 (Delta source and fallback):** the delta is best-effort and never blocking. It also
+    decides the seeding of a **new-generation** Epic (BR-PLAN-15): the **changed-only** `Scope:` is
+    promised **only** when the previous content is actually recovered and verified here.
+    - `Base-Commit` reachable **and its content hashing to the recorded `Revision`**: the previous
+      content is recovered (`git show <Base-Commit>:<pointer>`) and the delta is the comparison
+      against the current content.
     - `Base-Commit` absent, unreachable (history rewritten or garbage-collected), inconsistent with
       `Revision` (no base-branch commit reproduces it), or the file is dirty: no diff is displayed,
-      a non-blocking notice is emitted, and the current content is treated as the novelty.
+      a non-blocking notice is emitted, and the current content is treated as the novelty — for a
+      new-generation Epic, its `Scope:` then covers the **full anchored scope**.
   - **BR-PLAN-17 (Baseline scope):** only the **`planned`** baseline is written by this phase. The
     `triaged` (Phase 2) and `implemented` (Phase 3) baselines are explicitly out of scope here and
     reserved for later increments.
@@ -298,7 +327,12 @@
     `Delivered:` and **frozen for the Epic's lifetime** — a historical record of what that Epic
     delivered. Updating the specification's delivery-status header (BR-SPEC-25) remains the
     **authority** on what is implemented: `Delivered:` records _which Epic_ delivered a requirement,
-    not _whether_ it is implemented.
+    not _whether_ it is implemented. The transition is **detected and proposed by a run**, never
+    silent: when a run reads an **open** Epic whose issues are all checked and whose `Revision` is
+    current, it shows the change (`Scope:` → `Delivered:`, metadata only) in the comparison table
+    and applies it **only after the `yes` confirmation** (BR-PLAN-09); if declined, the Epic stays
+    open. This is the **sole exception** to the "all up to date ⇒ no write" rule: an Epic already
+    finalized, or not yet fully checked, still produces no write.
 - **User Stories:**
   - _As a_ developer, _I want to_ turn a validated specification into a roadmap of high-level issues
     _so that_ the triage can create the detailed tickets automatically.
@@ -425,8 +459,8 @@
       - **Source Type:** [File / Conversation Context]
       - **Pointer:** [e.g., `docs/specs/[file-name].md` OR `Current Conversation History`]
       - **Revision:** [sha256:<hex> — omitted for a Conversation Context anchor]
-      - **Base-Commit:** [newest base-branch commit whose blob hashes to the Revision — omitted when
-        none exists or the file is modified locally]
+      - **Base-Commit:** [newest base-branch commit whose file content hashes to the Revision —
+        omitted when none exists or the file is modified locally]
       - **Scope:** [BR-XXX-01, BR-XXX-02 — targeted requirements; renamed `Delivered:` and frozen
         when the Epic is finalized]
       - **Decisions:** [ADR-NNNN links constraining this Epic — optional]
@@ -463,7 +497,7 @@
       - **Source Type:** [File / Conversation Context]
       - **Pointer:** [e.g., `docs/specs/[file-name].md`]
       - **Revision:** [sha256:<hex>]
-      - **Base-Commit:** [newest base-branch commit whose blob hashes to the Revision]
+      - **Base-Commit:** [newest base-branch commit whose file content hashes to the Revision]
       - **Scope:** [BR-XXX-01, BR-XXX-02 — targeted requirements; renamed `Delivered:` and frozen
         when the Epic is finalized]
       - **Decisions:** [ADR-NNNN links constraining this Epic — optional]
@@ -496,7 +530,7 @@
     `Revision`/`Base-Commit` lines are written in the same confirmed merge — a spec change since the
     legacy build resurfaces as work, and the baseline is never stamped on un-reconciled content
     (BR-PLAN-15, step 1).
-  - **EC-PLAN-08 (`Base-Commit` absent or unreachable):** the previous blob cannot be recovered
+  - **EC-PLAN-08 (`Base-Commit` absent or unreachable):** the previous content cannot be recovered
     (history rewritten, garbage-collected, or the pointed file is modified in the working tree); the
     diff is skipped, a non-blocking notice is emitted and the current content is treated as the
     novelty (BR-PLAN-16).
@@ -520,9 +554,15 @@
     traced; the ADR is never invented (BR-PLAN-19).
   - **EC-PLAN-14 (Specification changed after finalization):** a specification change targeting a
     pointer whose Epics are **all finalized** does **not** reopen them: a **new generation** Epic is
-    created, seeded with the delta from the last finalized Epic's `Revision` (BR-PLAN-07,
-    BR-PLAN-15), its `Scope:` records only the changed requirements, and the finalized Epics keep
-    their frozen `Delivered:` (BR-PLAN-20).
+    created, seeded from the last finalized Epic's `Revision` (BR-PLAN-07, BR-PLAN-15), and the
+    finalized Epics keep their frozen `Delivered:` (BR-PLAN-20). Its `Scope:` records **only the
+    changed requirements** when the last finalized Epic's previous content is recovered and verified
+    (its `Base-Commit` reachable and hashing to that `Revision`); when it cannot be (BR-PLAN-16,
+    EC-PLAN-08), the current specification is treated as the novelty and the new Epic's `Scope:`
+    covers the **full anchored scope**, traced as a fallback.
+  - **EC-PLAN-15 (Finalization declined):** when the user declines a proposed finalization, the Epic
+    stays **open** (its `Scope:` unchanged) and nothing is written; a later run proposes it again
+    (BR-PLAN-09, BR-PLAN-20).
 
 ## 4. Acceptance Criteria (QA)
 
@@ -547,13 +587,15 @@
       migrate the layout or update the configuration.
 - [ ] **AC-PLAN-07 — Baseline Scenario:** Given a File-anchor Epic written or merged, when the
       roadmap is committed, then its `📋 Spec Anchors` record `Revision: sha256:<hex>` of the
-      pointed file and a `Base-Commit` line only when a base-branch commit whose pointed-file blob
-      hashes to that `Revision` exists and the file is unmodified in the branch and working tree;
-      otherwise the line is omitted (BR-PLAN-14).
-- [ ] **AC-PLAN-08 — Up-to-date Scenario:** Given a roadmap whose anchored Epics all have a recorded
-      `Revision` equal to the current `hash(pointer)`, when `/smart-plan` is run, then the run
-      traces `up to date`, nothing is written and no issue is added, modified or deleted
-      (BR-PLAN-09, BR-PLAN-15).
+      pointed file and a `Base-Commit` line only when a base-branch commit whose pointed-file
+      **LF-normalised content hashes to that `Revision`** exists (the candidate is matched by
+      re-hashing its content, never by comparing the blob's object ID, which hashes a header and may
+      be SHA-1) and the file is unmodified in the branch and working tree; otherwise the line is
+      omitted (BR-PLAN-14).
+- [ ] **AC-PLAN-08 — Up-to-date Scenario:** Given a roadmap whose anchored **open** Epics all have a
+      recorded `Revision` equal to the current `hash(pointer)` and none is eligible for
+      finalization, when `/smart-plan` is run, then the run traces `up to date`, nothing is written
+      and no issue is added, modified or deleted (BR-PLAN-09, BR-PLAN-15).
 - [ ] **AC-PLAN-09 — Delta Fallback Scenario:** Given an Epic whose `Base-Commit` is absent,
       unreachable or whose pointed file is dirty, when the delta is computed, then no diff is
       displayed, a non-blocking notice is emitted and the current content is treated as the novelty
@@ -588,6 +630,12 @@
       is reported and a delta re-plan is proposed (BR-PLAN-15, BR-PLAN-20, EC-PLAN-12).
 - [ ] **AC-PLAN-18 — New-generation Scenario:** Given a finalized Epic and a specification change
       targeting the same pointer, when `/smart-plan` is run, then the finalized Epic is left
-      untouched (its `Delivered:` stays frozen) and a **new Epic** is created whose `Scope:` records
-      only the requirements changed since the finalized Epic's `Revision` (BR-PLAN-07, BR-PLAN-15,
-      BR-PLAN-20, EC-PLAN-14).
+      untouched (its `Delivered:` stays frozen) and a **new Epic** is created; its `Scope:` records
+      **only the requirements changed** since the finalized Epic's `Revision` when that Epic's
+      previous content is recovered and verified (BR-PLAN-16), and otherwise covers the **full
+      anchored scope** of the current specification with the fallback traced (BR-PLAN-07,
+      BR-PLAN-15, BR-PLAN-16, BR-PLAN-20, EC-PLAN-08, EC-PLAN-14).
+- [ ] **AC-PLAN-19 — Finalization-write Scenario:** Given an **open** Epic whose issues are all
+      checked and whose `Revision` is current (no delta), when `/smart-plan` is run, then the run
+      proposes the finalization (`Scope:` → `Delivered:`) in the comparison table and writes nothing
+      before `yes`; an already-finalized Epic still produces no write (BR-PLAN-09, BR-PLAN-20).
