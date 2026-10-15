@@ -25,7 +25,7 @@ This repo is BOTH the framework source AND its own first user.
 
 ## Code Quality Workflow
 
-- **Editor:** VS Code (handles ESLint and Prettier automatically on save).
+- **Editor:** VS Code (formats Python with Ruff and Markdown/YAML/JSON with Prettier on save).
 - **Git Hooks:** Lefthook is configured to lint and format on commit (when enabled).
 - **AI Instructions:** Do not waste tokens or time manually formatting code, fixing spaces, or
   adjusting style in your code blocks. The development environment fully handles this. Focus
