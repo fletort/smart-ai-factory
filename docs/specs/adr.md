@@ -131,9 +131,17 @@
     whole batch, never a step between two writes. The author of an ADR is the consumer of the
     decision, never a post-hoc editor. Promotion to `accepted` happens **after development**,
     outside Phase 0.
+  <!-- ⚠️ DEPENDENCY ALERT: bidirectional ./smart-plan.md#BR-PLAN-19 -->
+  <!-- The ADR reference contract (BR-ADR-08) and the ADR location/template (BR-ADR-09) are consumed
+  by `smart-plan` (BR-PLAN-19), which reads the ADRs referenced by the anchored specification and
+  cites them on the Epic under a `Decisions:` line (read and cite only, never create). Any change of
+  the reference format or of the location changes what the plan can cite; conversely the `Decisions:`
+  anchor depends on it. The mirror marker is declared on the business-rules section of
+  smart-plan.md. -->
   - **BR-ADR-08 (Traceability links):** an ADR links to the `FEAT_ID` of the specification(s) it
     serves and, when relevant, to the sections of the technical constitution it affects. A
-    specification that triggers an ADR references it back (BR-SPEC-26).
+    specification that triggers an ADR references it back (BR-SPEC-26); a downstream planner (Phase
+    1, `smart-plan` BR-PLAN-19) may also **cite** it (read only, never create).
   - **BR-ADR-09 (Location is configuration-driven):** the ADR directory is resolved from
     `specifications.paths.adr_directory` (default `docs/adr`) and the template from
     `specifications.templates.adr` (default `.smart.ai/templates/adr.md`); neither is hard-coded.

@@ -1,6 +1,7 @@
 # Specifications: Cloud Triage, Stateless CI/CD & Token Optimization (ID: TCLD)
 
-> **State**: _Proposed specification (The specified files may not exist yet.)_
+> **State**: _Not implemented_ (proposed specification; the specified files may not exist yet).
+> **Not developed:** BR-TLCD-01 to BR-TLCD-16, EC-TLCD-01 to EC-TLCD-09, AC-TLCD-01 to AC-TLCD-09.
 
 ## 1. Context & Objectives
 
@@ -276,28 +277,29 @@ memory bank.
 
 ## 4. Acceptance Criteria (QA)
 
-- [ ] **Nominal Scenario:** Given a roadmap push with an eligible, clear issue, when
+- [ ] **AC-TLCD-01 — Nominal Scenario:** Given a roadmap push with an eligible, clear issue, when
       `ai_triage_pipeline.yml` runs, then a ticket labelled `ready-to-dev` (or `pending-approval`
       when `hitl_during_triage: true`) is created and `(#N)` is synced to the roadmap through a pull
       request.
-- [ ] **Manual Brainstorm Scenario:** Given an ambiguous issue and `auto_brainstorm: false`, when
-      the triage runs, then a ticket labelled `brainstorming` holds the questions and the hidden
-      `FACTORY_CONTEXT`, and the run exits with code 3.
-- [ ] **Resume Scenario:** Given a `brainstorming` ticket, when an authorised author comments, then
-      only the issue text and comments are downloaded, the triage is repeated and, if
+- [ ] **AC-TLCD-02 — Manual Brainstorm Scenario:** Given an ambiguous issue and
+      `auto_brainstorm: false`, when the triage runs, then a ticket labelled `brainstorming` holds
+      the questions and the hidden `FACTORY_CONTEXT`, and the run exits with code 3.
+- [ ] **AC-TLCD-03 — Resume Scenario:** Given a `brainstorming` ticket, when an authorised author
+      comments, then only the issue text and comments are downloaded, the triage is repeated and, if
       `ready_to_dev`, the same ticket is mutated.
-- [ ] **Auto Brainstorm Scenario:** Given `auto_brainstorm: true`, when the advanced model resolves
-      the ambiguity, then a pull request is opened and linked to the ticket, nothing is pushed to
-      the default branch, and the triage resumes only once the PR is merged.
-- [ ] **Loop Protection Scenario:** Given the merge of a roadmap-sync PR, when the push workflow
-      runs, then it exits with code 0 before any LLM call.
-- [ ] **Token Scenario:** Given a discussion turn, when the brainstorm command rehydrates the
-      session, then the prompt data stays below ~1,500 tokens without a full repository scan.
-- [ ] **Error Scenario (authorisation):** Given a comment from an author that is not `OWNER`,
-      `MEMBER` or `COLLABORATOR`, when the event is received, then the routing workflow does not
-      process it.
-- [ ] **Error Scenario (merge trust):** Given a merged PR whose number differs from
+- [ ] **AC-TLCD-04 — Auto Brainstorm Scenario:** Given `auto_brainstorm: true`, when the advanced
+      model resolves the ambiguity, then a pull request is opened and linked to the ticket, nothing
+      is pushed to the default branch, and the triage resumes only once the PR is merged.
+- [ ] **AC-TLCD-05 — Loop Protection Scenario:** Given the merge of a roadmap-sync PR, when the push
+      workflow runs, then it exits with code 0 before any LLM call.
+- [ ] **AC-TLCD-06 — Token Scenario:** Given a discussion turn, when the brainstorm command
+      rehydrates the session, then the prompt data stays below ~1,500 tokens without a full
+      repository scan.
+- [ ] **AC-TLCD-07 — Error Scenario (authorisation):** Given a comment from an author that is not
+      `OWNER`, `MEMBER` or `COLLABORATOR`, when the event is received, then the routing workflow
+      does not process it.
+- [ ] **AC-TLCD-08 — Error Scenario (merge trust):** Given a merged PR whose number differs from
       `BrainstormState.pending_pr`, when the event is received, then the session does not leave the
       `AwaitingPR` state.
-- [ ] **Error Scenario (failure):** Given an exit code other than 3, when the workflow ends, then
-      the error summary is commented on the tracking issue when one exists.
+- [ ] **AC-TLCD-09 — Error Scenario (failure):** Given an exit code other than 3, when the workflow
+      ends, then the error summary is commented on the tracking issue when one exists.

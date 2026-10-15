@@ -1,6 +1,7 @@
 # Specifications: Triage Engine (Phase 2) (ID: TRGE)
 
-> **State**: _Proposed specification (The specified files may not exist yet.)_
+> **State**: _Not implemented_ (proposed specification; the specified files may not exist yet).
+> **Not developed:** BR-TRGE-01 to BR-TRGE-19, EC-TRGE-01 to EC-TRGE-17, AC-TRGE-01 to AC-TRGE-12.
 
 ## 1. Context & Objectives
 
@@ -120,6 +121,20 @@
   - **BR-TRGE-18 (Untrusted input):** issue and comment text is treated as data (delimited blocks)
     and the model's output only ever goes through the Pydantic schema. Event data is passed to the
     CLI through files or environment variables, never through shell interpolation.
+  - **BR-TRGE-19 (Anchor-field tolerance):** the parser requires only `Source Type` and `Pointer`;
+    every **other** anchor field written by `smart-plan` is **tolerated as metadata only**
+    (informational, surfaced in the output when useful): the revision baseline (`Revision` — which
+    `smart-plan` writes for every File anchor, BR-PLAN-14 — and `Base-Commit`) parsed into
+    `SpecAnchor.revision` / `SpecAnchor.base_commit`, and the Epic annotations (`Scope:` on an open
+    Epic, renamed `Delivered:` once finalized, BR-PLAN-18 / BR-PLAN-20; `Decisions:`, BR-PLAN-19)
+    parsed into `SpecAnchor.scope` / `SpecAnchor.decisions`. **None** of them influences
+    eligibility, dependency resolution, context packing or the `(#N)` write-back, and the triage
+    never reinterprets a requirement identifier: the requirement-to-Epic mapping is owned by
+    `smart-plan` (BR-PLAN-18). Their absence is valid (a `Conversation Context` anchor, or a roadmap
+    built by a legacy `smart-plan`), so the parser never requires them and never rejects a roadmap
+    that omits them. A finalized Epic (`Delivered:`) has all its issues checked and is therefore
+    already ineligible by the existing rule (BR-TRGE-01), with no special case. The triage never
+    recomputes or writes a baseline (the `triaged` baseline is out of scope, BR-PLAN-17).
 - **User Stories:**
   - _As a_ product owner, _I want_ my high-level roadmap issues turned into detailed, sized tickets
     _so that_ developer agents receive precise tasks at the right cost tier.
@@ -177,6 +192,13 @@
 
   Detailed contracts are given in the sub-sections below.
 
+<!-- ⚠️ DEPENDENCY ALERT: incoming ./smart-plan.md#BR-PLAN-14 -->
+<!-- This section is the roadmap format contract with smart-plan (BR-TRGE-04). The anchor block
+written by smart-plan changes that format: the revision baseline (BR-PLAN-14: Revision, Base-Commit)
+and the Epic annotations (BR-PLAN-18 Scope / BR-PLAN-20 Delivered, BR-PLAN-19 Decisions). The parser
+must therefore tolerate all these fields as metadata only, described in BR-TRGE-19. The mirror marker
+is declared on BR-PLAN-14 of smart-plan.md. -->
+
 ### Roadmap discovery & parsing
 
 The parser reads **exactly the format written by `smart-plan`**. Any change to that format must be
@@ -207,6 +229,10 @@ Inputs: `roadmap.versioned` and `roadmap.layout` from the config.
 class SpecAnchor(BaseModel):
     source_type: Literal["File", "Conversation Context"]  # values emitted by smart-plan
     pointer: str                      # "docs/specs/x.md" or "Current Conversation History"
+    revision: str | None = None       # "sha256:<hex>" planned baseline, None if absent
+    base_commit: str | None = None    # base-branch commit of the pointer, None if omitted
+    scope: list[str] = []             # targeted requirement IDs (BR-PLAN-18) — metadata only
+    decisions: list[str] = []         # ADR links of the Epic (BR-PLAN-19) — metadata only
 
 class RoadmapIssue(BaseModel):
     id: str                           # "ISSUE-2.1" (stable, never renumbered)
@@ -227,7 +253,17 @@ Recognised patterns (line based):
   - **Depends on:** None | [ISSUE-1.1], [ISSUE-1.2]
 - **Source Type:** File | Conversation Context
 - **Pointer:** `docs/specs/file.md` | `Current Conversation History`
+- **Revision:** sha256:<hex>                   # planned baseline; required to write, tolerated on parse (BR-PLAN-14)
+- **Base-Commit:** <sha>                        # optional, base-branch commit reproducing the Revision
+- **Scope:** BR-XXX-01, BR-XXX-02              # optional, targeted requirements — open Epic (BR-PLAN-18)
+- **Delivered:** BR-XXX-01, BR-XXX-02          # optional, same line, renamed on a finalized Epic (BR-PLAN-20)
+- **Decisions:** [ADR-NNNN](...)               # optional, ADR links of the Epic (BR-PLAN-19)
 ```
+
+Apart from `Source Type` and `Pointer`, every field above (`Revision`, `Base-Commit`,
+`Scope:`/`Delivered:`, `Decisions:`) is **metadata only**: the parser recognises it, keeps it on the
+anchor and never uses it for eligibility, dependency checks, context packing or the write-back
+(BR-TRGE-19).
 
 A line that looks like an issue but does not match is reported as a warning and never silently
 skipped.
@@ -581,39 +617,58 @@ src/smart_ai/triage/
     listing the proposed issues, nothing created.
   - **EC-TRGE-15 (Roadmap changed in the meantime):** detected through `roadmap_line`; the line is
     re-read and its ID verified just before writing.
+  - **EC-TRGE-16 (Anchor without optional fields):** a `Conversation Context` anchor, or a roadmap
+    built before BR-PLAN-14 / BR-PLAN-18, has no `Revision`/`Base-Commit` (and possibly no
+    `Scope:`/`Delivered:`/`Decisions:`); the parser accepts the missing fields as `None`/empty and
+    the triage proceeds normally (BR-TRGE-19).
+  - **EC-TRGE-17 (Malformed baseline value):** a `Revision` that is not `sha256:<hex>` or a
+    `Base-Commit` that is not a plausible commit reference is reported as a warning and ignored
+    (treated as absent); it never blocks the triage (BR-TRGE-04, BR-TRGE-19).
 
 ## 4. Acceptance Criteria (QA)
 
-- [ ] **Nominal Scenario:** Given an eligible roadmap issue with a clear specification, when
-      `smart-ai triage` runs, then a ticket is created with the `[SIZE]`-prefixed title, the
+- [ ] **AC-TRGE-01 — Nominal Scenario:** Given an eligible roadmap issue with a clear specification,
+      when `smart-ai triage` runs, then a ticket is created with the `[SIZE]`-prefixed title, the
       `size:<SIZE>` label and the `tracking-id` marker, and `(#N)` is appended to the matching
       roadmap line only.
-- [ ] **Eligibility Scenario:** Given an issue whose dependency ticket carries the `brainstorming`
-      label, when the selection runs, then the issue is not selected.
-- [ ] **Brainstorm Scenario (manual):** Given `unclear_specification`, when the human answers, then
-      the answer is appended to `turns`, the triage call is repeated and the same ticket is mutated
-      on `ready_to_dev` (`brainstorming` removed, `size:<SIZE>` and `ready-to-dev` set).
-- [ ] **Brainstorm Scenario (auto, cloud):** Given `auto_brainstorm: true`, when the advanced model
-      resolves the ambiguity, then a pull request limited to the allowlist is opened, no development
-      issue is created before it is merged, and the merge resumes the triage.
-- [ ] **Approval Scenario:** Given `hitl_during_triage: true` in cloud, when the result is
-      `ready_to_dev`, then the ticket gets `pending-approval` instead of `ready-to-dev`.
-- [ ] **Conversation Context Scenario:** Given an epic anchored on `Current Conversation History`,
-      when the triage runs, then the context is asked before the triage and never requested twice.
-- [ ] **Idempotence Scenario:** Given a retry after a failure, when the command runs again, then no
-      second ticket is created and no comment is processed twice.
-- [ ] **Error Scenario:** Given a layout divergence in non-interactive or cloud mode, when the
-      triage runs, then it exits with code 4 and describes the divergence.
-- [ ] **Error Scenario (state):** Given a `FACTORY_CONTEXT` with an invalid signature, when a
-      session is resumed, then the payload is rejected before any field is trusted.
-- [ ] **Nothing-to-do Scenario:** Given no eligible issue, when the triage runs, then it exits with
-      code 0 before any LLM call.
+- [ ] **AC-TRGE-02 — Eligibility Scenario:** Given an issue whose dependency ticket carries the
+      `brainstorming` label, when the selection runs, then the issue is not selected.
+- [ ] **AC-TRGE-03 — Brainstorm Scenario (manual):** Given `unclear_specification`, when the human
+      answers, then the answer is appended to `turns`, the triage call is repeated and the same
+      ticket is mutated on `ready_to_dev` (`brainstorming` removed, `size:<SIZE>` and `ready-to-dev`
+      set).
+- [ ] **AC-TRGE-04 — Brainstorm Scenario (auto, cloud):** Given `auto_brainstorm: true`, when the
+      advanced model resolves the ambiguity, then a pull request limited to the allowlist is opened,
+      no development issue is created before it is merged, and the merge resumes the triage.
+- [ ] **AC-TRGE-05 — Approval Scenario:** Given `hitl_during_triage: true` in cloud, when the result
+      is `ready_to_dev`, then the ticket gets `pending-approval` instead of `ready-to-dev`.
+- [ ] **AC-TRGE-06 — Conversation Context Scenario:** Given an epic anchored on
+      `Current Conversation History`, when the triage runs, then the context is asked before the
+      triage and never requested twice.
+- [ ] **AC-TRGE-07 — Idempotence Scenario:** Given a retry after a failure, when the command runs
+      again, then no second ticket is created and no comment is processed twice.
+- [ ] **AC-TRGE-08 — Error Scenario:** Given a layout divergence in non-interactive or cloud mode,
+      when the triage runs, then it exits with code 4 and describes the divergence.
+- [ ] **AC-TRGE-09 — Error Scenario (state):** Given a `FACTORY_CONTEXT` with an invalid signature,
+      when a session is resumed, then the payload is rejected before any field is trusted.
+- [ ] **AC-TRGE-10 — Nothing-to-do Scenario:** Given no eligible issue, when the triage runs, then
+      it exits with code 0 before any LLM call.
+- [ ] **AC-TRGE-11 — Anchor-tolerance Scenario:** Given a roadmap whose Epics carry the optional
+      anchor lines (`Revision`, `Base-Commit`, `Scope:`/`Delivered:`, `Decisions:`), when the triage
+      parses it, then the fields land in `SpecAnchor.revision`/`base_commit`/`scope`/`decisions` and
+      the triage behaviour (eligibility, dependency checks, context packing, write-back) is
+      unchanged; a roadmap without them parses identically (BR-TRGE-19).
+- [ ] **AC-TRGE-12 — Malformed-baseline Scenario:** Given a `Revision` that is not `sha256:<hex>`,
+      when the roadmap is parsed, then a warning is emitted, the value is treated as absent and the
+      triage does not fail (EC-TRGE-17).
 
 ### Test strategy
 
 - **Roadmap parser and write-back**: golden fixtures covering the four layouts, versioned and
-  unversioned, divergence, malformed lines, already-triaged lines and checked boxes. Fixtures reuse
-  the shapes in `tests/skills/smart-plan/assets/`.
+  unversioned, divergence, malformed lines, already-triaged lines, checked boxes and the optional
+  anchor lines — the `Revision`/`Base-Commit` baseline and the `Scope:`/`Delivered:`/`Decisions:`
+  annotations (present, absent, malformed). Fixtures reuse the shapes in
+  `tests/skills/smart-plan/assets/`.
 - **Engine**: fakes for all the ports; scenarios for `ready_to_dev`, one brainstorm loop (manual and
   auto), conversation-context anchor, approval `n`/`edit`, retry after failed write-back
   (idempotence marker), budget exhaustion.

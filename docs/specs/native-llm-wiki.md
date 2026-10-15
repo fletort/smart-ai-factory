@@ -1,7 +1,10 @@
 # Specifications: Native LLM Wiki Engine (ID: WIKI)
 
-> **State**: _Proposed specification_ (templates are available in `templates/docs/INDEX.md`,
-> `templates/src/README.md` and `templates/src/_module_/README.md`)
+> **State**: _Partially implemented_ (`bootstrap/docs/INDEX.md`) — **revision proposed**.
+> **Implemented:** BR-WIKI-06.
+>
+> **Not developed:** BR-WIKI-01 to BR-WIKI-05, BR-WIKI-07 to BR-WIKI-09, EC-WIKI-01 to EC-WIKI-04,
+> AC-WIKI-01 to AC-WIKI-05.
 
 ## 1. Context & Objectives
 
@@ -68,9 +71,9 @@
     `README.md`. It forms an impenetrable semantic boundary around that module.
   - **BR-WIKI-06 (Bootstrap):** bootstrap versions of the three documentation types are proposed by
     the installation process and can be personalised to the project
-    ([`docs/INDEX.md`](../../templates/docs/INDEX.md),
-    [`src/README.md`](../../templates/src/README.md),
-    [`src/_module_/README.md`](../../templates/src/_module_/README.md)).
+    ([`docs/INDEX.md`](../../bootstrap/docs/INDEX.md),
+    [`src/README.md`](../../bootstrap/src/README.md),
+    [`src/_module_/README.md`](../../bootstrap/src/_module_/README.md)).
   - **BR-WIKI-07 (Scaffolding loop):** when generating a new skill or DevOps script via the CLI, the
     framework automatically appends the entry row into `src/README.md` and provisions the local
     `README.md` skeleton, ensuring the repository's LLM Wiki compiles and remains intact.
@@ -270,17 +273,18 @@
 
 ## 4. Acceptance Criteria (QA)
 
-- [ ] **Nominal Scenario:** Given a repository with a router, `docs/INDEX.md`, `src/README.md` and
-      module code-wikis, when the triage receives a roadmap update, then it reads the router, the
-      two indexes and the matching module `README.md` only, and loads only the specified entrypoint
-      files.
-- [ ] **Scaffolding Scenario:** Given a new skill or DevOps script generated through the CLI, when
-      generation ends, then a row exists in `src/README.md` and a local `README.md` skeleton is
-      provisioned.
-- [ ] **Budget Ingestion Scenario:** Given a ticket dispatched to a development agent, when the
-      DevRouter builds the system instruction, then the local `src/_module_/README.md` is injected.
-- [ ] **Error Scenario:** Given a requirement missing from the wiki or conflicting with its
-      constraints, when the triage evaluates the ticket, then it is labelled 🛑 Level: BRAINSTORM
-      and the pipeline halts.
-- [ ] **Constraint Scenario:** Given a `CLAUDE.md` / `AGENTS.md` router, when it is validated, then
-      it contains strictly less than 50 lines.
+- [ ] **AC-WIKI-01 — Nominal Scenario:** Given a repository with a router, `docs/INDEX.md`,
+      `src/README.md` and module code-wikis, when the triage receives a roadmap update, then it
+      reads the router, the two indexes and the matching module `README.md` only, and loads only the
+      specified entrypoint files.
+- [ ] **AC-WIKI-02 — Scaffolding Scenario:** Given a new skill or DevOps script generated through
+      the CLI, when generation ends, then a row exists in `src/README.md` and a local `README.md`
+      skeleton is provisioned.
+- [ ] **AC-WIKI-03 — Budget Ingestion Scenario:** Given a ticket dispatched to a development agent,
+      when the DevRouter builds the system instruction, then the local `src/_module_/README.md` is
+      injected.
+- [ ] **AC-WIKI-04 — Error Scenario:** Given a requirement missing from the wiki or conflicting with
+      its constraints, when the triage evaluates the ticket, then it is labelled 🛑 Level:
+      BRAINSTORM and the pipeline halts.
+- [ ] **AC-WIKI-05 — Constraint Scenario:** Given a `CLAUDE.md` / `AGENTS.md` router, when it is
+      validated, then it contains strictly less than 50 lines.
