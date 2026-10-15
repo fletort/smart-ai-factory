@@ -259,8 +259,9 @@
        baseline is recorded **only as part of that confirmed merge**, never standalone, so a spec
        change since the legacy build resurfaces as work instead of being silently marked as planned;
     2. `H_now == Revision`: the delta is **empty**, traced explicitly as `up to date` for that Epic;
-       no issue is added or modified by this run. The specification hash also covers the cited ADRs
-       (BR-PLAN-19), so no separate ADR baseline is needed;
+       no issue is added or modified by this run. Substantive ADR changes require a new ADR
+       back-referenced by the specification (BR-ADR-04, BR-PLAN-19); that reference changes
+       the specification hash without hashing ADR contents separately;
     3. `H_now != Revision` (or the file is new): the delta since the last planning is determined —
        from the content at `Base-Commit` when it is reachable, otherwise by treating the **current
        content as the novelty** (fallback). The delta is then **classified** as **substantive** or
