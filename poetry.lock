@@ -18,18 +18,18 @@ toml = ["tomli ; python_version < \"3.11\""]
 
 [[package]]
 name = "lefthook"
-version = "2.1.16"
+version = "2.2.1"
 description = "Git hooks manager. Fast, powerful, simple."
 optional = false
 python-versions = ">=3.6"
 groups = ["dev"]
 files = [
-    {file = "lefthook-2.1.16-py3-none-macosx_10_15_x86_64.whl", hash = "sha256:15b9eefd27e0e75e1e32a4fc082dfe38b89e8b7baaec3f4dcdc464966d22b903"},
-    {file = "lefthook-2.1.16-py3-none-macosx_11_0_arm64.whl", hash = "sha256:54ba55d82a60ef2389da78ab59ad231e6ae93380a9982a8e94d85cee5707d68c"},
-    {file = "lefthook-2.1.16-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:0d744b4c282283d8d33f04a39f9d0fcb364343c2f1d9eb716a106d21e9013fe2"},
-    {file = "lefthook-2.1.16-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:6dcb06338830eadb9d4ae9d34b5e18cbb1655307401323d708002f0e2ebb2c57"},
-    {file = "lefthook-2.1.16-py3-none-win_amd64.whl", hash = "sha256:5c85a1be88a3dda928ccb80c70536ecc997a1707421ad7d4e8d7520c75a423bf"},
-    {file = "lefthook-2.1.16-py3-none-win_arm64.whl", hash = "sha256:ee2b72bf44649b514aec8773ad8bbe981a804682a561356fd65054e0a5d56b5f"},
+    {file = "lefthook-2.2.1-py3-none-macosx_10_15_x86_64.whl", hash = "sha256:6bdbe7fb9fed406b4d621e770cdde2e603219ac4590cd10e57d29bfdcb02f9d9"},
+    {file = "lefthook-2.2.1-py3-none-macosx_11_0_arm64.whl", hash = "sha256:dd514fc007293320c1e3593db6243f8005fdaef9cdcef780be120b36cb5b0088"},
+    {file = "lefthook-2.2.1-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:7444926a70d0663bbfa76f175b11c4b036cf7ea871073ac54fc27709e31dcfd3"},
+    {file = "lefthook-2.2.1-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:f129824e8abe1c6ef3012b2073254bf1a3f6b432d636862c5bd83c0a4621716e"},
+    {file = "lefthook-2.2.1-py3-none-win_amd64.whl", hash = "sha256:76e81237789b6eee4e865f28942b9e56719dedf3f9487acb4bb0066329426e3a"},
+    {file = "lefthook-2.2.1-py3-none-win_arm64.whl", hash = "sha256:ff7e5952b3a9fd10c67362ff031f4e5dc37ae7c01808d0485e97db784cb13e7d"},
 ]
 
 [[package]]
@@ -84,4 +84,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11"
-content-hash = "eebd9a5caa1147b8833a78e74bf815d3d72186d9da8d43d7f56505f11dc1472d"
+content-hash = "1aa463cc081e890662ea5b8a2a63ce12038ffb72bdbd221750cb87a72b16e748"
