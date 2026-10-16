@@ -31,11 +31,11 @@ subtler fact: specifications are also corrected for **typography and form**, cha
 ### Option 1: Versioned snapshots, append-only (chosen)
 
 At each successful ingestion, copy the consumed specification verbatim to
-`<snapshot_dir>/<FEAT_ID>.vNN.md` and record `last_consumed` in a lock file; the delta is
-`diff(live spec, last_consumed snapshot)`. Each snapshot also stores a short **content hash**
-computed over the specification **excluding its delivery-status header** (BR-SPEC-25), because that
-header is recomputed at every revision and changes at Epic closure. Snapshots are **append-only**:
-the only rewrite allowed is a reviewed, audited form-only amendment (BR-PLAN-24).
+`<snapshot_dir>/<FEAT_ID>.vNN.md` and record `last_consumed` and the short content hash in a lock
+file; the delta is `diff(live spec, last_consumed snapshot)`. The lock stores the hash computed over
+the specification **excluding its delivery-status header** (BR-SPEC-25), because that header is
+recomputed at every revision and changes at Epic closure. Snapshots are **append-only**: the only
+rewrite allowed is a reviewed, audited form-only amendment (BR-PLAN-24).
 
 **Pros:**
 
@@ -110,7 +110,9 @@ is written to the snapshot.
 
 **We choose Option 1**, backed by Option 2 as a fast path:
 
-1. The snapshot is the **source of truth** for "what was already consumed" (never Git history).
+1. The snapshot is the **source of truth** for "what was already consumed" (never Git history). The
+   subsystem applies to **File-Mode anchors only**: a Context-Mode entry has no specification file,
+   so it carries no snapshot and no version pin.
 2. Identifier tracing remains the cheap fast path for additions/removals, while the content diff is
    authoritative for modifications (BR-PLAN-18).
 3. The short hash is an **internal** integrity stamp, not the identity of the version; it excludes
@@ -129,7 +131,8 @@ is written to the snapshot.
 ### Positive
 
 - Re-running `/smart-plan` on a revised specification is a precise, idempotent delta application.
-- In-flight Epics are protected by an **immutable per-Epic version pin** (BR-PLAN-16).
+- Started Epics are protected by an **immutable per-Epic version pin** (a not-started `Todo` Epic
+  may be re-pinned on an in-place update; BR-PLAN-16).
 - The behaviour is invariant to the merge strategy (squash, rebase or merge).
 
 ### Negative
