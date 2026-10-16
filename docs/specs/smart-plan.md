@@ -2,8 +2,8 @@
 
 > **State**: _Partially implemented_ (`smart-plan` skill in `.agents/skills/smart-plan/`) —
 > **revision proposed**. **Implemented:** BR-PLAN-01 to BR-PLAN-13, EC-PLAN-01 to EC-PLAN-06,
-> AC-PLAN-01 to AC-PLAN-06. **Not developed:** BR-PLAN-14 to BR-PLAN-25, EC-PLAN-07 to EC-PLAN-14,
-> AC-PLAN-07 to AC-PLAN-19 (delta-aware ingestion for File-Mode anchors: versioned snapshots,
+> AC-PLAN-01 to AC-PLAN-06. **Not developed:** BR-PLAN-14 to BR-PLAN-26, EC-PLAN-07 to EC-PLAN-14,
+> AC-PLAN-07 to AC-PLAN-21 (delta-aware ingestion for File-Mode anchors: versioned snapshots,
 > per-Epic version pin, delta classification, idempotence, reviewed form-only amendment, Epic-state
 > routing and negative-delta handling); the runtime prompt is updated by a downstream implementation
 > task.
@@ -147,7 +147,7 @@
     Global Vision and the Epic Purpose are checked and updated if the new specification alters the
     project's macro direction.
   - **BR-PLAN-14 (Snapshot subsystem scope, immutability & version increment):** the snapshot/delta
-    subsystem (BR-PLAN-14 to BR-PLAN-25) applies to **File Mode anchors only**
+    subsystem (BR-PLAN-14 to BR-PLAN-26) applies to **File Mode anchors only**
     (`Source Type: File`); a Context Mode entry has no specification file and carries no
     `Spec Version` (BR-PLAN-02). For a File anchor, on every successful ingestion the consumed
     specification is copied verbatim into the snapshot directory as `<FEAT_ID>.vNN.md`, where `NN`
@@ -160,11 +160,15 @@
     (BR-SPEC-25): a change of that header's structure invalidates the hash stability, and conversely
     the exclusion rule defined here constrains any change of the header. -->
 
-  - **BR-PLAN-15 (Spec-version hash — delivery-status header excluded):** each consumed version has
-    a **short content hash** recorded in `specs.lock`, computed over the specification content
-    **excluding its delivery-status header** (see [Smart-Spec](./smart-spec.md) BR-SPEC-25). The
-    header is recomputed at every revision and changes at Epic closure, so including it would make
-    the hash unstable. The hash is an **integrity stamp**, not the version identity.
+  - **BR-PLAN-15 (Spec-version hash — algorithm & canonicalization):** each consumed version records
+    a **short content hash** in `specs.lock`, computed as `sha256(canonical bytes)[:12]`: SHA-256,
+    hex-encoded lowercase, truncated to the first **12 characters** (48 bits — an accidental-drift
+    stamp, not a security control). The **canonical bytes** are the snapshot decoded as UTF-8 with
+    line endings normalised to `\n` (CRLF → LF), with the **delivery-status header block removed**
+    (the leading maximal run of `>` lines defined by [Smart-Spec](./smart-spec.md) BR-SPEC-25, plus
+    the single blank line that follows it). **No other normalisation** is applied — body whitespace
+    and trailing spaces are hashed verbatim, so a form-only edit still registers as a delta
+    (BR-PLAN-24). The hash is an **integrity stamp**, not the version identity.
 
     <!-- ⚠️ DEPENDENCY ALERT: outgoing ./triage-engine.md#roadmap-discovery--parsing -->
     <!-- Adding the `Spec Version` field to the Epic Spec Anchors (BR-PLAN-16) changes the roadmap
@@ -193,13 +197,13 @@
   - **BR-PLAN-20 (Epic-state routing matrix):** for each consumed `FEAT_ID` carrying a delta, the
     skill routes on the state of the existing Epic:
 
-    | Existing Epic state  | Delta                  | Action                                                                                                                        |
-    | :------------------- | :--------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
-    | absent               | any                    | Create a new Epic (pin the new version).                                                                                      |
-    | not started (`Todo`) | any                    | Update the Epic and its issues **in place**, **advance the pin** to the new version (BR-PLAN-16) and add the missing issues.  |
-    | in progress          | additive only          | Create an `[ADDON]` Epic for the delta (BR-PLAN-21).                                                                          |
-    | in progress          | modification / removal | Set the Epic `[Blocked / To Review]`, raise a conflict alert (BR-PLAN-07) and create a rerouting issue, **before** any write. |
-    | done                 | any                    | Create a successor Epic.                                                                                                      |
+    | Existing Epic state  | Delta                  | Action                                                                                                                                                                                        |
+    | :------------------- | :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    | absent               | any                    | Create a new Epic (pin the new version).                                                                                                                                                      |
+    | not started (`Todo`) | any                    | Update the Epic and its issues **in place**, **advance the pin** to the new version (BR-PLAN-16) and add the missing issues.                                                                  |
+    | in progress          | additive only          | Create an `[ADDON]` Epic for the delta (BR-PLAN-21); if the owner is itself an `[ADDON]`, apply in place (BR-PLAN-26).                                                                        |
+    | in progress          | modification / removal | Set the Epic `[Blocked / To Review]`, raise a conflict alert (BR-PLAN-07) and create a rerouting issue; surfaced in the confirmation diff (BR-PLAN-09) and committed atomically (BR-PLAN-23). |
+    | done                 | any                    | Create a successor Epic.                                                                                                                                                                      |
 
   - **BR-PLAN-21 (Addon placement — ask, default child):** when an additive delta lands on an
     in-progress Epic, the skill **asks** whether the `[ADDON]` Epic is a **child** of the
@@ -215,17 +219,25 @@
     delta is **form-only** (typography, whitespace, or a rewording that changes no requirement), the
     skill does **not** create a new version: it **amends the snapshot in place**, keeping the same
     `vNN` and therefore the same roadmap reference (BR-PLAN-16). The amendment is (1)
-    **reviewer-gated** — an LLM proposes `form_only` and, by default, a human confirms; the skill
-    never decides alone (BR-PLAN-25); (2) **explicit**, never an automatic side effect; and (3)
-    **audited**: an append-only entry `{version, previous_hash, new_hash, verdict, author, date}` is
-    appended to `specs.lock` and the stored hash is recomputed. A substantive diff — or a merely
-    **uncertain** verdict — takes the normal path (new version, BR-PLAN-18/20).
+    **reviewer-gated** — an LLM proposes `form_only`; by default a human confirms (`propose`) and
+    the human step may be **explicitly** waived under `auto` (BR-PLAN-25); the skill never amends
+    **without a reviewer verdict**; (2) **explicit**, never an automatic side effect; and (3)
+    **audited**: an append-only entry
+    `{feat_id, version, previous_hash, new_hash, verdict, author, date}` is appended to `specs.lock`
+    and the stored hash is recomputed. A substantive diff — or a merely **uncertain** verdict —
+    takes the normal path (new version, BR-PLAN-18/20).
   - **BR-PLAN-25 (Amendment review policy):** the reviewer behaviour is set by
     `snapshots.form_only_amendment`: `propose` (default — the LLM proposes and a human confirms:
     interactive prompt locally, approval step in cloud, consistent with the triage
     `pending-approval` pattern), `auto` (the LLM verdict is applied without human confirmation), or
     `off` (exception disabled — every delta, even form-only, creates a new version). When no
     reviewer is available or the verdict is uncertain, the fail-safe is **substantive**.
+  - **BR-PLAN-26 (Pointer ownership — single routing target):** each `FEAT_ID` has **one owner
+    Epic**: the **most recently created non-terminal (not Done) Epic** carrying that `FEAT_ID`,
+    excluding decommissioning Epics. BR-PLAN-20 always routes on the **owner's** state, never on an
+    arbitrary Epic sharing the pointer. Creating an Epic for the `FEAT_ID` (successor or `[ADDON]`)
+    transfers ownership to it. An `[ADDON]` **never receives an addon**: an additive delta landing
+    on an open addon owner is applied **in place** (issues appended), so addons never nest.
 
 - **User Stories:**
   - _As a_ developer, _I want to_ turn a validated specification into a roadmap of high-level issues
@@ -317,9 +329,9 @@
       `<snapshot_dir>/<FEAT_ID>.vNN.md` — rewritable **only** by a reviewed, audited form-only
       amendment (BR-PLAN-24) — plus a lock `<snapshot_dir>/specs.lock` recording `last_consumed`
       (`{ <FEAT_ID>: { version, hash } }`) and an append-only `amendments` audit trail
-      (`{ version, previous_hash, new_hash, verdict, author, date }`). The default `snapshot_dir`
-      follows the resolved roadmap location. Each Epic's Spec Anchors carry `Spec Version: vNN`; the
-      hash stays in the lock, never in the roadmap.
+      (`{ feat_id, version, previous_hash, new_hash, verdict, author, date }`). The default
+      `snapshot_dir` follows the resolved roadmap location. Each Epic's Spec Anchors carry
+      `Spec Version: vNN`; the hash stays in the lock, never in the roadmap.
   - **Database Updates (ERD if needed):** none. The roadmap format is the contract with the triage:
 
     Single-file layout (`roadmap.md`):
@@ -400,16 +412,16 @@
   - **EC-PLAN-08 (Snapshot lock missing or corrupt):** `last_consumed` is reconstructed from the
     highest existing snapshot version; if it cannot be determined, the user is asked — the workspace
     is never scanned (BR-PLAN-05).
-  - **EC-PLAN-09 (Recursive addon):** when an `[ADDON]` Epic itself receives a new delta, the matrix
-    of BR-PLAN-20 applies again; the skill asks before stacking another level (BR-PLAN-21) and never
-    silently deepens the nesting.
+  - **EC-PLAN-09 (Addon receives a further delta):** when the owner is an `[ADDON]` and receives
+    another additive delta, no second addon is created: the new issues are applied **in place** on
+    that addon (BR-PLAN-26). A modification/removal delta still routes normally (BR-PLAN-20).
   - **EC-PLAN-10 (Delivery-status header changed alone):** because the header is excluded from the
     hash (BR-PLAN-15), an Epic-closure update of the header produces **no** delta and the run is a
     traced no-op (BR-PLAN-19).
   - **EC-PLAN-11 (Snapshot tampering — hash mismatch):** when the recorded hash of the
     `last_consumed` snapshot no longer matches its content **and no matching `amendments` entry
-    exists in `specs.lock`**, the integrity stamp fails: the divergence is reported and the user is
-    asked; no delta is applied on a doubtful base.
+    (same `feat_id` and `version`) exists in `specs.lock`**, the integrity stamp fails: the
+    divergence is reported and the user is asked; no delta is applied on a doubtful base.
   - **EC-PLAN-12 (Diff judged substantive):** when the reviewer classifies the delta as substantive,
     no amendment is allowed: the normal path applies (new `vNN+1`, BR-PLAN-18/20).
   - **EC-PLAN-13 (No reviewer / uncertain verdict):** when no reviewer can classify the delta, or
@@ -455,8 +467,8 @@
       rebase, when the delta is computed, then it is identical to a non-squashed merge (BR-PLAN-17).
 - [ ] **AC-PLAN-12 — In-progress conflict Scenario:** Given a modification of a rule under
       construction in an in-progress Epic, when the delta is applied, then the Epic is set
-      `[Blocked / To Review]`, an alert is raised and a rerouting issue is created before any write
-      (BR-PLAN-20).
+      `[Blocked / To Review]`, an alert is raised and a rerouting issue is included in the
+      confirmation diff, all committed atomically (BR-PLAN-20, BR-PLAN-23).
 - [ ] **AC-PLAN-13 — Snapshot atomicity Scenario:** Given a run where **any** participant write
       fails (the roadmap, the snapshot, or the `specs.lock` update), when the run ends, then
       **none** is advanced — the snapshot, `last_consumed` and the roadmap are left unchanged
@@ -480,3 +492,10 @@
 - [ ] **AC-PLAN-19 — Amendment atomicity Scenario:** Given a reviewed form-only amendment whose
       write fails midway, when the run ends, then the snapshot content, the stored hash and the
       `amendments` audit trail are all unchanged, as one transaction (BR-PLAN-23, BR-PLAN-24).
+- [ ] **AC-PLAN-20 — Hash canonicalization Scenario:** Given the same snapshot content on an LF and
+      a CRLF checkout, when the content hash is computed, then both yield the identical recorded
+      hash (BR-PLAN-15).
+- [ ] **AC-PLAN-21 — Pointer ownership Scenario:** Given several open Epics sharing a `FEAT_ID`
+      (root + `[ADDON]`), when a new delta is routed, then it targets the newest non-terminal owner,
+      and an additive delta on an open addon is applied in place without nesting a new addon
+      (BR-PLAN-26).
