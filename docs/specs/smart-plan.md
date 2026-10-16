@@ -418,10 +418,11 @@
   - **EC-PLAN-10 (Delivery-status header changed alone):** because the header is excluded from the
     hash (BR-PLAN-15), an Epic-closure update of the header produces **no** delta and the run is a
     traced no-op (BR-PLAN-19).
-  - **EC-PLAN-11 (Snapshot tampering — hash mismatch):** when the recorded hash of the
-    `last_consumed` snapshot no longer matches its content **and no matching `amendments` entry
-    (same `feat_id` and `version`) exists in `specs.lock`**, the integrity stamp fails: the
-    divergence is reported and the user is asked; no delta is applied on a doubtful base.
+  - **EC-PLAN-11 (Snapshot tampering — hash mismatch):** when the computed hash of the
+    `last_consumed` snapshot does not match the recorded `last_consumed.hash`, the integrity
+    stamp fails regardless of whether an `amendments` entry exists; any amendment's `new_hash`
+    must itself match the current stored hash. The divergence is reported and the user is asked; no
+    delta is applied on a doubtful base.
   - **EC-PLAN-12 (Diff judged substantive):** when the reviewer classifies the delta as substantive,
     no amendment is allowed: the normal path applies (new `vNN+1`, BR-PLAN-18/20).
   - **EC-PLAN-13 (No reviewer / uncertain verdict):** when no reviewer can classify the delta, or
