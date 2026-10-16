@@ -165,8 +165,8 @@
     hex-encoded lowercase, truncated to the first **12 characters** (48 bits — an accidental-drift
     stamp, not a security control). The **canonical bytes** are the snapshot decoded as UTF-8 with
     line endings normalised to `\n` (CRLF → LF), with the **delivery-status header block removed**
-    (the leading maximal run of `>` lines defined by [Smart-Spec](./smart-spec.md) BR-SPEC-25, plus
-    the single blank line that follows it). **No other normalisation** is applied — body whitespace
+    (the contiguous blockquote beginning with `> **State**:` and continuing through the BR-SPEC-25
+    header fields, plus the single blank line that follows it). **No other normalisation** is applied — body whitespace
     and trailing spaces are hashed verbatim, so a form-only edit still registers as a delta
     (BR-PLAN-24). The hash is an **integrity stamp**, not the version identity.
 
