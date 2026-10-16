@@ -2,8 +2,8 @@
 
 > **State**: _Partially implemented_ (`smart-plan` skill in `.agents/skills/smart-plan/`) —
 > **revision proposed**. **Implemented:** BR-PLAN-01 to BR-PLAN-13, EC-PLAN-01 to EC-PLAN-06,
-> AC-PLAN-01 to AC-PLAN-06. **Not developed:** BR-PLAN-14 to BR-PLAN-28, EC-PLAN-07 to EC-PLAN-14,
-> AC-PLAN-07 to AC-PLAN-23 (delta-aware ingestion for File-Mode anchors: versioned snapshots,
+> AC-PLAN-01 to AC-PLAN-06. **Not developed:** BR-PLAN-14 to BR-PLAN-28, EC-PLAN-07 to EC-PLAN-15,
+> AC-PLAN-07 to AC-PLAN-24 (delta-aware ingestion for File-Mode anchors: versioned snapshots,
 > per-Epic version pin, delta classification, idempotence, reviewed form-only amendment, Epic-state
 > routing and negative-delta handling); the runtime prompt is updated by a downstream implementation
 > task.
@@ -197,13 +197,14 @@
   - **BR-PLAN-20 (Epic-state routing matrix):** for each consumed `FEAT_ID` carrying a delta, the
     skill routes on the state of the existing Epic:
 
-    | Existing Epic state  | Delta                  | Action                                                                                                                                                                                        |
-    | :------------------- | :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-    | absent               | any                    | Create a new Epic (pin the new version).                                                                                                                                                      |
-    | not started (`Todo`) | any                    | Update the Epic and its issues **in place**, **advance the pin** to the new version (BR-PLAN-16) and add the missing issues.                                                                  |
-    | in progress          | additive only          | Create an `[ADDON]` Epic for the delta (BR-PLAN-21); if the owner is itself an `[ADDON]`, apply in place (BR-PLAN-26).                                                                        |
-    | in progress          | modification / removal | Set the Epic `[Blocked / To Review]`, raise a conflict alert (BR-PLAN-07) and create a rerouting issue; surfaced in the confirmation diff (BR-PLAN-09) and committed atomically (BR-PLAN-23). |
-    | done                 | any                    | Create a successor Epic.                                                                                                                                                                      |
+    | Existing Epic state   | Delta                  | Action                                                                                                                                                                                        |
+    | :-------------------- | :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    | absent                | any                    | Create a new Epic (pin the new version).                                                                                                                                                      |
+    | not started (`Todo`)  | any                    | Update the Epic and its issues **in place**, **advance the pin** to the new version (BR-PLAN-16) and add the missing issues.                                                                  |
+    | in progress           | additive only          | Create an `[ADDON]` Epic for the delta (BR-PLAN-21); if the owner is itself an `[ADDON]`, apply in place (BR-PLAN-26).                                                                        |
+    | in progress           | modification / removal | Set the Epic `[Blocked / To Review]`, raise a conflict alert (BR-PLAN-07) and create a rerouting issue; surfaced in the confirmation diff (BR-PLAN-09) and committed atomically (BR-PLAN-23). |
+    | `Blocked / To Review` | any                    | **Frozen** (BR-PLAN-27): no routing action is applied and the delta is **not** consumed (no snapshot advance); re-raise the conflict alert and ask the user to clear the block first.         |
+    | done                  | any                    | Create a successor Epic.                                                                                                                                                                      |
 
   - **BR-PLAN-21 (Addon placement — ask, default child):** when an additive delta lands on an
     in-progress Epic, the skill **asks** whether the `[ADDON]` Epic is a **child** of the
@@ -238,21 +239,23 @@
     arbitrary Epic sharing the pointer. Creating an Epic for the `FEAT_ID` (successor or `[ADDON]`)
     transfers ownership to it. An `[ADDON]` **never receives an addon**: an additive delta landing
     on an open addon owner is applied **in place** (issues appended), so addons never nest.
+
    <!-- ⚠️ DEPENDENCY ALERT: outgoing ./triage-engine.md#roadmap-discovery--parsing -->
    <!-- The optional `📊 Status` line is a new Epic-level field; the triage parser must tolerate it
    as unknown metadata (it carries no ticket-routing semantics). -->
-   - **BR-PLAN-27 (Epic state — derivation & syntax):** the Epic state consumed by BR-PLAN-20 is
-     resolved deterministically, in this precedence order:
-     1. **Explicit override** — if the Epic carries the optional line
-        `- **📊 Status:** Blocked / To Review`, its state is `Blocked / To Review`. This is the
-        **only** state not derivable from the issues; the skill writes it (BR-PLAN-20) and clears it
-        on a later run once the conflict is resolved.
-     2. **Derived from the Target Issues List** — over the Epic's own issue checkboxes: no issue
-        checked ⇒ `Todo`; every issue checked (Epic with at least one issue) ⇒ `Done`; some but not
-        all checked ⇒ `In Progress`; an Epic with no issue ⇒ `Todo`. The skill never rewrites the
-        derived states, so the mapping is identical across implementations; a roadmap without the
-        `Status` line simply follows step 2 (never `Blocked` until the skill writes it).
-
+  - **BR-PLAN-27 (Epic state — derivation & syntax):** the Epic state consumed by BR-PLAN-20 is
+    resolved deterministically, in this precedence order:
+    1. **Explicit override** — if the Epic carries the optional line
+       `- **📊 Status:** Blocked / To Review`, its state is `Blocked / To Review`. This is the
+       **only** state not derivable from the issues: the skill **writes** it when the conflict is
+       detected (BR-PLAN-20) and the **human clears it** once the conflict is reviewed
+       (user-managed, like the checkboxes, BR-PLAN-13). While it is present the Epic is **not a
+       routing target** — BR-PLAN-20 freezes its `FEAT_ID`.
+    2. **Derived from the Target Issues List** — over the Epic's own issue checkboxes: no issue
+       checked ⇒ `Todo`; every issue checked (Epic with at least one issue) ⇒ `Done`; some but not
+       all checked ⇒ `In Progress`; an Epic with no issue ⇒ `Todo`. The skill never rewrites the
+       derived states, so the mapping is identical across implementations; a roadmap without the
+       `Status` line simply follows step 2 (never `Blocked` until the skill writes it).
 
   - **BR-PLAN-28 (Snapshot store — location & sharing):** `<snapshot_dir>` defaults to
     `<roadmap_root>/.snapshots/`, where `<roadmap_root>` is the roadmap's directory **without** its
@@ -460,6 +463,10 @@
   - **EC-PLAN-14 (Amendment then re-run):** after a reviewed form-only amendment, the snapshot
     content and the recorded hash agree, so the next run is a traced no-op (BR-PLAN-19); the same
     cosmetic diff is never re-detected.
+  - **EC-PLAN-15 (Delta while the owner is blocked):** when a `FEAT_ID`'s owner carries
+    `Blocked / To Review` (BR-PLAN-27), the incoming delta is **not** applied and its snapshot is
+    **not** advanced; the skill reports it and asks the user to clear the block first. The other
+    `FEAT_ID`s of the run proceed normally.
 
 ## 4. Acceptance Criteria (QA)
 
@@ -537,3 +544,7 @@
       `v0.1` to `v0.2`, when `/smart-plan` runs on an already-consumed specification, then the
       shared `<roadmap_root>/.snapshots/` lock is reused and the run is a delta, never a fresh `v01`
       ingestion (BR-PLAN-28).
+- [ ] **AC-PLAN-24 — Blocked routing Scenario:** Given a delta on a `FEAT_ID` whose owner carries
+      `Blocked / To Review`, when `/smart-plan` is run, then no routing action is applied, the
+      snapshot is not advanced, and the user is asked to clear the block first (BR-PLAN-20,
+      BR-PLAN-27).
