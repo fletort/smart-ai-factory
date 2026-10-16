@@ -32,6 +32,9 @@
     detailing belongs to the Triage phase.
   - Ticket creation on GitHub and size estimation (Phase 2).
   - Modifying the user-managed checkboxes of the roadmap.
+  - Cross-file crash-safety of the snapshot publication: BR-PLAN-23 guarantees an all-or-nothing
+    outcome for **observably failed** writes only, not recovery from a process crash or power loss
+    between file replacements (no durable journal is maintained).
 
 ## 2. Functional & UX Specifications (What)
 
