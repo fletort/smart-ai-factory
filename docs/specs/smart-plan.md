@@ -238,21 +238,21 @@
     arbitrary Epic sharing the pointer. Creating an Epic for the `FEAT_ID` (successor or `[ADDON]`)
     transfers ownership to it. An `[ADDON]` **never receives an addon**: an additive delta landing
     on an open addon owner is applied **in place** (issues appended), so addons never nest.
-  - **BR-PLAN-27 (Epic state — derivation & syntax):** the Epic state consumed by BR-PLAN-20 is
-    resolved deterministically, in this precedence order:
-    1. **Explicit override** — if the Epic carries the optional line
-       `- **📊 Status:** Blocked / To Review`, its state is `Blocked / To Review`. This is the
-       **only** state not derivable from the issues; the skill writes it (BR-PLAN-20) and clears it
-       on a later run once the conflict is resolved.
-    2. **Derived from the Target Issues List** — over the Epic's own issue checkboxes: no issue
-       checked ⇒ `Todo`; every issue checked (Epic with at least one issue) ⇒ `Done`; some but not
-       all checked ⇒ `In Progress`; an Epic with no issue ⇒ `Todo`. The skill never rewrites the
-       derived states, so the mapping is identical across implementations; a roadmap without the
-       `Status` line simply follows step 2 (never `Blocked` until the skill writes it).
+   <!-- ⚠️ DEPENDENCY ALERT: outgoing ./triage-engine.md#roadmap-discovery--parsing -->
+   <!-- The optional `📊 Status` line is a new Epic-level field; the triage parser must tolerate it
+   as unknown metadata (it carries no ticket-routing semantics). -->
+   - **BR-PLAN-27 (Epic state — derivation & syntax):** the Epic state consumed by BR-PLAN-20 is
+     resolved deterministically, in this precedence order:
+     1. **Explicit override** — if the Epic carries the optional line
+        `- **📊 Status:** Blocked / To Review`, its state is `Blocked / To Review`. This is the
+        **only** state not derivable from the issues; the skill writes it (BR-PLAN-20) and clears it
+        on a later run once the conflict is resolved.
+     2. **Derived from the Target Issues List** — over the Epic's own issue checkboxes: no issue
+        checked ⇒ `Todo`; every issue checked (Epic with at least one issue) ⇒ `Done`; some but not
+        all checked ⇒ `In Progress`; an Epic with no issue ⇒ `Todo`. The skill never rewrites the
+        derived states, so the mapping is identical across implementations; a roadmap without the
+        `Status` line simply follows step 2 (never `Blocked` until the skill writes it).
 
-    <!-- ⚠️ DEPENDENCY ALERT: outgoing ./triage-engine.md#roadmap-discovery--parsing -->
-    <!-- The optional `📊 Status` line is a new Epic-level field; the triage parser must tolerate it
-    as unknown metadata (it carries no ticket-routing semantics). -->
 
   - **BR-PLAN-28 (Snapshot store — location & sharing):** `<snapshot_dir>` defaults to
     `<roadmap_root>/.snapshots/`, where `<roadmap_root>` is the roadmap's directory **without** its
