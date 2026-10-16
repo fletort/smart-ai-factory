@@ -140,8 +140,9 @@ is written to the snapshot.
 ### Negative
 
 - Repository size grows with the number of consumed specification versions.
-- A snapshot directory and a lock file (`specs.lock`) must be maintained atomically with the roadmap
-  write (BR-PLAN-23).
+- A snapshot directory and a lock file (`specs.lock`) must be published together with the roadmap
+  write; this is **best-effort** (no cross-file crash journal), the `last_consumed` entry acting as
+  the single commit marker (BR-PLAN-23).
 - Immutability is relaxed: a reviewed form-only amendment rewrites a snapshot in place. Mitigated by
   the reviewer gate, the explicit opt-in and the append-only audit trail (BR-PLAN-24); the previous
   content stays recoverable from Git.

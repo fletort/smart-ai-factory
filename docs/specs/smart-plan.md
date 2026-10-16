@@ -3,7 +3,7 @@
 > **State**: _Partially implemented_ (`smart-plan` skill in `.agents/skills/smart-plan/`) —
 > **revision proposed**. **Implemented:** BR-PLAN-01 to BR-PLAN-13, EC-PLAN-01 to EC-PLAN-06,
 > AC-PLAN-01 to AC-PLAN-06. **Not developed:** BR-PLAN-14 to BR-PLAN-28, EC-PLAN-07 to EC-PLAN-15,
-> AC-PLAN-07 to AC-PLAN-24 (delta-aware ingestion for File-Mode anchors: versioned snapshots,
+> AC-PLAN-07 to AC-PLAN-25 (delta-aware ingestion for File-Mode anchors: versioned snapshots,
 > per-Epic version pin, delta classification, idempotence, reviewed form-only amendment, Epic-state
 > routing and negative-delta handling); the runtime prompt is updated by a downstream implementation
 > task.
@@ -215,10 +215,13 @@
   - **BR-PLAN-22 (Negative delta — decommissioning):** a removal delta always raises an alert; based
     on the case analysis the skill **may propose a decommissioning Epic** for the removed scope
     (user decision). Removed issues follow BR-PLAN-07 (`<!-- [DELETED] -->`, no identifier shift).
-  - **BR-PLAN-23 (Snapshot publication atomicity):** the new snapshot, the `last_consumed` update,
-    and the roadmap write are committed as one all-or-nothing transaction (stage all files and roll
-    back on any failure); if any participant fails, none is advanced. A reviewed amendment
-    (BR-PLAN-24) uses the same transaction.
+  - **BR-PLAN-23 (Snapshot publication — commit marker & rollback):** the new snapshot, the roadmap
+    write and the `last_consumed` update are staged and published together, rolling back on any
+    write that **fails observably**. This is **best-effort, not a cross-file crash journal**: the
+    `last_consumed` entry is published **last** and acts as the **single commit marker** — a
+    snapshot not referenced by it (left by an interrupted run) is an **uncommitted orphan**,
+    discarded and overwritten on the next run, never treated as consumed (EC-PLAN-08). A reviewed
+    amendment (BR-PLAN-24) follows the same rule.
   - **BR-PLAN-24 (Reviewed form-only amendment):** by **narrow exception to BR-PLAN-14**, when the
     delta is **form-only** (typography, whitespace, or a rewording that changes no requirement), the
     skill does **not** create a new version: it **amends the snapshot in place**, keeping the same
@@ -444,9 +447,10 @@
     `yes`; adjustments can be specified instead.
   - **EC-PLAN-07 (First run — no snapshot):** with no prior snapshot for the `FEAT_ID`, the whole
     specification is treated as new; no delta conflict is reported and the first snapshot is `v01`.
-  - **EC-PLAN-08 (Snapshot lock missing or corrupt):** `last_consumed` is reconstructed from the
-    highest existing snapshot version; if it cannot be determined, the user is asked — the workspace
-    is never scanned (BR-PLAN-05).
+  - **EC-PLAN-08 (Snapshot lock missing or corrupt):** only the **lock** defines the consumed base —
+    a snapshot **newer** than `last_consumed` (an uncommitted orphan, BR-PLAN-23) is discarded,
+    never adopted. If the lock is entirely absent, the highest snapshot version is offered as the
+    base but the user is asked to confirm it; the workspace is never scanned (BR-PLAN-05).
   - **EC-PLAN-09 (Addon receives a further delta):** when the owner is an `[ADDON]` and receives
     another additive delta, no second addon is created: the new issues are applied **in place** on
     that addon (BR-PLAN-26). A modification/removal delta still routes normally (BR-PLAN-20).
@@ -510,10 +514,10 @@
       construction in an in-progress Epic, when the delta is applied, then the Epic is set
       `[Blocked / To Review]`, an alert is raised and a rerouting issue is included in the
       confirmation diff, all committed atomically (BR-PLAN-20, BR-PLAN-23).
-- [ ] **AC-PLAN-13 — Snapshot atomicity Scenario:** Given a run where **any** participant write
-      fails (the roadmap, the snapshot, or the `specs.lock` update), when the run ends, then
-      **none** is advanced — the snapshot, `last_consumed` and the roadmap are left unchanged
-      (BR-PLAN-23).
+- [ ] **AC-PLAN-13 — Snapshot write-failure Scenario:** Given a run where **any** participant write
+      **fails observably** (returns an error — the roadmap, the snapshot, or the `specs.lock`
+      update), when the run ends, then **none** is advanced: the staged files are rolled back and
+      the snapshot, `last_consumed` and the roadmap are left unchanged (BR-PLAN-23).
 - [ ] **AC-PLAN-14 — Addon question Scenario:** Given an additive delta on an in-progress Epic, when
       the `[ADDON]` Epic is planned, then the skill asks child or sibling (default child) and waits
       for the answer (BR-PLAN-21).
@@ -530,9 +534,9 @@
 - [ ] **AC-PLAN-18 — Todo re-pin Scenario:** Given a `Todo` Epic updated in place by a newer delta,
       when the update is applied, then the Epic pin advances to the new `vNN` and the newly added
       issues inherit it (BR-PLAN-16, BR-PLAN-20).
-- [ ] **AC-PLAN-19 — Amendment atomicity Scenario:** Given a reviewed form-only amendment whose
-      write fails midway, when the run ends, then the snapshot content, the stored hash and the
-      `amendments` audit trail are all unchanged, as one transaction (BR-PLAN-23, BR-PLAN-24).
+- [ ] **AC-PLAN-19 — Amendment write-failure Scenario:** Given a reviewed form-only amendment whose
+      write **fails observably**, when the run ends, then the snapshot content, the stored hash and
+      the `amendments` audit trail are all rolled back — none is advanced (BR-PLAN-23, BR-PLAN-24).
 - [ ] **AC-PLAN-20 — Hash canonicalization Scenario:** Given the same snapshot content on an LF and
       a CRLF checkout, when the content hash is computed, then both yield the identical recorded
       hash (BR-PLAN-15).
@@ -552,3 +556,7 @@
       `Blocked / To Review`, when `/smart-plan` is run, then no routing action is applied, the
       snapshot is not advanced, and the user is asked to clear the block first (BR-PLAN-20,
       BR-PLAN-27).
+- [ ] **AC-PLAN-25 — Orphan snapshot Scenario:** Given an interrupted run that left a snapshot newer
+      than the recorded `last_consumed`, when the next run starts, then the orphan is discarded and
+      the delta is re-derived from the recorded base, never from the orphan (BR-PLAN-23,
+      EC-PLAN-08).
