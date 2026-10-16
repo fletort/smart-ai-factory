@@ -212,7 +212,7 @@ Inputs: `roadmap.versioned` and `roadmap.layout` from the config.
 class SpecAnchor(BaseModel):
     source_type: Literal["File", "Conversation Context"]  # values emitted by smart-plan
     pointer: str                      # "docs/specs/x.md" or "Current Conversation History"
-    spec_version: str | None = None   # "vNN #hash" (File mode only), BR-PLAN-16; optional, never required
+    spec_version: str | None = None   # "vNN" (File mode only), BR-PLAN-16; optional, never required
 
 class RoadmapIssue(BaseModel):
     id: str                           # "ISSUE-2.1" (stable, never renumbered)
@@ -233,7 +233,7 @@ Recognised patterns (line based):
   - **Depends on:** None | [ISSUE-1.1], [ISSUE-1.2]
 - **Source Type:** File | Conversation Context
 - **Pointer:** `docs/specs/file.md` | `Current Conversation History`
-- **Spec Version:** vNN #hash                  # optional; File mode only, epic-closure safety net (BR-PLAN-16)
+- **Spec Version:** vNN                       # optional; File mode only, no hash (BR-PLAN-16)
 ```
 
 A line that looks like an issue but does not match is reported as a warning and never silently

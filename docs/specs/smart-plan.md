@@ -2,10 +2,10 @@
 
 > **State**: _Partially implemented_ (`smart-plan` skill in `.agents/skills/smart-plan/`) —
 > **revision proposed**. **Implemented:** BR-PLAN-01 to BR-PLAN-13, EC-PLAN-01 to EC-PLAN-06,
-> AC-PLAN-01 to AC-PLAN-06. **Not developed:** BR-PLAN-14 to BR-PLAN-23, EC-PLAN-07 to EC-PLAN-11,
-> AC-PLAN-07 to AC-PLAN-14 (delta-aware ingestion: immutable versioned snapshots, per-Epic version
-> pin, delta classification, idempotence, Epic-state routing and negative-delta handling); the
-> runtime prompt is updated by a downstream implementation task.
+> AC-PLAN-01 to AC-PLAN-06. **Not developed:** BR-PLAN-14 to BR-PLAN-25, EC-PLAN-07 to EC-PLAN-14,
+> AC-PLAN-07 to AC-PLAN-16 (delta-aware ingestion: versioned snapshots, per-Epic version pin, delta
+> classification, idempotence, reviewed form-only amendment, Epic-state routing and negative-delta
+> handling); the runtime prompt is updated by a downstream implementation task.
 
 ## 1. Context & Objectives
 
@@ -146,7 +146,8 @@
   - **BR-PLAN-14 (Snapshot immutability & version increment):** on every successful ingestion, the
     consumed specification is copied verbatim into the snapshot directory as `<FEAT_ID>.vNN.md`,
     where `NN` is a two-digit, zero-padded, monotonically increasing increment **per consumed
-    `FEAT_ID`**. A snapshot is never rewritten; a new version is always a new file.
+    `FEAT_ID`**. A snapshot is never rewritten and a new version is always a new file — the sole
+    exception being a reviewed, audited form-only amendment (BR-PLAN-24).
 
     <!-- ⚠️ DEPENDENCY ALERT: bidirectional ./smart-spec.md#BR-SPEC-25 -->
     <!-- The hash boundary of BR-PLAN-15 is defined by the shape of the delivery-status header
@@ -163,10 +164,11 @@
     <!-- Adding the `Spec Version` field to the Epic Spec Anchors (BR-PLAN-16) changes the roadmap
     format read by the triage parser: its model and recognised patterns must follow. -->
 
-  - **BR-PLAN-16 (Per-Epic version pin):** each Epic records the consumed specification version and
-    hash in its Spec Anchors (`Spec Version: vNN #hash`), extending BR-PLAN-12. The pin is
-    **immutable**: an Epic never changes the version it was built on, even when newer snapshots
-    exist.
+  - **BR-PLAN-16 (Per-Epic version pin):** each Epic records the consumed specification version in
+    its Spec Anchors (`Spec Version: vNN`), extending BR-PLAN-12; the short **integrity hash**
+    (BR-PLAN-15) lives only in `specs.lock`, never in the roadmap, so the pin survives a form-only
+    amendment (BR-PLAN-24). The pin is **immutable**: an Epic never changes the version it was built
+    on, even when newer snapshots exist.
   - **BR-PLAN-17 (Delta base — snapshot, never Git):** the delta is computed by diffing the live
     specification against the **last consumed snapshot** (`last_consumed`, resolved from the
     snapshot lock), never against Git history. `squash` / `rebase` merges therefore have no effect
@@ -198,7 +200,22 @@
     (user decision). Removed issues follow BR-PLAN-07 (`<!-- [DELETED] -->`, no identifier shift).
   - **BR-PLAN-23 (Snapshot publication atomicity):** the new snapshot, the `last_consumed` update
     and the roadmap write are committed in the **same pass**; if the roadmap write fails, the
-    snapshot is **not** advanced.
+    snapshot is **not** advanced. A reviewed amendment (BR-PLAN-24) is atomic the same way.
+  - **BR-PLAN-24 (Reviewed form-only amendment):** by **narrow exception to BR-PLAN-14**, when the
+    delta is **form-only** (typography, whitespace, or a rewording that changes no requirement), the
+    skill does **not** create a new version: it **amends the snapshot in place**, keeping the same
+    `vNN` and therefore the same roadmap reference (BR-PLAN-16). The amendment is (1)
+    **reviewer-gated** — an LLM proposes `form_only` and, by default, a human confirms; the skill
+    never decides alone (BR-PLAN-25); (2) **explicit**, never an automatic side effect; and (3)
+    **audited**: an append-only entry `{version, previous_hash, new_hash, verdict, author, date}` is
+    appended to `specs.lock` and the stored hash is recomputed. A substantive diff — or a merely
+    **uncertain** verdict — takes the normal path (new version, BR-PLAN-18/20).
+  - **BR-PLAN-25 (Amendment review policy):** the reviewer behaviour is set by
+    `snapshots.form_only_amendment`: `propose` (default — the LLM proposes and a human confirms:
+    interactive prompt locally, approval step in cloud, consistent with the triage
+    `pending-approval` pattern), `auto` (the LLM verdict is applied without human confirmation), or
+    `off` (exception disabled — every delta, even form-only, creates a new version). When no
+    reviewer is available or the verdict is uncertain, the fail-safe is **substantive**.
 - **User Stories:**
   - _As a_ developer, _I want to_ turn a validated specification into a roadmap of high-level issues
     _so that_ the triage can create the detailed tickets automatically.
@@ -210,6 +227,8 @@
     no unwanted change is applied.
   - _As a_ maintainer, _I want_ `/smart-plan` to ingest only the delta of a specification edited in
     place _so that_ in-flight Epics and their pinned version are never disturbed.
+  - _As a_ maintainer, _I want_ a typo-only edit to refresh the snapshot under review instead of
+    forking a new version _so that_ cosmetic churn never disturbs the roadmap or the pinned version.
   - _As a_ FinOps owner, _I want_ a lightweight roadmap _so that_ downstream triage runs stay cheap.
 
 ## 3. Technical Specifications (How)
@@ -223,9 +242,10 @@
 
   Delta-aware ingestion is inserted **between Discovery and Build/Merge**: when the target
   specification already has a prior snapshot, the Build/Merge step operates on the **delta** only
-  (BR-PLAN-17/18). The snapshot subsystem (BR-PLAN-14/15/16) is local and file-based; the roadmap
-  format gains one additive Spec Anchor field (`Spec Version`), which the triage parser may treat as
-  unknown metadata until it is updated.
+  (BR-PLAN-17/18). The snapshot subsystem (BR-PLAN-14/15/16/24) is local and file-based, with a
+  reviewed form-only amendment path (BR-PLAN-24/25); the roadmap format gains one additive Spec
+  Anchor field (`Spec Version: vNN`), which the triage parser may treat as unknown metadata until it
+  is updated.
 
   ```mermaid
   sequenceDiagram
@@ -267,8 +287,9 @@
   - **Endpoints / Methods:** skill invoked with `/smart-plan` from the IDE chat; inputs are a
     specification file path or the conversation context.
   - **Payload Constraints:**
-    - Configuration keys: `roadmap.versioned` (boolean, `true` generates `roadmap/vX.Y/...`) and
-      `roadmap.layout` (`single`, `multi` or `auto`).
+    - Configuration keys: `roadmap.versioned` (boolean, `true` generates `roadmap/vX.Y/...`),
+      `roadmap.layout` (`single`, `multi` or `auto`) and `snapshots.form_only_amendment` (`propose`
+      | `auto` | `off`, default `propose`; BR-PLAN-25).
     - Output locations:
 
       | versioned | layout   | Files written                                      |
@@ -281,10 +302,13 @@
     - Issue identifiers: epic-qualified `[ISSUE-X.Y]` (X = epic id, Y starts at 1 in a new Epic).
       New IDs continue strictly after the highest ID of the epic; a new Epic takes IDs strictly
       after the highest epic ID already defined. Identifiers are stable and never renumbered.
-    - Snapshot store (BR-PLAN-14/15/16): immutable specification snapshots
-      `<snapshot_dir>/<FEAT_ID>.vNN.md` plus a lock `<snapshot_dir>/specs.lock` recording
-      `last_consumed` (`{ <FEAT_ID>: { version, hash } }`). The default `snapshot_dir` follows the
-      resolved roadmap location. Each Epic's Spec Anchors carry `Spec Version: vNN #hash`.
+    - Snapshot store (BR-PLAN-14/15/16/24): append-only specification snapshots
+      `<snapshot_dir>/<FEAT_ID>.vNN.md` — rewritable **only** by a reviewed, audited form-only
+      amendment (BR-PLAN-24) — plus a lock `<snapshot_dir>/specs.lock` recording `last_consumed`
+      (`{ <FEAT_ID>: { version, hash } }`) and an append-only `amendments` audit trail
+      (`{ version, previous_hash, new_hash, verdict, author, date }`). The default `snapshot_dir`
+      follows the resolved roadmap location. Each Epic's Spec Anchors carry `Spec Version: vNN`; the
+      hash stays in the lock, never in the roadmap.
   - **Database Updates (ERD if needed):** none. The roadmap format is the contract with the triage:
 
     Single-file layout (`roadmap.md`):
@@ -304,7 +328,7 @@
     - **📋 Spec Anchors:**
       - **Source Type:** [File / Conversation Context]
       - **Pointer:** [e.g., `docs/specs/[file-name].md` OR `Current Conversation History`]
-      - **Spec Version:** [vNN #hash — File mode only, BR-PLAN-16]
+      - **Spec Version:** [vNN — File mode only, BR-PLAN-16]
 
     #### Target Issues List
 
@@ -337,7 +361,7 @@
     - **📋 Spec Anchors:**
       - **Source Type:** [File / Conversation Context]
       - **Pointer:** [e.g., `docs/specs/[file-name].md`]
-      - **Spec Version:** [vNN #hash — File mode only, BR-PLAN-16]
+      - **Spec Version:** [vNN — File mode only, BR-PLAN-16]
 
     ## Target Issues List
 
@@ -372,8 +396,17 @@
     hash (BR-PLAN-15), an Epic-closure update of the header produces **no** delta and the run is a
     traced no-op (BR-PLAN-19).
   - **EC-PLAN-11 (Snapshot tampering — hash mismatch):** when the recorded hash of the
-    `last_consumed` snapshot no longer matches its content, the integrity stamp fails: the
-    divergence is reported and the user is asked; no delta is applied on a doubtful base.
+    `last_consumed` snapshot no longer matches its content **and no matching `amendments` entry
+    exists in `specs.lock`**, the integrity stamp fails: the divergence is reported and the user is
+    asked; no delta is applied on a doubtful base.
+  - **EC-PLAN-12 (Diff judged substantive):** when the reviewer classifies the delta as substantive,
+    no amendment is allowed: the normal path applies (new `vNN+1`, BR-PLAN-18/20).
+  - **EC-PLAN-13 (No reviewer / uncertain verdict):** when no reviewer can classify the delta, or
+    the verdict is uncertain, the fail-safe applies: the delta is treated as substantive (new
+    version). With `off` in `snapshots.form_only_amendment`, every delta takes this path.
+  - **EC-PLAN-14 (Amendment then re-run):** after a reviewed form-only amendment, the snapshot
+    content and the recorded hash agree, so the next run is a traced no-op (BR-PLAN-19); the same
+    cosmetic diff is never re-detected.
 
 ## 4. Acceptance Criteria (QA)
 
@@ -402,8 +435,8 @@
       identifier, changed body), when the delta is computed, then it is classified as a modification
       by content diff (BR-PLAN-18).
 - [ ] **AC-PLAN-09 — Version-pin Scenario:** Given a written Epic, when its Spec Anchors are
-      inspected, then it carries `Spec Version: vNN #hash` referring to an existing, immutable
-      snapshot (BR-PLAN-16).
+      inspected, then it carries `Spec Version: vNN` referring to an existing snapshot, and no hash
+      appears in the roadmap (BR-PLAN-16).
 - [ ] **AC-PLAN-10 — Header-exclusion Scenario:** Given a specification whose only change is its
       delivery-status header, when `/smart-plan` is run, then no delta is produced (EC-PLAN-10).
 - [ ] **AC-PLAN-11 — Squash-immunity Scenario:** Given a specification merged through squash or
@@ -417,3 +450,10 @@
 - [ ] **AC-PLAN-14 — Addon question Scenario:** Given an additive delta on an in-progress Epic, when
       the `[ADDON]` Epic is planned, then the skill asks child or sibling (default child) and waits
       for the answer (BR-PLAN-21).
+- [ ] **AC-PLAN-15 — Form-only amendment Scenario:** Given a typo-only specification edit and a
+      reviewer that confirms `form_only`, when `/smart-plan` is run, then the snapshot is amended in
+      place (same `vNN`), an audit entry is appended to `specs.lock`, the hash is recomputed, the
+      roadmap `Spec Version` is unchanged, and a re-run is a no-op (BR-PLAN-24, EC-PLAN-14).
+- [ ] **AC-PLAN-16 — Fail-safe amendment Scenario:** Given a form-only edit and no reviewer (or an
+      uncertain verdict), when `/smart-plan` is run, then the delta is treated as substantive and a
+      new version `vNN+1` is created (BR-PLAN-25, EC-PLAN-13).
