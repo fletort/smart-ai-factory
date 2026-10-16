@@ -177,10 +177,15 @@
 
   Detailed contracts are given in the sub-sections below.
 
+<!-- ⚠️ DEPENDENCY ALERT: incoming ./smart-plan.md#BR-PLAN-16 -->
+<!-- The roadmap format parsed here is produced by `smart-plan`; the `Spec Version` field of the
+Epic Spec Anchors (BR-PLAN-16) is read by this parser, so any change of that field must be reflected
+here. -->
+
 ### Roadmap discovery & parsing
 
 The parser reads **exactly the format written by `smart-plan`**. Any change to that format must be
-reflected here.
+reflected here, including the `Spec Version` anchor field (BR-PLAN-16).
 
 #### Layout resolution
 
@@ -207,6 +212,7 @@ Inputs: `roadmap.versioned` and `roadmap.layout` from the config.
 class SpecAnchor(BaseModel):
     source_type: Literal["File", "Conversation Context"]  # values emitted by smart-plan
     pointer: str                      # "docs/specs/x.md" or "Current Conversation History"
+    spec_version: str | None = None   # "vNN #hash" (File mode only), BR-PLAN-16; optional, never required
 
 class RoadmapIssue(BaseModel):
     id: str                           # "ISSUE-2.1" (stable, never renumbered)
@@ -227,6 +233,7 @@ Recognised patterns (line based):
   - **Depends on:** None | [ISSUE-1.1], [ISSUE-1.2]
 - **Source Type:** File | Conversation Context
 - **Pointer:** `docs/specs/file.md` | `Current Conversation History`
+- **Spec Version:** vNN #hash                  # optional; File mode only, epic-closure safety net (BR-PLAN-16)
 ```
 
 A line that looks like an issue but does not match is reported as a warning and never silently
@@ -588,6 +595,9 @@ src/smart_ai/triage/
       `smart-ai triage` runs, then a ticket is created with the `[SIZE]`-prefixed title, the
       `size:<SIZE>` label and the `tracking-id` marker, and `(#N)` is appended to the matching
       roadmap line only.
+- [ ] **Roadmap format Scenario:** Given an Epic carrying a `Spec Version` anchor line, when the
+      roadmap is parsed, then `SpecAnchor.spec_version` is populated; a missing line yields `None`,
+      so unversioned roadmaps stay valid (BR-TRGE-04, BR-PLAN-16).
 - [ ] **Eligibility Scenario:** Given an issue whose dependency ticket carries the `brainstorming`
       label, when the selection runs, then the issue is not selected.
 - [ ] **Brainstorm Scenario (manual):** Given `unclear_specification`, when the human answers, then

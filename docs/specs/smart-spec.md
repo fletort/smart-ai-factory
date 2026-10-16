@@ -235,6 +235,11 @@
     ALERT one to explain the dependency in one or two sentences. It is **decorative**: the edge is
     fully defined by the marker itself (mode + source unit + anchor) and is never resolved from the
     prose of this comment.
+
+  <!-- ⚠️ DEPENDENCY ALERT: bidirectional ./smart-plan.md#BR-PLAN-15 -->
+  <!-- The delivery-status header defined here (BR-SPEC-25) bounds the snapshot hash of the roadmap
+  consumer (BR-PLAN-15): a change of this header's structure invalidates the hash stability, and
+  conversely the hash exclusion rule defined there constrains any change of this header. -->
   - **BR-SPEC-25 (Delivery-status header):** every specification carries a structured state header
     at the top of the document that separates what exists from what does not:
 
