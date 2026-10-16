@@ -2,8 +2,8 @@
 
 > **State**: _Partially implemented_ (`smart-plan` skill in `.agents/skills/smart-plan/`) —
 > **revision proposed**. **Implemented:** BR-PLAN-01 to BR-PLAN-13, EC-PLAN-01 to EC-PLAN-06,
-> AC-PLAN-01 to AC-PLAN-06. **Not developed:** BR-PLAN-14 to BR-PLAN-26, EC-PLAN-07 to EC-PLAN-14,
-> AC-PLAN-07 to AC-PLAN-21 (delta-aware ingestion for File-Mode anchors: versioned snapshots,
+> AC-PLAN-01 to AC-PLAN-06. **Not developed:** BR-PLAN-14 to BR-PLAN-28, EC-PLAN-07 to EC-PLAN-14,
+> AC-PLAN-07 to AC-PLAN-23 (delta-aware ingestion for File-Mode anchors: versioned snapshots,
 > per-Epic version pin, delta classification, idempotence, reviewed form-only amendment, Epic-state
 > routing and negative-delta handling); the runtime prompt is updated by a downstream implementation
 > task.
@@ -147,7 +147,7 @@
     Global Vision and the Epic Purpose are checked and updated if the new specification alters the
     project's macro direction.
   - **BR-PLAN-14 (Snapshot subsystem scope, immutability & version increment):** the snapshot/delta
-    subsystem (BR-PLAN-14 to BR-PLAN-26) applies to **File Mode anchors only**
+    subsystem (BR-PLAN-14 to BR-PLAN-28) applies to **File Mode anchors only**
     (`Source Type: File`); a Context Mode entry has no specification file and carries no
     `Spec Version` (BR-PLAN-02). For a File anchor, on every successful ingestion the consumed
     specification is copied verbatim into the snapshot directory as `<FEAT_ID>.vNN.md`, where `NN`
@@ -238,6 +238,29 @@
     arbitrary Epic sharing the pointer. Creating an Epic for the `FEAT_ID` (successor or `[ADDON]`)
     transfers ownership to it. An `[ADDON]` **never receives an addon**: an additive delta landing
     on an open addon owner is applied **in place** (issues appended), so addons never nest.
+  - **BR-PLAN-27 (Epic state — derivation & syntax):** the Epic state consumed by BR-PLAN-20 is
+    resolved deterministically, in this precedence order:
+    1. **Explicit override** — if the Epic carries the optional line
+       `- **📊 Status:** Blocked / To Review`, its state is `Blocked / To Review`. This is the
+       **only** state not derivable from the issues; the skill writes it (BR-PLAN-20) and clears it
+       on a later run once the conflict is resolved.
+    2. **Derived from the Target Issues List** — over the Epic's own issue checkboxes: no issue
+       checked ⇒ `Todo`; every issue checked (Epic with at least one issue) ⇒ `Done`; some but not
+       all checked ⇒ `In Progress`; an Epic with no issue ⇒ `Todo`. The skill never rewrites the
+       derived states, so the mapping is identical across implementations; a roadmap without the
+       `Status` line simply follows step 2 (never `Blocked` until the skill writes it).
+
+    <!-- ⚠️ DEPENDENCY ALERT: outgoing ./triage-engine.md#roadmap-discovery--parsing -->
+    <!-- The optional `📊 Status` line is a new Epic-level field; the triage parser must tolerate it
+    as unknown metadata (it carries no ticket-routing semantics). -->
+
+  - **BR-PLAN-28 (Snapshot store — location & sharing):** `<snapshot_dir>` defaults to
+    `<roadmap_root>/.snapshots/`, where `<roadmap_root>` is the roadmap's directory **without** its
+    `vX.Y` segment (e.g. `roadmap/.snapshots/` for `roadmap/v0.1/roadmap.md`, or `./.snapshots/` for
+    a root `roadmap.md`). The store — snapshots, `specs.lock` and the `amendments` trail — is
+    therefore **shared across every roadmap version** and keyed by `FEAT_ID`, never by the roadmap
+    version, so switching `vX.Y` never restarts ingestion. It is overridable through
+    `snapshots.dir`.
 
 - **User Stories:**
   - _As a_ developer, _I want to_ turn a validated specification into a roadmap of high-level issues
@@ -311,8 +334,9 @@
     specification file path or the conversation context.
   - **Payload Constraints:**
     - Configuration keys: `roadmap.versioned` (boolean, `true` generates `roadmap/vX.Y/...`),
-      `roadmap.layout` (`single`, `multi` or `auto`) and `snapshots.form_only_amendment` (`propose`
-      | `auto` | `off`, default `propose`; BR-PLAN-25).
+      `roadmap.layout` (`single`, `multi` or `auto`), `snapshots.form_only_amendment` (`propose` |
+      `auto` | `off`, default `propose`; BR-PLAN-25) and `snapshots.dir` (path; default
+      `<roadmap_root>/.snapshots/`, shared across roadmap versions; BR-PLAN-28).
     - Output locations:
 
       | versioned | layout   | Files written                                      |
@@ -330,8 +354,9 @@
       amendment (BR-PLAN-24) — plus a lock `<snapshot_dir>/specs.lock` recording `last_consumed`
       (`{ <FEAT_ID>: { version, hash } }`) and an append-only `amendments` audit trail
       (`{ feat_id, version, previous_hash, new_hash, verdict, author, date }`). The default
-      `snapshot_dir` follows the resolved roadmap location. Each Epic's Spec Anchors carry
-      `Spec Version: vNN`; the hash stays in the lock, never in the roadmap.
+      `snapshot_dir` is `<roadmap_root>/.snapshots/`, **shared across every roadmap version**
+      (BR-PLAN-28). Each Epic's Spec Anchors carry `Spec Version: vNN`; the hash stays in the lock,
+      never in the roadmap.
   - **Database Updates (ERD if needed):** none. The roadmap format is the contract with the triage:
 
     Single-file layout (`roadmap.md`):
@@ -348,6 +373,8 @@
     ### 🚀 Epic 1: [Epic Name]
 
     - **🎯 Epic Purpose:** [Brief focus and goal of this specific block]
+    - **📊 Status:** [optional — only when `Blocked / To Review`; otherwise derived from the issue
+      checkboxes, BR-PLAN-27]
     - **📋 Spec Anchors:**
       - **Source Type:** [File / Conversation Context]
       - **Pointer:** [e.g., `docs/specs/[file-name].md` OR `Current Conversation History`]
@@ -381,6 +408,8 @@
     # 🚀 Epic [X]: [Epic Name]
 
     - **🎯 Epic Purpose:** [Brief focus and goal of this specific block]
+    - **📊 Status:** [optional — only when `Blocked / To Review`; otherwise derived from the issue
+      checkboxes, BR-PLAN-27]
     - **📋 Spec Anchors:**
       - **Source Type:** [File / Conversation Context]
       - **Pointer:** [e.g., `docs/specs/[file-name].md`]
@@ -500,3 +529,11 @@
       (root + `[ADDON]`), when a new delta is routed, then it targets the newest non-terminal owner,
       and an additive delta on an open addon is applied in place without nesting a new addon
       (BR-PLAN-26).
+- [ ] **AC-PLAN-22 — Epic state derivation Scenario:** Given Epics with (a) no issue checked, (b)
+      all issues checked, (c) mixed checkboxes and (d) a `📊 Status: Blocked / To Review` line, when
+      the state is resolved, then they yield `Todo`, `Done`, `In Progress` and `Blocked / To Review`
+      respectively (BR-PLAN-27).
+- [ ] **AC-PLAN-23 — Shared snapshot store Scenario:** Given a versioned roadmap switched from
+      `v0.1` to `v0.2`, when `/smart-plan` runs on an already-consumed specification, then the
+      shared `<roadmap_root>/.snapshots/` lock is reused and the run is a delta, never a fresh `v01`
+      ingestion (BR-PLAN-28).

@@ -182,10 +182,15 @@
 Epic Spec Anchors (BR-PLAN-16) is read by this parser, so any change of that field must be reflected
 here. -->
 
+<!-- ⚠️ DEPENDENCY ALERT: incoming ./smart-plan.md#BR-PLAN-27 -->
+<!-- `smart-plan` may emit an optional `📊 Status` Epic line (BR-PLAN-27). It is additive and carries
+no ticket-routing semantics: the parser tolerates it as unknown metadata rather than modelling it. -->
+
 ### Roadmap discovery & parsing
 
 The parser reads **exactly the format written by `smart-plan`**. Any change to that format must be
-reflected here, including the `Spec Version` anchor field (BR-PLAN-16).
+reflected here, including the `Spec Version` anchor field (BR-PLAN-16) and the optional `📊 Status`
+line (BR-PLAN-27).
 
 #### Layout resolution
 
@@ -236,8 +241,9 @@ Recognised patterns (line based):
 - **Spec Version:** vNN                       # optional; File mode only, no hash (BR-PLAN-16)
 ```
 
-A line that looks like an issue but does not match is reported as a warning and never silently
-skipped.
+An optional Epic-level `- **📊 Status:** ...` line (BR-PLAN-27) is tolerated and ignored: it carries
+no ticket-routing semantics. A line that looks like an issue but does not match is reported as a
+warning and never silently skipped.
 
 #### Eligibility
 
