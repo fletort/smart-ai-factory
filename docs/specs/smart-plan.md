@@ -166,9 +166,9 @@
     stamp, not a security control). The **canonical bytes** are the snapshot decoded as UTF-8 with
     line endings normalised to `\n` (CRLF → LF), with the **delivery-status header block removed**
     (the contiguous blockquote beginning with `> **State**:` and continuing through the BR-SPEC-25
-    header fields, plus the single blank line that follows it). **No other normalisation** is applied — body whitespace
-    and trailing spaces are hashed verbatim, so a form-only edit still registers as a delta
-    (BR-PLAN-24). The hash is an **integrity stamp**, not the version identity.
+    header fields, plus the single blank line that follows it). **No other normalisation** is
+    applied — body whitespace and trailing spaces are hashed verbatim, so a form-only edit still
+    registers as a delta (BR-PLAN-24). The hash is an **integrity stamp**, not the version identity.
 
     <!-- ⚠️ DEPENDENCY ALERT: outgoing ./triage-engine.md#roadmap-discovery--parsing -->
     <!-- Adding the `Spec Version` field to the Epic Spec Anchors (BR-PLAN-16) changes the roadmap
@@ -419,10 +419,10 @@
     hash (BR-PLAN-15), an Epic-closure update of the header produces **no** delta and the run is a
     traced no-op (BR-PLAN-19).
   - **EC-PLAN-11 (Snapshot tampering — hash mismatch):** when the computed hash of the
-    `last_consumed` snapshot does not match the recorded `last_consumed.hash`, the integrity
-    stamp fails regardless of whether an `amendments` entry exists; any amendment's `new_hash`
-    must itself match the current stored hash. The divergence is reported and the user is asked; no
-    delta is applied on a doubtful base.
+    `last_consumed` snapshot does not match the recorded `last_consumed.hash`, the integrity stamp
+    fails regardless of whether an `amendments` entry exists; any amendment's `new_hash` must itself
+    match the current stored hash. The divergence is reported and the user is asked; no delta is
+    applied on a doubtful base.
   - **EC-PLAN-12 (Diff judged substantive):** when the reviewer classifies the delta as substantive,
     no amendment is allowed: the normal path applies (new `vNN+1`, BR-PLAN-18/20).
   - **EC-PLAN-13 (No reviewer / uncertain verdict):** when no reviewer can classify the delta, or
