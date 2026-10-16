@@ -32,10 +32,12 @@ subtler fact: specifications are also corrected for **typography and form**, cha
 
 At each successful ingestion, copy the consumed specification verbatim to
 `<snapshot_dir>/<FEAT_ID>.vNN.md` and record `last_consumed` and the short content hash in a lock
-file; the delta is `diff(live spec, last_consumed snapshot)`. The lock stores the hash computed over
-the specification **excluding its delivery-status header** (BR-SPEC-25), because that header is
-recomputed at every revision and changes at Epic closure. Snapshots are **append-only**: the only
-rewrite allowed is a reviewed, audited form-only amendment (BR-PLAN-24).
+file; the delta is `diff(canonical(live spec), canonical(last_consumed snapshot))` — **both sides**
+canonicalised (delivery-status header removed, line endings normalised) — so a header-only revision
+yields no delta. The lock stores the hash computed over the specification **excluding its
+delivery-status header** (BR-SPEC-25), because that header is recomputed at every revision and
+changes at Epic closure. Snapshots are **append-only**: the only rewrite allowed is a reviewed,
+audited form-only amendment (BR-PLAN-24).
 
 **Pros:**
 

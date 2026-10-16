@@ -182,18 +182,21 @@
     snapshots exist. A **not-started (`Todo`) Epic** has no built work to protect, so an in-place
     update **advances its pin** to the newly consumed version (BR-PLAN-20). A Context Mode Epic
     carries no `Spec Version`.
-  - **BR-PLAN-17 (Delta base — snapshot, never Git):** the delta is computed by diffing the live
-    specification against the **last consumed snapshot** (`last_consumed`, resolved from the
-    snapshot lock), never against Git history. `squash` / `rebase` merges therefore have no effect
-    on the result.
+  - **BR-PLAN-17 (Delta base — snapshot, never Git):** the delta is computed by diffing the
+    **canonical bytes** (BR-PLAN-15: LF-normalised, delivery-status header removed) of the live
+    specification against those of the **last consumed snapshot** (`last_consumed`, resolved from
+    the snapshot lock) — **both sides canonicalised identically**, so a header-only revision yields
+    an empty delta (EC-PLAN-10) — never against Git history. The snapshot is stored verbatim, its
+    own header included (BR-PLAN-14); canonicalisation is applied **at comparison time**. `squash` /
+    `rebase` merges therefore have no effect on the result.
   - **BR-PLAN-18 (Delta classification):** the delta partitions requirements into **additions**
     (identifiers present in the specification, absent from the consumed version), **removals**
     (consumed identifiers now absent) and **modifications** (same identifier, changed body). Because
     a business rule may be edited in place, modifications are detected by **content diff**, not by
     identifier comparison.
-  - **BR-PLAN-19 (Idempotence):** when the live specification (excluding the delivery-status header)
-    is identical to the `last_consumed` snapshot, the skill exits with a traced no-op and writes
-    nothing.
+  - **BR-PLAN-19 (Idempotence):** when the **canonical bytes** of the live specification are
+    identical to those of the `last_consumed` snapshot (same canonicalisation, BR-PLAN-15/17), the
+    skill exits with a traced no-op and writes nothing.
   - **BR-PLAN-20 (Epic-state routing matrix):** for each consumed `FEAT_ID` carrying a delta, the
     skill routes on the state of the existing Epic:
 
@@ -447,9 +450,9 @@
   - **EC-PLAN-09 (Addon receives a further delta):** when the owner is an `[ADDON]` and receives
     another additive delta, no second addon is created: the new issues are applied **in place** on
     that addon (BR-PLAN-26). A modification/removal delta still routes normally (BR-PLAN-20).
-  - **EC-PLAN-10 (Delivery-status header changed alone):** because the header is excluded from the
-    hash (BR-PLAN-15), an Epic-closure update of the header produces **no** delta and the run is a
-    traced no-op (BR-PLAN-19).
+  - **EC-PLAN-10 (Delivery-status header changed alone):** because the header is excluded from both
+    the hash and the diff (BR-PLAN-15/17), an Epic-closure update of the header produces **no**
+    delta and the run is a traced no-op (BR-PLAN-19).
   - **EC-PLAN-11 (Snapshot tampering — hash mismatch):** when the computed hash of the
     `last_consumed` snapshot does not match the recorded `last_consumed.hash`, the integrity stamp
     fails regardless of whether an `amendments` entry exists; any amendment's `new_hash` must itself
@@ -499,7 +502,8 @@
       appears in the roadmap, and the matching integrity hash is recorded in `specs.lock`
       (BR-PLAN-15, BR-PLAN-16).
 - [ ] **AC-PLAN-10 — Header-exclusion Scenario:** Given a specification whose only change is its
-      delivery-status header, when `/smart-plan` is run, then no delta is produced (EC-PLAN-10).
+      delivery-status header, when `/smart-plan` is run, then no delta is produced — the diff is
+      taken over the canonical bytes of both sides (EC-PLAN-10, BR-PLAN-17).
 - [ ] **AC-PLAN-11 — Squash-immunity Scenario:** Given a specification merged through squash or
       rebase, when the delta is computed, then it is identical to a non-squashed merge (BR-PLAN-17).
 - [ ] **AC-PLAN-12 — In-progress conflict Scenario:** Given a modification of a rule under
