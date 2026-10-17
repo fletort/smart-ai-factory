@@ -388,7 +388,6 @@
     - **Reciprocity:** Follows the mirror table `outgoing ⟷ incoming` and
       `bidirectional ⟷ bidirectional` (BR-SPEC-22, BR-SPEC-23). An explanatory human-readable
       comment may follow the block but must not separate the stacked markers.
-    -
   - **Database Updates (ERD if needed):** none. Files written: the specification file(s),
     `docs/INDEX.md` and, when the justification test passes and the user has not declined it, one
     ADR file. The high-level documents are never written (BR-SPEC-20). All of these files are
