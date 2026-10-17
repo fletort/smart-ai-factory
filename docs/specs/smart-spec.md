@@ -212,10 +212,13 @@
     edge between two **addressable units**. Grammar:
     `<!-- ⚠️ DEPENDENCY ALERT: <mode> <relative/path/to/document.md>#<anchor> -->`.
     - **Source unit — placement is the scope.** The marker qualifies the **addressable unit
-      immediately below it**: a rule (`BR-`/`EC-`/`AC-<FEAT_ID>-NN`) or, when the edge concerns a
-      whole section, that section heading. A rule-level marker is preferred whenever the edge
-      concerns a single rule and is written **directly above that rule**, not at the top of its
-      chapter. A marker placed before anything that is neither a rule nor a heading is invalid.
+      immediately below it, or immediately below the contiguous block of markers it belongs to**: a
+      rule (`BR-`/`EC-`/`AC-<FEAT_ID>-NN`) or, when the edge concerns a whole section, that section
+      heading. **Multiple markers may be written sequentially** directly above the same addressable
+      unit to declare multiple dependencies for that single unit. **Each marker may be immediately
+      followed by an optional, human-readable explanatory HTML comment**; this explicit commentary
+      does not break the marker sequence. A marker sequence placed before anything that is neither a
+      rule nor a heading is invalid.
     - **Target unit — the `<anchor>` is mandatory.** It names the counterpart unit in the target
       document using the same keys: a rule identifier (`#BR-ADR-01`) or a heading anchor
       (`#2-functional--ux-specifications-what`). A document path alone does **not** say where in the
@@ -235,6 +238,11 @@
     ALERT one to explain the dependency in one or two sentences. It is **decorative**: the edge is
     fully defined by the marker itself (mode + source unit + anchor) and is never resolved from the
     prose of this comment.
+
+  <!-- ⚠️ DEPENDENCY ALERT: bidirectional ./smart-plan.md#BR-PLAN-15 -->
+  <!-- The delivery-status header defined here (BR-SPEC-25) bounds the snapshot hash of the roadmap
+  consumer (BR-PLAN-15): a change of this header's structure invalidates the hash stability, and
+  conversely the hash exclusion rule defined there constrains any change of this header. -->
   - **BR-SPEC-25 (Delivery-status header):** every specification carries a structured state header
     at the top of the document that separates what exists from what does not:
 
@@ -372,11 +380,16 @@
     per prefix.
   - **Dependency marker contract:**
     `<!-- ⚠️ DEPENDENCY ALERT: <mode> <relative/path.md>#<anchor> -->`,
-    `mode ∈ {outgoing, incoming, bidirectional}`; the marker is immediately followed by the unit it
-    qualifies (a rule, or a section heading) and the anchor names the counterpart unit; reciprocity
-    follows the mirror table `outgoing ⟷ incoming` and `bidirectional ⟷ bidirectional` (BR-SPEC-22,
-    BR-SPEC-23).
-
+    `mode ∈ {outgoing, incoming, bidirectional}`.
+    - **Block Semantics:** Multiple markers may be stacked consecutively to form a contiguous block
+      above a single target.
+    - **Target Resolution:** The entire contiguous block of markers qualifies the **first
+      addressable unit located immediately below the block** (a rule identifier or a section
+      heading).
+    - **Reciprocity:** Follows the mirror table `outgoing ⟷ incoming` and
+      `bidirectional ⟷ bidirectional` (BR-SPEC-22, BR-SPEC-23). An explanatory human-readable comment
+      may follow each marker, including between stacked markers; comments are ignored for block grouping
+      and do not change the shared target.
   - **Database Updates (ERD if needed):** none. Files written: the specification file(s),
     `docs/INDEX.md` and, when the justification test passes and the user has not declined it, one
     ADR file. The high-level documents are never written (BR-SPEC-20). All of these files are
