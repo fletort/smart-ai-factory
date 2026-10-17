@@ -379,11 +379,16 @@
     per prefix.
   - **Dependency marker contract:**
     `<!-- ⚠️ DEPENDENCY ALERT: <mode> <relative/path.md>#<anchor> -->`,
-    `mode ∈ {outgoing, incoming, bidirectional}`; the marker is immediately followed by the unit it
-    qualifies (a rule, or a section heading) and the anchor names the counterpart unit; reciprocity
-    follows the mirror table `outgoing ⟷ incoming` and `bidirectional ⟷ bidirectional` (BR-SPEC-22,
-    BR-SPEC-23).
-
+    `mode ∈ {outgoing, incoming, bidirectional}`.
+    - **Block Semantics:** Multiple markers may be stacked consecutively to form a contiguous block
+      above a single target.
+    - **Target Resolution:** The entire contiguous block of markers qualifies the **first
+      addressable unit located immediately below the block** (a rule identifier or a section
+      heading).
+    - **Reciprocity:** Follows the mirror table `outgoing ⟷ incoming` and
+      `bidirectional ⟷ bidirectional` (BR-SPEC-22, BR-SPEC-23). An explanatory human-readable
+      comment may follow the block but must not separate the stacked markers.
+    -
   - **Database Updates (ERD if needed):** none. Files written: the specification file(s),
     `docs/INDEX.md` and, when the justification test passes and the user has not declined it, one
     ADR file. The high-level documents are never written (BR-SPEC-20). All of these files are

@@ -161,8 +161,9 @@
     `Spec Version` (BR-PLAN-02). For a File anchor, on every successful ingestion the consumed
     specification is copied verbatim into the snapshot directory as `<FEAT_ID>.vNN.md`, where `NN`
     is a two-digit, zero-padded, monotonically increasing increment **per consumed `FEAT_ID`**. A
-    snapshot is never rewritten and a new version is always a new file — the sole exception being a
-    reviewed, audited form-only amendment (BR-PLAN-24).
+    snapshot is never rewritten and a new version is always a new file — **the sole exception being
+    a reviewed, audited form-only amendment (BR-PLAN-24) or the overwriting of an uncommitted orphan
+    file after an interrupted run (BR-PLAN-23)**.
 
     <!-- ⚠️ DEPENDENCY ALERT: bidirectional ./smart-spec.md#BR-SPEC-25 -->
     <!-- The hash boundary of BR-PLAN-15 is defined by the shape of the delivery-status header
@@ -209,14 +210,14 @@
   - **BR-PLAN-20 (Epic-state routing matrix):** for each consumed `FEAT_ID` carrying a delta, the
     skill routes on the state of the existing Epic:
 
-    | Existing Epic state   | Delta                  | Action                                                                                                                                                                                        |
-    | :-------------------- | :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-    | absent                | any                    | Create a new Epic (pin the new version).                                                                                                                                                      |
-    | not started (`Todo`)  | any                    | Update the Epic and its issues **in place**, **advance the pin** to the new version (BR-PLAN-16) and add the missing issues.                                                                  |
-    | in progress           | additive only          | Create an `[ADDON]` Epic for the delta (BR-PLAN-21); if the owner is itself an `[ADDON]`, apply in place (BR-PLAN-26).                                                                        |
-    | in progress           | modification / removal | Set the Epic `[Blocked / To Review]`, raise a conflict alert (BR-PLAN-07) and create a rerouting issue; surfaced in the confirmation diff (BR-PLAN-09) and committed atomically (BR-PLAN-23). |
-    | `Blocked / To Review` | any                    | **Frozen** (BR-PLAN-27): no routing action is applied and the delta is **not** consumed (no snapshot advance); re-raise the conflict alert and ask the user to clear the block first.         |
-    | done                  | any                    | Create a successor Epic.                                                                                                                                                                      |
+    | Existing Epic state   | Delta                  | Action                                                                                                                                                                                                                                                                                                                                                               |
+    | :-------------------- | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    | absent                | any                    | Create a new Epic (pin the new version).                                                                                                                                                                                                                                                                                                                             |
+    | not started (`Todo`)  | any                    | Update the Epic and its issues **in place**, **advance the pin** to the new version (BR-PLAN-16) and add the missing issues.                                                                                                                                                                                                                                         |
+    | in progress           | additive only          | Create an `[ADDON]` Epic for the delta (BR-PLAN-21); if the owner is itself an `[ADDON]`, apply in place (BR-PLAN-26).                                                                                                                                                                                                                                               |
+    | in progress           | modification / removal | Set the Epic `[Blocked / To Review]`, raise a conflict alert (BR-PLAN-07) and create an idempotent rerouting issue (creation is skipped if a pending rerouting issue already exists for this `FEAT_ID`).**The delta is NOT consumed**: the snapshot is not advanced and last_consumed remains unchanged, leaving the delta pending until the block is human-cleared. |
+    | `Blocked / To Review` | any                    | **Frozen** (BR-PLAN-27): no routing action is applied and the delta is **not** consumed (no snapshot advance); re-raise the conflict alert and ask the user to clear the block first.                                                                                                                                                                                |
+    | done                  | any                    | Create a successor Epic.                                                                                                                                                                                                                                                                                                                                             |
 
   - **BR-PLAN-21 (Addon placement — ask, default child):** when an additive delta lands on an
     in-progress Epic, the skill **asks** whether the `[ADDON]` Epic is a **child** of the
@@ -224,13 +225,16 @@
   - **BR-PLAN-22 (Negative delta — decommissioning):** a removal delta always raises an alert; based
     on the case analysis the skill **may propose a decommissioning Epic** for the removed scope
     (user decision). Removed issues follow BR-PLAN-07 (`<!-- [DELETED] -->`, no identifier shift).
-  - **BR-PLAN-23 (Snapshot publication — commit marker & rollback):** the new snapshot, the roadmap
-    write and the `last_consumed` update are staged and published together, rolling back on any
-    write that **fails observably**. This is **best-effort, not a cross-file crash journal**: the
-    `last_consumed` entry is published **last** and acts as the **single commit marker** — a
-    snapshot not referenced by it (left by an interrupted run) is an **uncommitted orphan**,
-    discarded and overwritten on the next run, never treated as consumed (EC-PLAN-08). A reviewed
-    amendment (BR-PLAN-24) follows the same rule.
+  - **BR-PLAN-23 (Snapshot publication — commit marker & safety):** the new snapshot, the roadmap
+    write and the `last_consumed` update are staged and published together. This is **best-effort,
+    not a cross-file crash journal**: the `last_consumed` entry is published **last** and acts as
+    the **single commit marker**. Any snapshot file found on disk whose version is higher than the
+    recorded `last_consumed.version` is an uncommitted orphan (left by an interrupted run). **Narrow
+    exception to BR-PLAN-14**: Since an orphan was never officially committed to `specs.lock`, it is
+    considered a corrupted workspace artifact. To keep the snapshot store clean, the skill
+    **explicitly allows overwriting or reusing this specific orphan file** on the next run,
+    resetting its content to match the newly calculated version state.
+
   - **BR-PLAN-24 (Reviewed form-only amendment):** by **narrow exception to BR-PLAN-14**, when the
     delta is **form-only** (typography, whitespace, or a rewording that changes no requirement), the
     skill does **not** create a new version: it **amends the snapshot in place**, keeping the same
@@ -524,12 +528,15 @@
       rebase, when the delta is computed, then it is identical to a non-squashed merge (BR-PLAN-17).
 - [ ] **AC-PLAN-12 — In-progress conflict Scenario:** Given a modification of a rule under
       construction in an in-progress Epic, when the delta is applied, then the Epic is set
-      `[Blocked / To Review]`, an alert is raised and a rerouting issue is included in the
-      confirmation diff, all committed atomically (BR-PLAN-20, BR-PLAN-23).
-- [ ] **AC-PLAN-13 — Snapshot write-failure Scenario:** Given a run where **any** participant write
-      **fails observably** (returns an error — the roadmap, the snapshot, or the `specs.lock`
-      update), when the run ends, then **none** is advanced: the staged files are rolled back and
-      the snapshot, `last_consumed` and the roadmap are left unchanged (BR-PLAN-23).
+      `[Blocked / To Review]`, an alert is raised and a rerouting issue is created **ONLY if it does
+      not already exist**. Furthermore, **the delta remains pending**: the snapshot version and
+      last_consumed lock are **not** advanced, allowing subsequent runs to re-detect the delta until
+      the block is manually cleared.
+- [ ] **AC-PLAN-13 — Orphan snapshot reuse Scenario:** Given an interrupted run that left a snapshot
+      file on disk newer than the recorded `last_consumed.version`, when the next execution runs,
+      then this uncommitted orphan file is **explicitly allowed to be overwritten and reused** to
+      match the new version state, keeping the snapshot store clean without incrementing to a dead
+      version number.
 - [ ] **AC-PLAN-14 — Addon question Scenario:** Given an additive delta on an in-progress Epic, when
       the `[ADDON]` Epic is planned, then the skill asks child or sibling (default child) and waits
       for the answer (BR-PLAN-21).
@@ -572,3 +579,8 @@
       than the recorded `last_consumed`, when the next run starts, then the orphan is discarded and
       the delta is re-derived from the recorded base, never from the orphan (BR-PLAN-23,
       EC-PLAN-08).
+- [ ] **AC-PLAN-26 — Terminal and Cross-version Ownership Scenario:** Given a new delta processed
+      for a `FEAT_ID` where all previous Epics in the active roadmap version are `Done` (or absent),
+      when routed, then the system detects **no active owner** for this layer, bypasses ownership
+      inspection, and falls back to the `absent` row of the matrix to spawn a brand-new independent
+      Epic in the current roadmap version without modifying past versions.
