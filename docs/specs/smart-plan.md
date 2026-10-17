@@ -3,7 +3,7 @@
 > **State**: _Partially implemented_ (`smart-plan` skill in `.agents/skills/smart-plan/`) —
 > **revision proposed**. **Implemented:** BR-PLAN-01 to BR-PLAN-13, EC-PLAN-01 to EC-PLAN-06,
 > AC-PLAN-01 to AC-PLAN-06. **Not developed:** BR-PLAN-14 to BR-PLAN-28, EC-PLAN-07 to EC-PLAN-15,
-> AC-PLAN-07 to AC-PLAN-25 (delta-aware ingestion for File-Mode anchors: versioned snapshots,
+> AC-PLAN-07 to AC-PLAN-26 (delta-aware ingestion for File-Mode anchors: versioned snapshots,
 > per-Epic version pin, delta classification, idempotence, reviewed form-only amendment, Epic-state
 > routing and negative-delta handling); the runtime prompt is updated by a downstream implementation
 > task.
