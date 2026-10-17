@@ -181,7 +181,6 @@
 <!-- The roadmap format parsed here is produced by `smart-plan`; the `Spec Version` field of the
 Epic Spec Anchors (BR-PLAN-16) is read by this parser, so any change of that field must be reflected
 here. -->
-
 <!-- ⚠️ DEPENDENCY ALERT: incoming ./smart-plan.md#BR-PLAN-27 -->
 <!-- `smart-plan` may emit an optional `📊 Status` Epic line (BR-PLAN-27). It is additive and carries
 no ticket-routing semantics: the parser tolerates it as unknown metadata rather than modelling it. -->
