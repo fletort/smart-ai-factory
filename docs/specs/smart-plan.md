@@ -248,12 +248,15 @@
     `pending-approval` pattern), `auto` (the LLM verdict is applied without human confirmation), or
     `off` (exception disabled — every delta, even form-only, creates a new version). When no
     reviewer is available or the verdict is uncertain, the fail-safe is **substantive**.
-  - **BR-PLAN-26 (Pointer ownership — single routing target):** each `FEAT_ID` has **one owner
-    Epic**: the **most recently created non-terminal (not Done) Epic** carrying that `FEAT_ID`,
-    excluding decommissioning Epics. BR-PLAN-20 always routes on the **owner's** state, never on an
-    arbitrary Epic sharing the pointer. Creating an Epic for the `FEAT_ID` (successor or `[ADDON]`)
-    transfers ownership to it. An `[ADDON]` **never receives an addon**: an additive delta landing
-    on an open addon owner is applied **in place** (issues appended), so addons never nest.
+  - **BR-PLAN-26 (Pointer ownership — single routing target):** each `FEAT_ID` has **one owner Epic
+    within the scope of the active roadmap version being processed**: the **most recently created
+    non-terminal (not Done) Epic** carrying that `FEAT_ID` in that specific roadmap layer, excluding
+    decommissioning Epics. **Terminal State Isolation**: If all Epics for a `FEAT_ID` in the active
+    roadmap are terminal (`Done`), or if no Epic exists yet, **there is no active owner**. In this
+    case, any incoming delta bypasses ownership inspection and falls back directly to the absent row
+    of the routing matrix (BR-PLAN-20), triggering the creation of a brand-new independent Epic. An
+    `[ADDON]` **never receives an addon**: an additive delta landing on an open addon owner is
+    applied **in place** (issues appended), so addons never nest.
 
    <!-- ⚠️ DEPENDENCY ALERT: outgoing ./triage-engine.md#roadmap-discovery--parsing -->
    <!-- The optional `📊 Status` line is a new Epic-level field; the triage parser must tolerate it
