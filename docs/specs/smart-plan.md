@@ -35,6 +35,12 @@
   - Cross-file crash-safety of the snapshot publication: BR-PLAN-23 guarantees an all-or-nothing
     outcome for **observably failed** writes only, not recovery from a process crash or power loss
     between file replacements (no durable journal is maintained).
+  - **Cross-version Epic duplication (Roll-over):** Automatically copying or "bootstrapping"
+    unchanged Epics from an older roadmap version (e.g., `v0.1`) into a newly initialized version
+    (e.g., `v0.2`) when no specification delta is detected. Each roadmap version is a strictly
+    isolated scope; cross-version backlog migration or rolling over incomplete work is a human
+    product-management or version-governance decision executed via external scripts, never an
+    automatic side effect of the roadmap ingestion skill.
 
 ## 2. Functional & UX Specifications (What)
 

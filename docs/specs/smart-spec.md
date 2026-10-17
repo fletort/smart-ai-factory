@@ -212,10 +212,12 @@
     edge between two **addressable units**. Grammar:
     `<!-- ⚠️ DEPENDENCY ALERT: <mode> <relative/path/to/document.md>#<anchor> -->`.
     - **Source unit — placement is the scope.** The marker qualifies the **addressable unit
-      immediately below it**: a rule (`BR-`/`EC-`/`AC-<FEAT_ID>-NN`) or, when the edge concerns a
-      whole section, that section heading. A rule-level marker is preferred whenever the edge
-      concerns a single rule and is written **directly above that rule**, not at the top of its
-      chapter. A marker placed before anything that is neither a rule nor a heading is invalid.
+      immediately below it, or immediately below the contiguous block of DEPENDENCY ALERT markers it
+      belongs to**: a rule (`BR-`/`EC-`/`AC-<FEAT_ID>-NN`) or, when the edge concerns a whole
+      section, that section heading. **Multiple markers may be stacked consecutively** directly
+      above the same addressable unit to declare multiple dependencies for that single unit. A
+      marker (or block of markers) placed before anything that is neither a rule nor a heading is
+      invalid.
     - **Target unit — the `<anchor>` is mandatory.** It names the counterpart unit in the target
       document using the same keys: a rule identifier (`#BR-ADR-01`) or a heading anchor
       (`#2-functional--ux-specifications-what`). A document path alone does **not** say where in the
