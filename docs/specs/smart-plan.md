@@ -226,7 +226,7 @@
     successor Epic. The snapshot and `last_consumed` lock are advanced to the current spec hash only
     after these updates are successfully written. |
 
-    | `done` | any | Create a successor Epic. |
+    | `Done` | any | Create a successor Epic. |
 
   - **BR-PLAN-21 (Addon placement — ask, default child):** when an additive delta lands on an
     in-progress Epic, the skill **asks** whether the `[ADDON]` Epic is a **child** of the
