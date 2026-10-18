@@ -217,8 +217,14 @@
     | in progress           | additive only          | Create an `[ADDON]` Epic for the delta (BR-PLAN-21); if the owner is itself an `[ADDON]`, apply in place (BR-PLAN-26).                                                                                                                                                                                                                                               |
     | in progress           | modification / removal | Set the Epic `[Blocked / To Review]`, raise a conflict alert (BR-PLAN-07) and create an idempotent rerouting issue (creation is skipped if a pending rerouting issue already exists for this `FEAT_ID`).**The delta is NOT consumed**: the snapshot is not advanced and last_consumed remains unchanged, leaving the delta pending until the block is human-cleared. |
     | `Blocked / To Review` | any                    | **Frozen** (BR-PLAN-27): no routing action is applied and the delta is **not** consumed (no snapshot advance); re-raise the conflict alert and ask the user to clear the block first.                                                                                                                                                                                |
-    | `Reviewed`            | any                    | **Unfreeze & Consume**: The skill successfully consumes the pending delta, advances the snapshot and `last_consumed` lock to the current spec hash, and automatically removes the `Status` line.                                                                                                                                                                     |
-    | done                  | any                    | Create a successor Epic.                                                                                                                                                                                                                                                                                                                                             |
+
+    | `Reviewed` | any | **Unfreeze, Re-route & Consume**: The skill automatically removes the
+    `Status` line, then immediately re-routes the pending delta through the standard matrix logic
+    (applying modifications/removals directly to the In Progress Epic or spawning an Addon/Successor
+    as required) and advances the snapshot and `last_consumed` lock only after the roadmap updates
+    are written. |
+
+    | `Done` | any | Create a successor Epic. |
 
   - **BR-PLAN-21 (Addon placement — ask, default child):** when an additive delta lands on an
     in-progress Epic, the skill **asks** whether the `[ADDON]` Epic is a **child** of the
@@ -398,8 +404,8 @@
     ### 🚀 Epic 1: [Epic Name]
 
     - **🎯 Epic Purpose:** [Brief focus and goal of this specific block]
-    - **📊 Status:** [optional — `Blocked / To Review` while frozen or `Reviewed` to release; otherwise derived from the issue
-      checkboxes, BR-PLAN-27]
+    - **📊 Status:** [optional — `Blocked / To Review` while frozen or `Reviewed` to release;
+      otherwise derived from the issue checkboxes, BR-PLAN-27]
     - **📋 Spec Anchors:**
       - **Source Type:** [File / Conversation Context]
       - **Pointer:** [e.g., `docs/specs/[file-name].md` OR `Current Conversation History`]
