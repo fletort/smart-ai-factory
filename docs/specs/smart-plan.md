@@ -306,15 +306,15 @@
     visible technical alert and write nothing**. Older roadmap versions are treated as immutable
     historical records and cannot re-consume specifications.
 
-  - **BR-PLAN-29 (Auto-layout re-evaluation on update):** in `auto` layout mode, the
-    **projected scope** (the roadmap as it would be after the current merge: the number of Epics
-    and the total number of issues) is re-evaluated at **every update** of an existing roadmap.
-    Update-time auto-layout is **escalation-only**: an existing `multi` layout is retained even
-    when the projected scope is at or below the BR-PLAN-04 threshold; no multi-to-single proposal
-    or migration is performed. For an existing `single` layout, only a single-to-multi proposal
-    may be emitted (BR-PLAN-30); nothing is migrated without consent. Creation still follows
-    BR-PLAN-04. In an explicit `single` or `multi` configuration no proposal is emitted and the
-    configured layout is authoritative (BR-PLAN-06 governs a contradiction).
+  - **BR-PLAN-29 (Auto-layout re-evaluation on update):** in `auto` layout mode, the **projected
+    scope** (the roadmap as it would be after the current merge: the number of Epics and the total
+    number of issues) is re-evaluated at **every update** of an existing roadmap. Update-time
+    auto-layout is **escalation-only**: an existing `multi` layout is retained even when the
+    projected scope is at or below the BR-PLAN-04 threshold; no multi-to-single proposal or
+    migration is performed. For an existing `single` layout, only a single-to-multi proposal may be
+    emitted (BR-PLAN-30); nothing is migrated without consent. Creation still follows BR-PLAN-04. In
+    an explicit `single` or `multi` configuration no proposal is emitted and the configured layout
+    is authoritative (BR-PLAN-06 governs a contradiction).
   - **BR-PLAN-30 (Escalation proposal — single to multi):** when the resolved on-disk layout is
     `single`, `roadmap.layout` is `auto`, and the projected scope **strictly exceeds** the
     BR-PLAN-04 threshold (more than **3 Epics** or more than **50 issues**), the skill **proposes**
@@ -342,12 +342,12 @@
     `roadmap.layout` is **never** changed by a migration: it stays `auto`, and the on-disk layout is
     what the resolver reads.
   - **BR-PLAN-33 (Layout switch vs layout divergence):** an `auto` migration (BR-PLAN-29/30) is a
-    **deliberate, consented evolution of the layout**, distinct from layout divergence
-    (BR-PLAN-06). The divergence stop applies when the filesystem contradicts an **explicit**
-    configured layout, or when `auto` finds **both layouts** on disk and cannot resolve a unique
-    layout (EC-PLAN-20). It does not apply when `auto` resolves to the only on-disk layout.
-    A successfully completed migration does not trigger the stop; an ambiguous state after an
-    interrupted migration does, and divergence takes precedence over any layout-switch proposal.
+    **deliberate, consented evolution of the layout**, distinct from layout divergence (BR-PLAN-06).
+    The divergence stop applies when the filesystem contradicts an **explicit** configured layout,
+    or when `auto` finds **both layouts** on disk and cannot resolve a unique layout (EC-PLAN-20).
+    It does not apply when `auto` resolves to the only on-disk layout. A successfully completed
+    migration does not trigger the stop; an ambiguous state after an interrupted migration does, and
+    divergence takes precedence over any layout-switch proposal.
 
 - **User Stories:**
   - _As a_ developer, _I want to_ turn a validated specification into a roadmap of high-level issues
