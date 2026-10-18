@@ -477,8 +477,8 @@
   - **EC-PLAN-08 (Snapshot lock missing, corrupt, or incomplete):** The snapshot lock (`specs.lock`)
     acts as the single source of truth for the consumed base.
     - **Missing Lock:** If the lock file is entirely absent, `last_consumed` is reconstructed from
-      the highest existing snapshot version found on disk and submitted to the user for
-      confirmation; the workspace is never scanned (BR-PLAN-05).
+      the highest existing snapshot version for the active `FEAT_ID` found on disk and submitted to the
+      user for confirmation; the workspace is never scanned (BR-PLAN-05).
     - **Corrupt or Malformed Lock:** If the lock file exists but contains invalid JSON, unparsable
       data, or lacks a valid `last_consumed` entry for the active execution, **the skill MUST
       immediately halt with a visible technical alert and write nothing**. The CLI is forbidden from
