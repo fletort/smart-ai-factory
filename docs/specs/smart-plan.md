@@ -210,22 +210,15 @@
   - **BR-PLAN-20 (Epic-state routing matrix):** for each consumed `FEAT_ID` carrying a delta, the
     skill routes on the state of the existing Epic:
 
-    | Existing Epic state   | Delta                  | Action                                                                                                                                                                                                                                                                                                                                                               |
-    | :-------------------- | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-    | absent                | any                    | Create a new Epic (pin the new version).                                                                                                                                                                                                                                                                                                                             |
-    | not started (`Todo`)  | any                    | Update the Epic and its issues **in place**, **advance the pin** to the new version (BR-PLAN-16) and add the missing issues.                                                                                                                                                                                                                                         |
-    | in progress           | additive only          | Create an `[ADDON]` Epic for the delta (BR-PLAN-21); if the owner is itself an `[ADDON]`, apply in place (BR-PLAN-26).                                                                                                                                                                                                                                               |
-    | in progress           | modification / removal | Set the Epic `[Blocked / To Review]`, raise a conflict alert (BR-PLAN-07) and create an idempotent rerouting issue (creation is skipped if a pending rerouting issue already exists for this `FEAT_ID`).**The delta is NOT consumed**: the snapshot is not advanced and last_consumed remains unchanged, leaving the delta pending until the block is human-cleared. |
-    | `Blocked / To Review` | any                    | **Frozen** (BR-PLAN-27): no routing action is applied and the delta is **not** consumed (no snapshot advance); re-raise the conflict alert and ask the user to clear the block first.                                                                                                                                                                                |
-
-    | `Reviewed` | any | **Unfreeze, Bypass Conflict & Consume**: The skill automatically removes
-    the `Status` line, **bypasses the conflict-blocking rule** of the
-    `in progress | modification / removal` row, and applies the updates directly to the underlying
-    Epic and its issues in place. The snapshot and `last_consumed` lock are advanced to the current
-    spec hash only after these roadmap updates are successfully written, returning the framework to
-    nominal state derivation.
-
-    | `Done` | any | Create a successor Epic. |
+    | Existing Epic state   | Delta                  | Action                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+    | :-------------------- | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+    | absent                | any                    | Create a new Epic (pin the new version).                                                                                                                                                                                                                                                                                                                                                                                                                             |
+    | not started (`Todo`)  | any                    | Update the Epic and its issues **in place**, **advance the pin** to the new version (BR-PLAN-16) and add the missing issues.                                                                                                                                                                                                                                                                                                                                         |
+    | in progress           | additive only          | Create an `[ADDON]` Epic for the delta (BR-PLAN-21); if the owner is itself an `[ADDON]`, apply in place (BR-PLAN-26).                                                                                                                                                                                                                                                                                                                                               |
+    | in progress           | modification / removal | Set the Epic `[Blocked / To Review]`, raise a conflict alert (BR-PLAN-07) and create an idempotent rerouting issue (creation is skipped if a pending rerouting issue already exists for this `FEAT_ID`). **The delta is NOT consumed**: the snapshot is not advanced and last_consumed remains unchanged, leaving the delta pending until the block is human-cleared.                                                                                                |
+    | `Blocked / To Review` | any                    | **Frozen** (BR-PLAN-27): no routing action is applied and the delta is **not** consumed (no snapshot advance); re-raise the conflict alert and ask the user to clear the block first.                                                                                                                                                                                                                                                                                |
+    | `Reviewed`            | any                    | **Unfreeze, Bypass Conflict & Consume**: The skill automatically removes the `Status` line, **bypasses the conflict-blocking rule** of the `in progress \| modification / removal` row, and applies the updates directly to the underlying Epic and its issues in place. The snapshot and `last_consumed` lock are advanced to the current spec hash only after these roadmap updates are successfully written, returning the framework to nominal state derivation. |
+    | `done`                | any                    | Create a successor Epic.                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
   - **BR-PLAN-21 (Addon placement — ask, default child):** when an additive delta lands on an
     in-progress Epic, the skill **asks** whether the `[ADDON]` Epic is a **child** of the
@@ -291,8 +284,11 @@
     `vX.Y` segment (e.g. `roadmap/.snapshots/` for `roadmap/v0.1/roadmap.md`, or `./.snapshots/` for
     a root `roadmap.md`). The store — snapshots, `specs.lock` and the `amendments` trail — is
     therefore **shared across every roadmap version** and keyed by `FEAT_ID`, never by the roadmap
-    version, so switching `vX.Y` never restarts ingestion. It is overridable through
-    `snapshots.dir`.
+    version, so switching `vX.Y` never restarts ingestion. **Path Override Resolution Rule:** The
+    store location is overridable through `snapshots.dir`. If a relative path is provided for
+    `snapshots.dir`, the CLI MUST resolve it strictly against the **project root directory** (where
+    `.smart.ai/conf.yml` resides), ensuring path stability and shared-store consistency regardless
+    of the active `vX.Y` segment being processed.
 
 - **User Stories:**
   - _As a_ developer, _I want to_ turn a validated specification into a roadmap of high-level issues
@@ -470,10 +466,17 @@
     `yes`; adjustments can be specified instead.
   - **EC-PLAN-07 (First run — no snapshot):** with no prior snapshot for the `FEAT_ID`, the whole
     specification is treated as new; no delta conflict is reported and the first snapshot is `v01`.
-  - **EC-PLAN-08 (Snapshot lock missing or corrupt):** only the **lock** defines the consumed base —
-    a snapshot **newer** than `last_consumed` (an uncommitted orphan, BR-PLAN-23) is discarded,
-    never adopted. If the lock is entirely absent, the highest snapshot version is offered as the
-    base but the user is asked to confirm it; the workspace is never scanned (BR-PLAN-05).
+  - **EC-PLAN-08 (Snapshot lock missing, corrupt, or incomplete):** The snapshot lock (`specs.lock`)
+    acts as the single source of truth for the consumed base.
+    - **Missing Lock:** If the lock file is entirely absent, `last_consumed` is reconstructed from
+      the highest existing snapshot version found on disk and submitted to the user for
+      confirmation; the workspace is never scanned (BR-PLAN-05).
+    - **Corrupt or Malformed Lock:** If the lock file exists but contains invalid JSON, unparsable
+      data, or lacks a valid `last_consumed` entry for the active execution, **the skill MUST
+      immediately halt with a visible technical alert and write nothing**. The CLI is forbidden from
+      inferring a base from the workspace or guessing partial data. To recover, a human must
+      manually delete or repair the corrupt lock file to trigger the missing-lock reconstruction
+      safetynet.
   - **EC-PLAN-09 (Addon receives a further delta):** when the owner is an `[ADDON]` and receives
     another additive delta, no second addon is created: the new issues are applied **in place** on
     that addon (BR-PLAN-26). A modification/removal delta still routes normally (BR-PLAN-20).
@@ -521,9 +524,11 @@
       migrate the layout or update the configuration.
 - [ ] **AC-PLAN-07 — Idempotence Scenario:** Given a specification already consumed and unchanged,
       when `/smart-plan` is run, then the run is a traced no-op and no file is written (BR-PLAN-19).
-- [ ] **AC-PLAN-08 — In-place modification Scenario:** Given a business rule edited in place (same
-      identifier, changed body), when the delta is computed, then it is classified as a modification
-      by content diff (BR-PLAN-18).
+- [ ] **AC-PLAN-08 — Snapshot lock fault-tolerance Scenario:** Given a `specs.lock` file that is
+      missing, the system reconstructs the base from disk and asks for confirmation. Given a
+      `specs.lock` file that is corrupt or malformed, the execution immediately halts with an error,
+      writes nothing, and refuses to infer data from the workspace until manual recovery is
+      performed.
 - [ ] **AC-PLAN-09 — Version-pin Scenario:** Given a written Epic, when its Spec Anchors are
       inspected, then it carries `Spec Version: vNN` referring to an existing snapshot, no hash
       appears in the roadmap, and the matching integrity hash is recorded in `specs.lock`
