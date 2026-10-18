@@ -285,16 +285,15 @@
        derived states, so the mapping is identical across implementations; a roadmap without the
        `Status` line simply follows step 2 (never `Blocked` until the skill writes it).
 
-  - **BR-PLAN-28 (Snapshot store — location & sharing):** `<snapshot_dir>` defaults to
-    `<roadmap_root>/.snapshots/`, where `<roadmap_root>` is the roadmap's directory **without** its
-    `vX.Y` segment (e.g. `roadmap/.snapshots/` for `roadmap/v0.1/roadmap.md`, or `./.snapshots/` for
-    a root `roadmap.md`). The store — snapshots, `specs.lock` and the `amendments` trail — is
-    therefore **shared across every roadmap version** and keyed by `FEAT_ID`, never by the roadmap
-    version, so switching `vX.Y` never restarts ingestion. **Path Override Resolution Rule:** The
-    store location is overridable through `snapshots.dir`. If a relative path is provided for
-    `snapshots.dir`, the CLI MUST resolve it strictly against the **project root directory** (where
-    `.smart.ai/conf.yml` resides), ensuring path stability and shared-store consistency regardless
-    of the active `vX.Y` segment being processed.
+  - **BR-PLAN-28 (Snapshot store — location, sharing & linearity):** `<snapshot_dir>` defaults to
+    `<roadmap_root>/.snapshots/` and is shared across roadmap versions to maintain a unified
+    consumption history. **Linear Version Lock Rule:** To prevent state corruption from historical
+    rollbacks, `specs.lock` tracks the highest roadmap version successfully processed via the field
+    `last_active_roadmap_version`. The CLI MUST enforce a strictly linear workflow: if the active
+    roadmap version being processed is sémantiquement older than `last_active_roadmap_version`
+    (e.g., trying to run `v0.1` when the lock is at `v0.2`), **the skill MUST immediately halt with
+    a visible technical alert and write nothing**. Older roadmap versions are treated as immutable
+    historical records and cannot re-consume specifications.
 
 - **User Stories:**
   - _As a_ developer, _I want to_ turn a validated specification into a roadmap of high-level issues
@@ -592,10 +591,10 @@
       all issues checked, (c) mixed checkboxes and (d) a `📊 Status: Blocked / To Review` line, when
       the state is resolved, then they yield `Todo`, `Done`, `In Progress` and `Blocked / To Review`
       respectively (BR-PLAN-27).
-- [ ] **AC-PLAN-23 — Shared snapshot store Scenario:** Given a versioned roadmap switched from
-      `v0.1` to `v0.2`, when `/smart-plan` runs on an already-consumed specification, then the
-      shared `<roadmap_root>/.snapshots/` lock is reused and the run is a delta, never a fresh `v01`
-      ingestion (BR-PLAN-28).
+- [ ] **AC-PLAN-23 — Linear version enforcement Scenario:** Given a shared snapshot store where the
+      lock is at `v0.2`, when `/smart-plan` is executed on an older roadmap version (e.g., `v0.1`),
+      then the execution immediately halts with an error, writes nothing, and protects the
+      historical state from corruption.
 - [ ] **AC-PLAN-24 — Blocked routing Scenario:** Given a delta on a `FEAT_ID` whose owner carries
       `Blocked / To Review`, when `/smart-plan` is run, then no routing action is taken and the
       snapshot is not advanced. Given the status updated to `Reviewed`, when `/smart-plan` runs,
