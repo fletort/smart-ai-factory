@@ -286,13 +286,13 @@
        `Status` line simply follows step 2 (never `Blocked` until the skill writes it).
 
   - **BR-PLAN-28 (Snapshot store — location, sharing & linearity):** `<snapshot_dir>` defaults to
-    `<roadmap_root>/.snapshots/` and is shared across roadmap versions to maintain a unified
-    consumption history. **Linear Version Lock Rule:** To prevent state corruption from historical
-    rollbacks, `specs.lock` tracks the highest roadmap version successfully processed via the field
+    `.smart.ai/.snapshots/` and is shared across roadmap versions to maintain a unified consumption
+    history. **Linear Version Lock Rule:** To prevent state corruption from historical rollbacks,
+    `specs.lock` tracks the highest roadmap version successfully processed via the field
     `last_active_roadmap_version`. The CLI MUST enforce a strictly linear workflow: if the active
-    roadmap version being processed is sémantiquement older than `last_active_roadmap_version`
-    (e.g., trying to run `v0.1` when the lock is at `v0.2`), **the skill MUST immediately halt with
-    a visible technical alert and write nothing**. Older roadmap versions are treated as immutable
+    roadmap version being processed is semantically older than `last_active_roadmap_version` (e.g.,
+    trying to run `v0.1` when the lock is at `v0.2`), **the skill MUST immediately halt with a
+    visible technical alert and write nothing**. Older roadmap versions are treated as immutable
     historical records and cannot re-consume specifications.
 
 - **User Stories:**
