@@ -407,8 +407,8 @@
     ### 🚀 Epic 1: [Epic Name]
 
     - **🎯 Epic Purpose:** [Brief focus and goal of this specific block]
-    - **📊 Status:** [optional — `Blocked / To Review` while frozen or `Reviewed` to release;
-      otherwise derived from the issue checkboxes, BR-PLAN-27]
+    - **📊 Status:** [optional — explicit override: `Blocked / To Review` to freeze, or `Reviewed`
+      to unfreeze & consume delta; otherwise derived from the issue checkboxes, BR-PLAN-27]
     - **📋 Spec Anchors:**
       - **Source Type:** [File / Conversation Context]
       - **Pointer:** [e.g., `docs/specs/[file-name].md` OR `Current Conversation History`]
