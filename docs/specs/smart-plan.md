@@ -306,13 +306,15 @@
     visible technical alert and write nothing**. Older roadmap versions are treated as immutable
     historical records and cannot re-consume specifications.
 
-  - **BR-PLAN-29 (Auto-layout re-evaluation on update):** in `auto` layout mode, the effective
-    layout is re-derived at **every update** of an existing roadmap — not only at creation — from
-    the **projected scope** (the roadmap as it would be after the current merge: the number of Epics
-    and the total number of issues). The re-evaluation produces a **proposal only**; nothing is
-    migrated without consent (BR-PLAN-30). In an explicit `single` or `multi` configuration no
-    proposal is emitted and the configured layout is authoritative (BR-PLAN-06 governs a
-    contradiction).
+  - **BR-PLAN-29 (Auto-layout re-evaluation on update):** in `auto` layout mode, the
+    **projected scope** (the roadmap as it would be after the current merge: the number of Epics
+    and the total number of issues) is re-evaluated at **every update** of an existing roadmap.
+    Update-time auto-layout is **escalation-only**: an existing `multi` layout is retained even
+    when the projected scope is at or below the BR-PLAN-04 threshold; no multi-to-single proposal
+    or migration is performed. For an existing `single` layout, only a single-to-multi proposal
+    may be emitted (BR-PLAN-30); nothing is migrated without consent. Creation still follows
+    BR-PLAN-04. In an explicit `single` or `multi` configuration no proposal is emitted and the
+    configured layout is authoritative (BR-PLAN-06 governs a contradiction).
   - **BR-PLAN-30 (Escalation proposal — single to multi):** when the resolved on-disk layout is
     `single`, `roadmap.layout` is `auto`, and the projected scope **strictly exceeds** the
     BR-PLAN-04 threshold (more than **3 Epics** or more than **50 issues**), the skill **proposes**
