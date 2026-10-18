@@ -217,6 +217,7 @@
     | in progress           | additive only          | Create an `[ADDON]` Epic for the delta (BR-PLAN-21); if the owner is itself an `[ADDON]`, apply in place (BR-PLAN-26).                                                                                                                                                                                                                                               |
     | in progress           | modification / removal | Set the Epic `[Blocked / To Review]`, raise a conflict alert (BR-PLAN-07) and create an idempotent rerouting issue (creation is skipped if a pending rerouting issue already exists for this `FEAT_ID`).**The delta is NOT consumed**: the snapshot is not advanced and last_consumed remains unchanged, leaving the delta pending until the block is human-cleared. |
     | `Blocked / To Review` | any                    | **Frozen** (BR-PLAN-27): no routing action is applied and the delta is **not** consumed (no snapshot advance); re-raise the conflict alert and ask the user to clear the block first.                                                                                                                                                                                |
+    | `Reviewed`            | any                    | **Unfreeze & Consume**: The skill successfully consumes the pending delta, advances the snapshot and `last_consumed` lock to the current spec hash, and automatically removes the `Status` line.                                                                                                                                                                     |
     | done                  | any                    | Create a successor Epic.                                                                                                                                                                                                                                                                                                                                             |
 
   - **BR-PLAN-21 (Addon placement — ask, default child):** when an additive delta lands on an
@@ -267,12 +268,11 @@
    as unknown metadata (it carries no ticket-routing semantics). -->
   - **BR-PLAN-27 (Epic state — derivation & syntax):** the Epic state consumed by BR-PLAN-20 is
     resolved deterministically, in this precedence order:
-    1. **Explicit override** — if the Epic carries the optional line
-       `- **📊 Status:** Blocked / To Review`, its state is `Blocked / To Review`. This is the
-       **only** state not derivable from the issues: the skill **writes** it when the conflict is
-       detected (BR-PLAN-20) and the **human clears it** once the conflict is reviewed
-       (user-managed, like the checkboxes, BR-PLAN-13). While it is present the Epic is **not a
-       routing target** — BR-PLAN-20 freezes its `FEAT_ID`.
+    1. **Explicit override** — if the Epic carries the line `- **📊 Status:** Blocked / To Review`,
+       its state is `Blocked / To Review`. If it carries - `**📊 Status:** Reviewed`, its state is
+       `Reviewed`. These are the **only** states not derivable from the issues. While Blocked or
+       Reviewed is present, the Epic is not a routing target — it freezes or intercepts the FEAT_ID
+       routing.
     2. **Derived from the Target Issues List** — over the Epic's own issue checkboxes: no issue
        checked ⇒ `Todo`; every issue checked (Epic with at least one issue) ⇒ `Done`; some but not
        all checked ⇒ `In Progress`; an Epic with no issue ⇒ `Todo`. The skill never rewrites the
@@ -572,9 +572,11 @@
       shared `<roadmap_root>/.snapshots/` lock is reused and the run is a delta, never a fresh `v01`
       ingestion (BR-PLAN-28).
 - [ ] **AC-PLAN-24 — Blocked routing Scenario:** Given a delta on a `FEAT_ID` whose owner carries
-      `Blocked / To Review`, when `/smart-plan` is run, then no routing action is applied, the
-      snapshot is not advanced, and the user is asked to clear the block first (BR-PLAN-20,
-      BR-PLAN-27).
+      `Blocked / To Review`, when `/smart-plan` is run, then no routing action is taken and the
+      snapshot is not advanced. Given the status updated to `Reviewed`, when `/smart-plan` runs,
+      then the pending delta is successfully **consumed**, the snapshot and `last_consumed` are
+      advanced to the current spec hash, and the `Status` line is automatically removed by the
+      skill.
 - [ ] **AC-PLAN-25 — Orphan snapshot Scenario:** Given an interrupted run that left a snapshot newer
       than the recorded `last_consumed`, when the next run starts, then the orphan is discarded and
       the delta is re-derived from the recorded base, never from the orphan (BR-PLAN-23,
