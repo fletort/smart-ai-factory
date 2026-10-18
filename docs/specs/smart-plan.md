@@ -398,7 +398,7 @@
     ### 🚀 Epic 1: [Epic Name]
 
     - **🎯 Epic Purpose:** [Brief focus and goal of this specific block]
-    - **📊 Status:** [optional — only when `Blocked / To Review`; otherwise derived from the issue
+    - **📊 Status:** [optional — `Blocked / To Review` while frozen or `Reviewed` to release; otherwise derived from the issue
       checkboxes, BR-PLAN-27]
     - **📋 Spec Anchors:**
       - **Source Type:** [File / Conversation Context]
