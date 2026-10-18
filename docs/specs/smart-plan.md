@@ -332,11 +332,13 @@
   - **BR-PLAN-32 (Migration publication — best-effort atomicity & configuration stability):** the
     migration is written as one best-effort all-or-nothing set, on the same model as BR-PLAN-23: the
     **target** files are written first and the **source** files are removed only after every target
-    write has succeeded. On an **observably failed** write the skill rolls back the target files it
-    created and leaves the source layout intact (EC-PLAN-17); a process crash between the two steps
-    may leave both layouts on disk, which the next run resolves through the layout-divergence stop
-    (BR-PLAN-06), never by a silent migration. The configuration key `roadmap.layout` is **never**
-    changed by a migration: it stays `auto`, and the on-disk layout is what the resolver reads.
+    write has succeeded. On an **observably failed** target write **or an observably failed source
+    removal**, the skill rolls back **the entire transaction by removing any created target files**
+    and leaves the source layout intact (EC-PLAN-17); a process crash (power loss, kill signal)
+    between the two steps may still leave both layouts on disk, which the next run resolves through
+    the layout-divergence stop (BR-PLAN-06), never by a silent migration. The configuration key
+    `roadmap.layout` is **never** changed by a migration: it stays `auto`, and the on-disk layout is
+    what the resolver reads.
   - **BR-PLAN-33 (Layout switch vs layout divergence):** an `auto` migration (BR-PLAN-29/30) is a
     **deliberate, consented evolution of the layout**, distinct from the **contradiction** of
     BR-PLAN-06: the divergence stop is raised only when the filesystem contradicts an **explicit**
@@ -584,9 +586,11 @@
     update is applied in the current single-file layout, no `README.md` / `epic-X.md` is created,
     the source `roadmap.md` remains the sole roadmap and the decline is traced. The proposal is
     re-emitted at the next update while the threshold is still exceeded.
-  - **EC-PLAN-17 (Migration write failure):** a target write fails observably during a migration;
-    the skill rolls back the target files it created, keeps the source layout, writes nothing else
-    and reports the failure. No partial layout is left behind by the failure handling (BR-PLAN-32).
+  - **EC-PLAN-17 (Migration write or removal failure):** a target write fails observably **or the
+    subsequent source file removal fails observably** during a migration; the skill rolls back by
+    deleting any target files it created during the run, keeps the source layout fully intact,
+    writes/deletes nothing else and reports the failure. No partial or dual layout is left behind by
+    the failure handling, protecting the workspace from immediate divergence (BR-PLAN-32).
   - **EC-PLAN-18 (Threshold borderline):** a projected scope of exactly 3 Epics and exactly 50
     issues does not exceed the threshold; no migration is proposed (the comparison is strict,
     BR-PLAN-30).
@@ -708,9 +712,10 @@
       checkbox, `Spec Version` anchor, `📊 Status` line and `[DELETED]` marker is identical, the
       Epic order/IDs and the Global Vision are unchanged, and no snapshot was consumed nor
       `Spec Version` advanced (BR-PLAN-31).
-- [ ] **AC-PLAN-30 — Migration atomicity Scenario:** Given a migration whose target write fails
-      observably, when the run ends, then the created target files are rolled back and the source
-      layout is intact (BR-PLAN-32, EC-PLAN-17).
+- [ ] **AC-PLAN-30 — Migration atomicity Scenario:** Given a migration whose target write **or
+      source removal** fails observably, when the run ends, then **all** created target files are
+      rolled back (deleted) and the source layout remains completely intact and valid (BR-PLAN-32,
+      EC-PLAN-17).
 - [ ] **AC-PLAN-31 — Explicit-layout Scenario:** Given `roadmap.layout: single` or `multi` (not
       `auto`) and a projected scope crossing the threshold, when `/smart-plan` runs, then no switch
       is proposed and the configured layout is authoritative (BR-PLAN-29).
