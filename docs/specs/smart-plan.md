@@ -218,8 +218,10 @@
     | in progress           | modification / removal | Set the Epic `[Blocked / To Review]`, raise a conflict alert (BR-PLAN-07) and create an idempotent rerouting issue (creation is skipped if a pending rerouting issue already exists for this `FEAT_ID`). **The delta is NOT consumed**: the snapshot is not advanced and last_consumed remains unchanged, leaving the delta pending until the block is human-cleared. |
     | `Blocked / To Review` | any                    | **Frozen** (BR-PLAN-27): no routing action is applied and the delta is **not** consumed (no snapshot advance); re-raise the conflict alert and ask the user to clear the block first.                                                                                                                                                                                 |
 
-     | `Reviewed` | any | **Unfreeze, Bypass Conflict & Consume**: remove the `Status` line; for a non-terminal underlying Epic, apply the update in place; for a terminal Epic, create a new successor. Advance the snapshot and `last_consumed` only after the roadmap update succeeds. |
-     | `Done` | any | Create a successor Epic. |
+    | `Reviewed` | any | **Unfreeze, Bypass Conflict & Consume**: remove the `Status` line; for a
+    non-terminal underlying Epic, apply the update in place; for a terminal Epic, create a new
+    successor. Advance the snapshot and `last_consumed` only after the roadmap update succeeds. | |
+    `Done` | any | Create a successor Epic. |
 
   - **BR-PLAN-21 (Addon placement — ask, default child):** when an additive delta lands on an
     in-progress Epic, the skill **asks** whether the `[ADDON]` Epic is a **child** of the
@@ -271,9 +273,12 @@
     resolved deterministically, in this precedence order:
     1. **Explicit override** — if the Epic carries the line `- **📊 Status:** Blocked / To Review`,
        its state is `Blocked / To Review`. If it carries `- **📊 Status:** Reviewed`, its state is
-       `Reviewed`. These are the **only** states not derivable from the issues. While Blocked or
-       Reviewed is present, the Epic is not a routing target — it freezes or intercepts the FEAT_ID
-       routing.
+       `Reviewed`. These are the **only** states not derivable from the issues. While
+       `Blocked / To Review` is present, the Epic is **frozen** and skips routing (BR-PLAN-20).
+       While `Reviewed` is present, the Epic intercepts normal state derivation to make the row
+       strictly eligible for the `Reviewed` unfreeze-and-consume routing logic in the matrix, after
+       which the line is removed.
+
     2. **Derived from the Target Issues List** — over the Epic's own issue checkboxes: no issue
        checked ⇒ `Todo`; every issue checked (Epic with at least one issue) ⇒ `Done`; some but not
        all checked ⇒ `In Progress`; an Epic with no issue ⇒ `Todo`. The skill never rewrites the
@@ -437,8 +442,8 @@
     # 🚀 Epic [X]: [Epic Name]
 
     - **🎯 Epic Purpose:** [Brief focus and goal of this specific block]
-    - **📊 Status:** [optional — only when `Blocked / To Review`; otherwise derived from the issue
-      checkboxes, BR-PLAN-27]
+    - **📊 Status:** [optional — explicit override: `Blocked / To Review` to freeze, or `Reviewed`
+      to unfreeze & consume delta; otherwise derived from the issue checkboxes, BR-PLAN-27]
     - **📋 Spec Anchors:**
       - **Source Type:** [File / Conversation Context]
       - **Pointer:** [e.g., `docs/specs/[file-name].md`]
@@ -472,7 +477,12 @@
     - **Missing Lock:** If the lock file is entirely absent, `last_consumed` is reconstructed from
       the highest existing snapshot version for the active `FEAT_ID` found on disk and submitted to
       the user for confirmation; the workspace is never scanned (BR-PLAN-05).
-     - **Corrupt or Malformed Lock:** If the lock file exists but contains invalid JSON, unparsable data, or an existing entry for the active `FEAT_ID` that lacks a valid `last_consumed` entry, **the skill MUST immediately halt with a visible technical alert and write nothing**. A missing `FEAT_ID` entry is the first-run case (EC-PLAN-07), not corruption. The CLI is forbidden from inferring a base from the workspace or guessing partial data. To recover a malformed entry, a human must manually repair the lock file.
+    - **Corrupt or Malformed Lock:** If the lock file exists but contains invalid JSON, unparsable
+      data, or an existing entry for the active `FEAT_ID` that lacks a valid `last_consumed` entry,
+      **the skill MUST immediately halt with a visible technical alert and write nothing**. A
+      missing `FEAT_ID` entry is the first-run case (EC-PLAN-07), not corruption. The CLI is
+      forbidden from inferring a base from the workspace or guessing partial data. To recover a
+      malformed entry, a human must manually repair the lock file.
   - **EC-PLAN-09 (Addon receives a further delta):** when the owner is an `[ADDON]` and receives
     another additive delta, no second addon is created: the new issues are applied **in place** on
     that addon (BR-PLAN-26). A modification/removal delta still routes normally (BR-PLAN-20).
