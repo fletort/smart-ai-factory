@@ -218,11 +218,12 @@
     | in progress           | modification / removal | Set the Epic `[Blocked / To Review]`, raise a conflict alert (BR-PLAN-07) and create an idempotent rerouting issue (creation is skipped if a pending rerouting issue already exists for this `FEAT_ID`).**The delta is NOT consumed**: the snapshot is not advanced and last_consumed remains unchanged, leaving the delta pending until the block is human-cleared. |
     | `Blocked / To Review` | any                    | **Frozen** (BR-PLAN-27): no routing action is applied and the delta is **not** consumed (no snapshot advance); re-raise the conflict alert and ask the user to clear the block first.                                                                                                                                                                                |
 
-    | `Reviewed` | any | **Unfreeze, Re-route & Consume**: The skill automatically removes the
-    `Status` line, then immediately re-routes the pending delta through the standard matrix logic
-    (applying modifications/removals directly to the In Progress Epic or spawning an Addon/Successor
-    as required) and advances the snapshot and `last_consumed` lock only after the roadmap updates
-    are written. |
+    | `Reviewed` | any | **Unfreeze, Bypass Conflict & Consume**: The skill automatically removes
+    the `Status` line, **bypasses the conflict-blocking rule** of the
+    `in progress | modification / removal` row, and applies the updates directly to the underlying
+    Epic and its issues in place. The snapshot and `last_consumed` lock are advanced to the current
+    spec hash only after these roadmap updates are successfully written, returning the framework to
+    nominal state derivation.
 
     | `Done` | any | Create a successor Epic. |
 
@@ -275,7 +276,7 @@
   - **BR-PLAN-27 (Epic state — derivation & syntax):** the Epic state consumed by BR-PLAN-20 is
     resolved deterministically, in this precedence order:
     1. **Explicit override** — if the Epic carries the line `- **📊 Status:** Blocked / To Review`,
-       its state is `Blocked / To Review`. If it carries - `**📊 Status:** Reviewed`, its state is
+       its state is `Blocked / To Review`. If it carries `- **📊 Status:** Reviewed`, its state is
        `Reviewed`. These are the **only** states not derivable from the issues. While Blocked or
        Reviewed is present, the Epic is not a routing target — it freezes or intercepts the FEAT_ID
        routing.
