@@ -218,15 +218,8 @@
     | in progress           | modification / removal | Set the Epic `[Blocked / To Review]`, raise a conflict alert (BR-PLAN-07) and create an idempotent rerouting issue (creation is skipped if a pending rerouting issue already exists for this `FEAT_ID`). **The delta is NOT consumed**: the snapshot is not advanced and last_consumed remains unchanged, leaving the delta pending until the block is human-cleared. |
     | `Blocked / To Review` | any                    | **Frozen** (BR-PLAN-27): no routing action is applied and the delta is **not** consumed (no snapshot advance); re-raise the conflict alert and ask the user to clear the block first.                                                                                                                                                                                 |
 
-    | `Reviewed` | any | **Unfreeze, Bypass Conflict & Consume**: The skill automatically removes
-    the `Status` line. **If the underlying Epic is non-terminal (`Todo` or `In Progress`)**, it
-    **bypasses the conflict-blocking rule** and applies the updates directly to the Epic and its
-    issues in place. **If the underlying Epic is terminal (`done`)**, the `Reviewed` token expires:
-    it bypasses the in-place update and routes directly to the `done` row logic to spawn a brand-new
-    successor Epic. The snapshot and `last_consumed` lock are advanced to the current spec hash only
-    after these updates are successfully written. |
-
-    | `Done` | any | Create a successor Epic. |
+     | `Reviewed` | any | **Unfreeze, Bypass Conflict & Consume**: remove the `Status` line; for a non-terminal underlying Epic, apply the update in place; for a terminal Epic, create a new successor. Advance the snapshot and `last_consumed` only after the roadmap update succeeds. |
+     | `Done` | any | Create a successor Epic. |
 
   - **BR-PLAN-21 (Addon placement — ask, default child):** when an additive delta lands on an
     in-progress Epic, the skill **asks** whether the `[ADDON]` Epic is a **child** of the
