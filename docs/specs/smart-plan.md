@@ -474,15 +474,22 @@
     specification is treated as new; no delta conflict is reported and the first snapshot is `v01`.
   - **EC-PLAN-08 (Snapshot lock missing, corrupt, or incomplete):** The snapshot lock (`specs.lock`)
     acts as the single source of truth for the consumed base.
-    - **Missing Lock:** If the lock file is entirely absent, `last_consumed` is reconstructed from
-      the highest existing snapshot version for the active `FEAT_ID` found on disk and submitted to
-      the user for confirmation; the workspace is never scanned (BR-PLAN-05).
+    - **Missing Lock or Missing FEAT_ID Entry (Recovery vs First-Run):**
+      - If the lock file is entirely absent, or if the active `FEAT_ID` entry is missing from an
+        existing lock, the CLI inspects the snapshot directory for pre-existing physical files
+        matching that `FEAT_ID` (e.g., `<FEAT_ID>.v*.md`).
+      - **True First-Run:** If no matching files exist on disk, it is treated as a nominal first run
+        (`EC-PLAN-07`) and initializes at `v01`.
+      - **Missing Entry Recovery:** If matching files _do_ exist on disk, the first-run path is
+        strictly forbidden to prevent overwriting code. Instead, `last_consumed` is safely
+        reconstructed using the highest available version found on disk for that active `FEAT_ID`
+        and submitted to the user for confirmation; the general workspace remains un-scanned
+        (BR-PLAN-05).
     - **Corrupt or Malformed Lock:** If the lock file exists but contains invalid JSON, unparsable
-      data, or an existing entry for the active `FEAT_ID` that lacks a valid `last_consumed` entry,
-      **the skill MUST immediately halt with a visible technical alert and write nothing**. A
-      missing `FEAT_ID` entry is the first-run case (EC-PLAN-07), not corruption. The CLI is
-      forbidden from inferring a base from the workspace or guessing partial data. To recover a
-      malformed entry, a human must manually repair the lock file.
+      data, or a corrupted structure, **the skill MUST immediately halt with a visible technical
+      alert and write nothing**. The CLI is forbidden from inferring a base from the workspace or
+      guessing partial data. To recover, a human must manually delete or repair the corrupt lock
+      file to trigger the missing-lock reconstruction safety net.
   - **EC-PLAN-09 (Addon receives a further delta):** when the owner is an `[ADDON]` and receives
     another additive delta, no second addon is created: the new issues are applied **in place** on
     that addon (BR-PLAN-26). A modification/removal delta still routes normally (BR-PLAN-20).
