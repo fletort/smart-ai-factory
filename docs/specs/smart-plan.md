@@ -342,11 +342,12 @@
     `roadmap.layout` is **never** changed by a migration: it stays `auto`, and the on-disk layout is
     what the resolver reads.
   - **BR-PLAN-33 (Layout switch vs layout divergence):** an `auto` migration (BR-PLAN-29/30) is a
-    **deliberate, consented evolution of the layout**, distinct from the **contradiction** of
-    BR-PLAN-06: the divergence stop is raised only when the filesystem contradicts an **explicit**
-    configured layout, never when `auto` legitimately resolves to the on-disk layout. A migration
-    never triggers the divergence stop, and the divergence stop (for example both layouts present
-    after an interrupted migration) takes precedence over the layout switch (EC-PLAN-20).
+    **deliberate, consented evolution of the layout**, distinct from layout divergence
+    (BR-PLAN-06). The divergence stop applies when the filesystem contradicts an **explicit**
+    configured layout, or when `auto` finds **both layouts** on disk and cannot resolve a unique
+    layout (EC-PLAN-20). It does not apply when `auto` resolves to the only on-disk layout.
+    A successfully completed migration does not trigger the stop; an ambiguous state after an
+    interrupted migration does, and divergence takes precedence over any layout-switch proposal.
 
 - **User Stories:**
   - _As a_ developer, _I want to_ turn a validated specification into a roadmap of high-level issues
