@@ -472,12 +472,7 @@
     - **Missing Lock:** If the lock file is entirely absent, `last_consumed` is reconstructed from
       the highest existing snapshot version for the active `FEAT_ID` found on disk and submitted to
       the user for confirmation; the workspace is never scanned (BR-PLAN-05).
-    - **Corrupt or Malformed Lock:** If the lock file exists but contains invalid JSON, unparsable
-      data, or lacks a valid `last_consumed` entry for the active execution, **the skill MUST
-      immediately halt with a visible technical alert and write nothing**. The CLI is forbidden from
-      inferring a base from the workspace or guessing partial data. To recover, a human must
-      manually delete or repair the corrupt lock file to trigger the missing-lock reconstruction
-      safetynet.
+     - **Corrupt or Malformed Lock:** If the lock file exists but contains invalid JSON, unparsable data, or an existing entry for the active `FEAT_ID` that lacks a valid `last_consumed` entry, **the skill MUST immediately halt with a visible technical alert and write nothing**. A missing `FEAT_ID` entry is the first-run case (EC-PLAN-07), not corruption. The CLI is forbidden from inferring a base from the workspace or guessing partial data. To recover a malformed entry, a human must manually repair the lock file.
   - **EC-PLAN-09 (Addon receives a further delta):** when the owner is an `[ADDON]` and receives
     another additive delta, no second addon is created: the new issues are applied **in place** on
     that addon (BR-PLAN-26). A modification/removal delta still routes normally (BR-PLAN-20).
