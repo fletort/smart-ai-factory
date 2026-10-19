@@ -741,9 +741,13 @@
       accompanying the update path is successfully ingested and its version advanced per
       BR-PLAN-20.**
 - [ ] **AC-PLAN-30 — Migration atomicity Scenario:** Given a combined migration-ingestion run whose
-      target write or source deletion fails observably, when the run ends, then newly created target
-      files are cleared where possible. Residual files or ambiguous states on disk from unexpected
-      or interrupted crashes are handled as layout divergence upon the next run (BR-PLAN-32,
+      target write or source deletion fails observably, when the run ends, then the skill rolls back
+      the entire local run and stops: the source is retained or restored, newly created target files
+      are removed, and all snapshot and `specs.lock` state changed by the run (including
+      `last_consumed`) is restored to its pre-run state. The `roadmap.md.migrating` marker is cleared
+      last, only after the entire local rollback is confirmed complete. If rollback is incomplete or
+      cannot be confirmed, or a crash interrupts publication, source removal or rollback, the marker
+      remains and the next run halts for manual migration recovery before any ingestion (BR-PLAN-32,
       EC-PLAN-17).
 - [ ] **AC-PLAN-31 — Explicit-layout Scenario:** Given `roadmap.layout: single` or `multi` (not
       `auto`) and a projected scope crossing the threshold, when `/smart-plan` runs, then no switch
