@@ -65,6 +65,9 @@
       DiscoverMulti --> LayoutEval
       DiscoverAuto --> LayoutEval
 
+      CheckDiv -->|yes| HaltDiv["❌ Halt: Stop & Ask User<br/>(BR-PLAN-06 / EC-PLAN-20)"]
+      CheckDiv -->|no| LayoutEval{"Config = auto AND<br/>Detected on-disk = SINGLE AND<br/>Projected scope > Threshold?"}
+
       LayoutEval{"Config = auto AND<br/>Detected on-disk = SINGLE AND<br/>Projected scope > Threshold?"}
 
       LayoutEval -->|yes| ProposeLayout["📐 Propose Layout Migration<br/>(single to multi, consented,<br/>atomic with marker - BR-PLAN-29/30)"]
@@ -347,14 +350,14 @@
     migration before any writes; never silently clear the marker or resume the migration. The
     **target** roadmap files and any concurrent specification delta snapshot are written first. Once
     target publication is successful, the **source** files are removed. An **observably failed**
-    write or source deletion triggers rollback of the entire local run: retain or restore the source,
-    remove any newly created target files, and restore the snapshot and `specs.lock` state changed
-    by the run (including `last_consumed`) to their pre-run state (EC-PLAN-17). Clear the marker
-    **last**, only after successful target publication **and source removal**, or after the entire
-    local rollback is confirmed complete. If rollback is incomplete or cannot be confirmed, or a
-    crash interrupts publication, source removal or rollback, leave the marker in place so the next
-    run stops for migration recovery before any ingestion.
-    The configuration key `roadmap.layout` is **never** changed by a migration: it stays `auto`.
+    write or source deletion triggers rollback of the entire local run: retain or restore the
+    source, remove any newly created target files, and restore the snapshot and `specs.lock` state
+    changed by the run (including `last_consumed`) to their pre-run state (EC-PLAN-17). Clear the
+    marker **last**, only after successful target publication **and source removal**, or after the
+    entire local rollback is confirmed complete. If rollback is incomplete or cannot be confirmed,
+    or a crash interrupts publication, source removal or rollback, leave the marker in place so the
+    next run stops for migration recovery before any ingestion. The configuration key
+    `roadmap.layout` is **never** changed by a migration: it stays `auto`.
   - **BR-PLAN-33 (Layout switch vs layout divergence):** an `auto` migration (BR-PLAN-29/30) is a
     **deliberate, consented evolution of the layout**, distinct from layout divergence (BR-PLAN-06).
     The divergence stop applies when the filesystem contradicts an **explicit** configured layout,
