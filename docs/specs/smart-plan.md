@@ -66,20 +66,19 @@
       DiscoverAuto --> CheckDiv
 
       CheckDiv -->|yes| HaltDiv["❌ Halt: Stop & Ask User<br/>(BR-PLAN-06 / EC-PLAN-20)"]
-      CheckDiv -->|no| LayoutEval{"Config = auto AND<br/>Detected on-disk = SINGLE AND<br/>Projected scope > Threshold?"}
-
-      LayoutEval{"Config = auto AND<br/>Detected on-disk = SINGLE AND<br/>Projected scope > Threshold?"}
-
-      LayoutEval -->|yes| ProposeLayout["📐 Propose Layout Migration<br/>(single to multi, consented,<br/>atomic with marker - BR-PLAN-29/30)"]
-      LayoutEval -->|no| Process["🏗️ Build / Merge Roadmap Strategy"]
-      ProposeLayout --> Process
+      CheckDiv -->|no| Process["🏗️ Build / Merge Roadmap Strategy"]
 
       Process -->|Step 1| Vision["🎯 Extract Global Vision"]
       Vision -->|Step 2| Epics["📊 Map Epics"]
       Epics -->|Step 3| Issues["🎫 Sequence High-Level Issues"]
 
       Issues -->|Clean slate: write directly<br/>in calculated auto layout| Output["✅ Write To Workspace"]
-      Issues -->|Existing roadmap| Confirm["🧾 Diff Table + User Confirmation"]
+      Issues -->|Existing roadmap| LayoutEval{"Config = auto AND<br/>Detected on-disk = SINGLE AND<br/>Projected scope > Threshold?"}
+
+      LayoutEval -->|yes| ProposeLayout["📐 Propose Layout Migration<br/>(single to multi, consented,<br/>atomic with marker - BR-PLAN-29/30)"]
+      LayoutEval -->|no| Confirm["🧾 Diff Table + User Confirmation"]
+      ProposeLayout --> Confirm
+
       Confirm -->|yes| Output
   ```
 
@@ -87,28 +86,30 @@
 
   ```mermaid
   stateDiagram-v2
-      [*] --> ConfigCheck
-      ConfigCheck --> Halted : .smart.ai/conf.yml missing
-      Halted --> [*]
-      ConfigCheck --> SourceDetection : config read, versioned/layout announced
-      SourceDetection --> VersionSelection : roadmap.versioned = true
-      VersionSelection --> Discovery : user confirms or gives the version
-      SourceDetection --> Discovery : roadmap.versioned = false
-      Discovery --> Divergence : filesystem contradicts config layout, marker found, or auto-both
-      Divergence --> Discovery : user decides migrate layout or update config
-      Discovery --> CleanSlate : no roadmap found
-      Discovery --> Reconciliation : existing roadmap read
-      CleanSlate --> Written : direct write, no question
-      Reconciliation --> LayoutProposal : auto AND on-disk layout is SINGLE AND projected scope over threshold (BR-PLAN-29/30)
-      LayoutProposal --> AwaitingConfirmation : migration added to the diff table
-      Reconciliation --> AwaitingConfirmation : diff table displayed without migration (already multi or under threshold)
-      AwaitingConfirmation --> Written : user types 'yes' [when NO migration is proposed] OR 'yes keep-single' [migration declined]
-      AwaitingConfirmation --> Migrating : user types 'yes' or 'yes layout' [when migration is accepted]
-      AwaitingConfirmation --> Reconciliation : user specifies adjustments
-      Migrating --> Written : target written, then source removed (atomic, marker cleared, BR-PLAN-32)
-      Migrating --> MigrationHalted : observable write/removal failure; attempt full local rollback (BR-PLAN-32), then halt
-      MigrationHalted --> [*] : keep marker unless rollback is confirmed complete; rediscovery only in a new invocation after confirmed recovery
-      Written --> [*]
+    [*] --> ConfigCheck
+    ConfigCheck --> Halted : .smart.ai/conf.yml missing
+    Halted --> [*]
+    ConfigCheck --> SourceDetection : config read, versioned/layout announced
+    SourceDetection --> VersionSelection : roadmap.versioned = true
+    VersionSelection --> Discovery : user confirms or gives the version
+    SourceDetection --> Discovery : roadmap.versioned = false
+    Discovery --> ConfigDivergence : filesystem contradicts explicit layout config
+    Discovery --> InterruptedDivergence : marker found OR auto found both layouts (EC-PLAN-20)
+    ConfigDivergence --> Discovery : user decides to migrate layout or update config
+    InterruptedDivergence --> ManualRecovery : halt with visible technical alert
+    ManualRecovery --> [*] : human manually cleans up workspace files
+    Discovery --> CleanSlate : no roadmap found
+    Discovery --> Reconciliation : existing roadmap read
+    CleanSlate --> Written : direct write, no question
+    Reconciliation --> LayoutProposal : auto AND on-disk layout is SINGLE AND projected scope over threshold (BR-PLAN-29/30)
+    LayoutProposal --> AwaitingConfirmation : migration added to the diff table
+    Reconciliation --> AwaitingConfirmation : diff table displayed without migration (already multi or under threshold)
+    AwaitingConfirmation --> Written : user types 'yes' [when NO migration is proposed] OR 'yes keep-single' [migration declined]
+    AwaitingConfirmation --> Migrating : user types 'yes' or 'yes layout' [when migration is accepted]
+    AwaitingConfirmation --> Reconciliation : user specifies adjustments
+    Migrating --> Written : target written, then source removed (atomic, marker cleared, BR-PLAN-32)
+    Migrating --> Reconciliation : write/removal failure, rollback to source layout
+    Written --> [*]
   ```
 
 - **Business Rules:**
@@ -744,11 +745,11 @@
       target write or source deletion fails observably, when the run ends, then the skill rolls back
       the entire local run and stops: the source is retained or restored, newly created target files
       are removed, and all snapshot and `specs.lock` state changed by the run (including
-      `last_consumed`) is restored to its pre-run state. The `roadmap.md.migrating` marker is cleared
-      last, only after the entire local rollback is confirmed complete. If rollback is incomplete or
-      cannot be confirmed, or a crash interrupts publication, source removal or rollback, the marker
-      remains and the next run halts for manual migration recovery before any ingestion (BR-PLAN-32,
-      EC-PLAN-17).
+      `last_consumed`) is restored to its pre-run state. The `roadmap.md.migrating` marker is
+      cleared last, only after the entire local rollback is confirmed complete. If rollback is
+      incomplete or cannot be confirmed, or a crash interrupts publication, source removal or
+      rollback, the marker remains and the next run halts for manual migration recovery before any
+      ingestion (BR-PLAN-32, EC-PLAN-17).
 - [ ] **AC-PLAN-31 — Explicit-layout Scenario:** Given `roadmap.layout: single` or `multi` (not
       `auto`) and a projected scope crossing the threshold, when `/smart-plan` runs, then no switch
       is proposed and the configured layout is authoritative (BR-PLAN-29).
