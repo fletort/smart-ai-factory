@@ -346,11 +346,14 @@
     layout-divergence stop (BR-PLAN-06, EC-PLAN-03): ask the user to recover the interrupted
     migration before any writes; never silently clear the marker or resume the migration. The
     **target** roadmap files and any concurrent specification delta snapshot are written first. Once
-    target publication is successful, the **source** files are removed. On an **observably failed**
-    write before source removal, the skill rolls back the local run by removing any newly created
-    targets files (EC-PLAN-17). Clear the marker **last**, only after target files are complete or
-    local rollback is finished. Any crash or failure during this step leaves an ambiguous state
-    (both layouts or partial files) is deferred to the automated divergence check of the next run.
+    target publication is successful, the **source** files are removed. An **observably failed**
+    write or source deletion triggers rollback of the entire local run: retain or restore the source,
+    remove any newly created target files, and restore the snapshot and `specs.lock` state changed
+    by the run (including `last_consumed`) to their pre-run state (EC-PLAN-17). Clear the marker
+    **last**, only after successful target publication **and source removal**, or after the entire
+    local rollback is confirmed complete. If rollback is incomplete or cannot be confirmed, or a
+    crash interrupts publication, source removal or rollback, leave the marker in place so the next
+    run stops for migration recovery before any ingestion.
     The configuration key `roadmap.layout` is **never** changed by a migration: it stays `auto`.
   - **BR-PLAN-33 (Layout switch vs layout divergence):** an `auto` migration (BR-PLAN-29/30) is a
     **deliberate, consented evolution of the layout**, distinct from layout divergence (BR-PLAN-06).
