@@ -61,9 +61,9 @@
       Strategy -->|layout: multi| DiscoverMulti["🔎 Read Existing multi files<br/>(Divergence stop if single found)"]
       Strategy -->|layout: auto| DiscoverAuto["🔎 Discover On-Disk State<br/>(Both layouts or marker = Divergence stop)"]
 
-      DiscoverSingle --> LayoutEval
-      DiscoverMulti --> LayoutEval
-      DiscoverAuto --> LayoutEval
+      DiscoverSingle --> CheckDiv{"Divergence detected?<br/>(Both layouts, marker, or mismatch)"}
+      DiscoverMulti --> CheckDiv
+      DiscoverAuto --> CheckDiv
 
       CheckDiv -->|yes| HaltDiv["❌ Halt: Stop & Ask User<br/>(BR-PLAN-06 / EC-PLAN-20)"]
       CheckDiv -->|no| LayoutEval{"Config = auto AND<br/>Detected on-disk = SINGLE AND<br/>Projected scope > Threshold?"}
