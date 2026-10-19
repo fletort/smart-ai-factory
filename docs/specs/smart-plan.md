@@ -103,7 +103,7 @@
       Reconciliation --> LayoutProposal : auto AND on-disk layout is SINGLE AND projected scope over threshold (BR-PLAN-29/30)
       LayoutProposal --> AwaitingConfirmation : migration added to the diff table
       Reconciliation --> AwaitingConfirmation : diff table displayed without migration (already multi or under threshold)
-      AwaitingConfirmation --> Written : user types 'yes' (no migration proposed) OR 'yes keep-single' (migration declined)
+      AwaitingConfirmation --> Written : user types 'yes' [when NO migration is proposed] OR 'yes keep-single' [migration declined]
       AwaitingConfirmation --> Migrating : user types 'yes' or 'yes layout' (migration accepted)
       AwaitingConfirmation --> Reconciliation : user specifies adjustments
       Migrating --> Written : target written, then source removed (atomic, marker cleared, BR-PLAN-32)
@@ -349,22 +349,23 @@
     regardless of its contents or whether the source or target `README.md` exists, triggers the
     layout-divergence stop (BR-PLAN-06, EC-PLAN-03): ask the user to recover the interrupted
     migration before any writes; never silently clear the marker or resume the migration. The
-    **target** roadmap files and any concurrent specification delta snapshot are written first. Once
-    target publication is successful, the **source** files are durably backed up by renaming them to
-    a temporary backup locator (e.g., `roadmap.md.bak`) before final decommissioning, and the
+    **target** roadmap files and any concurrent specification delta snapshot are written first; any
+    in-place amended snapshots (BR-PLAN-24) are backed up before modification. Once target
+    publication is successful, the **source** files are durably backed up by renaming them to a
+    temporary backup locator (e.g., `roadmap.md.bak`) before final decommissioning, and the
     `specs.lock` update is staged. On an **observably failed** target write, an observably failed
     source backup renaming, **an observably failed snapshot/lock publication (BR-PLAN-23), or any
     observed failure during final source removal**, the skill rolls back **the entire combined
-    transaction: it removes any created target files, discards any uncommitted snapshot artifacts,
-    restores the original source layout from the backup file, and leaves specs.lock untouched** to
-    keep the workspace intact (EC-PLAN-17). Clear the marker **last**, only after target
-    publication, lock commit, backup source removal, and metadata sync are durably complete, or
-    rollback has durably restored the intact source-only layout. If rollback or marker cleanup
-    cannot be completed, report the failure and stop; do not bypass a remaining marker. A process
-    crash (power loss, kill signal) may leave a partial target tree, both layouts, or the backup
-    file, but the marker forces the next run to stop for explicit recovery, even if `README.md` was
-    never written. The configuration key `roadmap.layout` is **never** changed by a migration: it
-    stays `auto`, and the on-disk layout is what the resolver reads after the marker check.
+    transaction: it removes any created target files, discards new snapshot files, reverts any
+    in-place amended snapshots to their pre-run state, restores the original source layout from the
+    backup file, and leaves specs.lock untouched** to keep the workspace intact (EC-PLAN-17). Clear
+    the marker **last**, only after target publication, lock commit, backup source removal, and
+    metadata sync are durably complete, or rollback has durably restored the intact source-only
+    layout. If rollback or marker cleanup cannot be completed, report the failure and stop; do not
+    bypass a remaining marker. A process crash (power loss, kill signal) may leave a partial target
+    tree, both layouts, or the backup file, but the marker forces the next run to stop for explicit
+    recovery. The configuration key `roadmap.layout` is **never** changed by a migration: it stays
+    `auto`, and the on-disk layout is what the resolver reads after the marker check.
   - **BR-PLAN-33 (Layout switch vs layout divergence):** an `auto` migration (BR-PLAN-29/30) is a
     **deliberate, consented evolution of the layout**, distinct from layout divergence (BR-PLAN-06).
     The divergence stop applies when the filesystem contradicts an **explicit** configured layout,
@@ -617,13 +618,14 @@
     is traced in logs. The proposal will be re-emitted at the next update if the threshold is still
     exceeded.
   - **EC-PLAN-17 (Migration write, backup, removal, or lock failure):** a target write fails
-    observably, the source backup renaming fails, **the concurrent snapshot or specs.lock commit
-    fails**, or the final source deletion fails observably during a combined migration-ingestion
-    run; the skill rolls back by deleting any target roadmap files and new snapshot files created
-    during the run, **restores the original source files from their temporary backup state, leaves
-    specs.lock unchanged**, writes/deletes nothing else and reports the failure. No partial layout
-    or desynchronized lock state is left behind by the failure handling, protecting the workspace
-    from immediate divergence or delta replay (BR-PLAN-32).
+    observably, the source backup renaming fails, the concurrent snapshot or specs.lock commit
+    fails, or the final source deletion fails observably during a combined migration-ingestion run;
+    the skill rolls back by deleting any target roadmap files and new snapshot files created during
+    the run, **restoring any in-place amended snapshot files to their original state, restoring the
+    original source files from their temporary backup state, and leaving specs.lock unchanged**,
+    writing/deleting nothing else and reports the failure. No partial layout, desynchronized lock
+    state, or corrupted snapshot hash is left behind by the failure handling, protecting the
+    workspace from immediate divergence or delta replay (BR-PLAN-32).
   - **EC-PLAN-18 (Threshold borderline):** a projected scope of exactly 3 Epics and exactly 50
     issues does not exceed the threshold; no migration is proposed (the comparison is strict,
     BR-PLAN-30).
@@ -750,11 +752,12 @@
       accompanying the update path is successfully ingested and its version advanced per
       BR-PLAN-20.**
 - [ ] **AC-PLAN-30 — Migration atomicity Scenario:** Given a combined migration-ingestion run whose
-      target write, source backup renaming, **snapshot write, specs.lock update**, or source
-      deletion fails observably, when the run ends, then all created target roadmap and snapshot
-      files are rolled back (deleted), **the source layout is fully restored from its backup state,
-      specs.lock remains unchanged**, and the workspace remains completely intact and valid without
-      any state desynchronization (BR-PLAN-32, EC-PLAN-17).
+      target write, source backup renaming, snapshot write, specs.lock update, or source deletion
+      fails observably, when the run ends, then all created target roadmap and new snapshot files
+      are rolled back (deleted), **any in-place amended snapshot files are reverted, the source
+      layout is fully restored from its backup state, specs.lock remains unchanged**, and the
+      workspace remains completely intact and valid without any state or hash desynchronization
+      (BR-PLAN-32, EC-PLAN-17).
 - [ ] **AC-PLAN-31 — Explicit-layout Scenario:** Given `roadmap.layout: single` or `multi` (not
       `auto`) and a projected scope crossing the threshold, when `/smart-plan` runs, then no switch
       is proposed and the configured layout is authoritative (BR-PLAN-29).
