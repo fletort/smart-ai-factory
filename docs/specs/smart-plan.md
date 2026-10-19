@@ -342,10 +342,13 @@
     Before creating any target directory or file, durably create a `roadmap.md.migrating` marker
     beside the source `roadmap.md` (at the root or inside the active `roadmap/vX.Y/` directory). If
     marker creation or its durability cannot be confirmed, stop without creating any target. After
-    version selection (BR-PLAN-03), **before BR-PLAN-05 layout resolution**, discovery in every
-    configured layout must check this marker. Its mere existence, regardless of its contents or
-    whether the source or target `README.md` exists, triggers the layout-divergence stop
-    (BR-PLAN-06, EC-PLAN-03): ask the user to recover the interrupted migration before any writes;
+    version selection (BR-PLAN-03), **before BR-PLAN-05 layout resolution**, `/smart-plan`
+    discovery in every configured layout must check this marker. **The marker-triggered divergence
+    stop in BR-PLAN-32/33 and EC-PLAN-20 applies only to `/smart-plan` runs; triage retains its
+    [layout-resolution contract](./triage-engine.md#layout-resolution).** Its mere existence,
+    regardless of its contents or whether the source or target `README.md` exists, triggers the
+    layout-divergence stop (BR-PLAN-06, EC-PLAN-03): ask the user to recover the interrupted migration
+    before any writes;
     never silently clear the marker or resume the migration. The **target** files are written first
     and the **source** files are removed only after every target write has succeeded. On an
     **observably failed** target write **or an observably failed source removal**, the skill rolls
