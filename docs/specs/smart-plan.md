@@ -353,15 +353,20 @@
     in-place amended snapshots (BR-PLAN-24) are backed up before modification. Once target
     publication is successful, the **source** files are durably backed up by renaming them to a
     temporary backup locator (e.g., `roadmap.md.bak`) before final decommissioning, and the
-    `specs.lock` update is staged. On an **observably failed** target write, an observably failed
+    `specs.lock` update is staged. Before publishing the lock, durably back up its pre-run
+    contents (or durably record its pre-run absence); if this cannot be confirmed, roll back
+    without publishing the lock. Retain this recovery state until successful completion or a
+    durably completed rollback. On an **observably failed** target write, an observably failed
     source backup renaming, **an observably failed snapshot/lock publication (BR-PLAN-23), or any
-    observed failure during final source removal**, the skill rolls back **the entire combined
-    transaction: it removes any created target files, discards new snapshot files, reverts any
-    in-place amended snapshots to their pre-run state, restores the original source layout from the
-    backup file, and leaves specs.lock untouched** to keep the workspace intact (EC-PLAN-17). Clear
-    the marker **last**, only after target publication, lock commit, backup source removal, and
-    metadata sync are durably complete, or rollback has durably restored the intact source-only
-    layout. If rollback or marker cleanup cannot be completed, report the failure and stop; do not
+    observed failure during final source removal or metadata sync**, the skill rolls back **the
+    entire combined transaction: it removes any created target files, discards new snapshot files,
+    reverts any in-place amended snapshots to their pre-run state, restores the original source
+    layout from the backup file, and restores any published specs.lock from its durable backup
+    (or removes the newly created lock if it was absent before the run)**, leaving the lock in its
+    pre-run state to keep the workspace intact (EC-PLAN-17). Clear the marker **last**, only after
+    target publication, lock commit, backup source removal, and metadata sync are durably complete,
+    or rollback has durably restored the intact source-only layout and the pre-run lock state.
+    If rollback or marker cleanup cannot be completed, report the failure and stop; do not
     bypass a remaining marker. A process crash (power loss, kill signal) may leave a partial target
     tree, both layouts, or the backup file, but the marker forces the next run to stop for explicit
     recovery. The configuration key `roadmap.layout` is **never** changed by a migration: it stays
