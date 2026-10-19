@@ -19,10 +19,9 @@
   project scope definition.
 - **Business Goals:**
   - Produce a macro, parallel-ready roadmap flow at zero cost: the phase has a high-context input
-    but a small, macro-level output, so a "Flash" model with a massive context window (default agent
-    `Gemini Flash Architect`, Free Tier on Google AI Studio) processes entire specifications for
-    free. The phase is fully automated (no mandatory HITL gate for a clean slate; an existing
-    roadmap is only written after the user confirms).
+    but a small, macro-level output, so a "Flash" model with a massive context window processes
+    entire specifications for free. The phase is fully automated (no mandatory HITL gate for a clean
+    slate; an existing roadmap is only written after the user confirms).
   - Keep the output files tight and clean (**FinOps preservation**) so the Phase 2 triage can
     execute multiple runs without context crowding.
   - Keep roadmap identifiers stable over time so that downstream links (`(#N)` ticket references)
@@ -58,28 +57,25 @@
       ReadFile --> Strategy{"Detect Versioning and Config Layout"}
       ReadChat --> Strategy
 
-      Strategy -->|not versioned and single| Single["📝 Generate Single File<br/>roadmap.md"]
-      Strategy -->|versioned and single| SingleVer["📝 Generate Single Versioned File<br/>roadmap/vX.Y/roadmap.md"]
-      Strategy -->|not versioned and multi| Multi["🗂️ Generate Multi Files Directory<br/>roadmap/..."]
-      Strategy -->|versioned and multi| MultiVer["🗂️ Generate Multi Versioned Files <br/>roadmap/vX.Y/..."]
-      Strategy -->|layout: auto| ResolveAuto["⚙️ Resolve Auto Layout<br/>(Uses existing on-disk layout,<br/>or projects scope if clean slate)"]
+      Strategy -->|layout: single| DiscoverSingle["🔎 Read Existing single file<br/>(Divergence stop if multi found)"]
+      Strategy -->|layout: multi| DiscoverMulti["🔎 Read Existing multi files<br/>(Divergence stop if single found)"]
+      Strategy -->|layout: auto| DiscoverAuto["🔎 Discover On-Disk State<br/>(Both layouts or marker = Divergence stop)"]
 
-      Single --> Discover["🔎 Discover & Read Existing Roadmap<br/>(layout divergence = ask user)"]
-      SingleVer --> Discover
-      Multi --> Discover
-      MultiVer --> Discover
-      ResolveAuto --> Discover
+      DiscoverSingle --> LayoutEval
+      DiscoverMulti --> LayoutEval
+      DiscoverAuto --> LayoutEval
 
-      Discover --> LayoutEval{"Layout = auto AND<br/>projected scope over threshold AND<br/>current layout is single?"}
-      LayoutEval -->|yes| ProposeLayout["📐 Propose Layout Migration<br/>(single to multi, consented,<br/>atomic - BR-PLAN-29/30)"]
+      LayoutEval{"Config = auto AND<br/>Detected on-disk = SINGLE AND<br/>Projected scope > Threshold?"}
+
+      LayoutEval -->|yes| ProposeLayout["📐 Propose Layout Migration<br/>(single to multi, consented,<br/>atomic with marker - BR-PLAN-29/30)"]
       LayoutEval -->|no| Process["🏗️ Build / Merge Roadmap Strategy"]
       ProposeLayout --> Process
 
-      Process -->|Step 1| Vision["🎯 Extract Global Vision<br/>(2-Sentence Summary)"]
+      Process -->|Step 1| Vision["🎯 Extract Global Vision"]
       Vision -->|Step 2| Epics["📊 Map Epics"]
-      Epics -->|Step 3| Issues["🎫 Sequence High-Level Issues<br/>(With Short IDs & Deps)"]
+      Epics -->|Step 3| Issues["🎫 Sequence High-Level Issues"]
 
-      Issues -->|Clean slate| Output["✅ Write To Workspace"]
+      Issues -->|Clean slate: write directly<br/>in calculated auto layout| Output["✅ Write To Workspace"]
       Issues -->|Existing roadmap| Confirm["🧾 Diff Table + User Confirmation"]
       Confirm -->|yes| Output
   ```
@@ -95,7 +91,7 @@
       SourceDetection --> VersionSelection : roadmap.versioned = true
       VersionSelection --> Discovery : user confirms or gives the version
       SourceDetection --> Discovery : roadmap.versioned = false
-      Discovery --> Divergence : filesystem contradicts config layout
+      Discovery --> Divergence : filesystem contradicts config layout, marker found, or auto-both
       Divergence --> Discovery : user decides migrate layout or update config
       Discovery --> CleanSlate : no roadmap found
       Discovery --> Reconciliation : existing roadmap read
@@ -104,10 +100,10 @@
       LayoutProposal --> AwaitingConfirmation : migration added to the diff table
       Reconciliation --> AwaitingConfirmation : diff table displayed without migration (already multi or under threshold)
       AwaitingConfirmation --> Written : user types 'yes' [when NO migration is proposed] OR 'yes keep-single' [migration declined]
-      AwaitingConfirmation --> Migrating : user types 'yes' or 'yes layout' (migration accepted)
+      AwaitingConfirmation --> Migrating : user types 'yes' or 'yes layout' [when migration is accepted]
       AwaitingConfirmation --> Reconciliation : user specifies adjustments
       Migrating --> Written : target written, then source removed (atomic, marker cleared, BR-PLAN-32)
-      Migrating --> Reconciliation : write failure, rollback to source layout
+      Migrating --> Reconciliation : write/removal failure, rollback to source layout
       Written --> [*]
   ```
 
@@ -334,9 +330,9 @@
     (`Source Type`, `Pointer`, `Spec Version`), the optional `📊 Status` line, `<!-- [DELETED] -->`
     markers, the Epic identifiers and their order, the Global Vision and every Epic Purpose. Only
     the **file partitioning** changes: the standalone `roadmap.md` is split into a `README.md` index
-    and one `epic-X.md` per Epic. **While the migration structural change itself does not generate a
+    and one `epic-X.md` per Epic. While the migration structural change itself does not generate a
     specification delta or consume snapshots, any active File-Mode delta being applied during the
-    same run still advances its respective snapshot and version pin normally per BR-PLAN-20/23.**
+    same run still advances its respective snapshot and version pin normally per BR-PLAN-20/23.
   - **BR-PLAN-32 (Migration publication — best-effort atomicity & configuration stability):** the
     migration is written as one best-effort all-or-nothing set, on the same model as BR-PLAN-23.
     Before creating any target directory or file, durably create a `roadmap.md.migrating` marker
@@ -349,28 +345,13 @@
     regardless of its contents or whether the source or target `README.md` exists, triggers the
     layout-divergence stop (BR-PLAN-06, EC-PLAN-03): ask the user to recover the interrupted
     migration before any writes; never silently clear the marker or resume the migration. The
-    **target** roadmap files and any concurrent specification delta snapshot are written first; any
-    in-place amended snapshots (BR-PLAN-24) are backed up before modification. Once target
-    publication is successful, the **source** files are durably backed up by renaming them to a
-    temporary backup locator (e.g., `roadmap.md.bak`) before final decommissioning, and the
-    `specs.lock` update is staged. Before publishing the lock, durably back up its pre-run contents
-    (or durably record its pre-run absence); if this cannot be confirmed, roll back without
-    publishing the lock. Retain this recovery state until successful completion or a durably
-    completed rollback. On an **observably failed** target write, an observably failed source backup
-    renaming, **an observably failed snapshot/lock publication (BR-PLAN-23), or any observed failure
-    during final source removal or metadata sync**, the skill rolls back **the entire combined
-    transaction: it removes any created target files, discards new snapshot files, reverts any
-    in-place amended snapshots to their pre-run state, restores the original source layout from the
-    backup file, and restores any published specs.lock from its durable backup (or removes the newly
-    created lock if it was absent before the run)**, leaving the lock in its pre-run state to keep
-    the workspace intact (EC-PLAN-17). Clear the marker **last**, only after target publication,
-    lock commit, backup source removal, and metadata sync are durably complete, or rollback has
-    durably restored the intact source-only layout and the pre-run lock state. If rollback or marker
-    cleanup cannot be completed, report the failure and stop; do not bypass a remaining marker. A
-    process crash (power loss, kill signal) may leave a partial target tree, both layouts, or the
-    backup file, but the marker forces the next run to stop for explicit recovery. The configuration
-    key `roadmap.layout` is **never** changed by a migration: it stays `auto`, and the on-disk
-    layout is what the resolver reads after the marker check.
+    **target** roadmap files and any concurrent specification delta snapshot are written first. Once
+    target publication is successful, the **source** files are removed. On an **observably failed**
+    write before source removal, the skill rolls back the local run by removing any newly created
+    targets files (EC-PLAN-17). Clear the marker **last**, only after target files are complete or
+    local rollback is finished. Any crash or failure during this step leaves an ambiguous state
+    (both layouts or partial files) is deferred to the automated divergence check of the next run.
+    The configuration key `roadmap.layout` is **never** changed by a migration: it stays `auto`.
   - **BR-PLAN-33 (Layout switch vs layout divergence):** an `auto` migration (BR-PLAN-29/30) is a
     **deliberate, consented evolution of the layout**, distinct from layout divergence (BR-PLAN-06).
     The divergence stop applies when the filesystem contradicts an **explicit** configured layout,
@@ -622,15 +603,11 @@
     remains the sole authoritative roadmap, the migration marker is never created, and the decline
     is traced in logs. The proposal will be re-emitted at the next update if the threshold is still
     exceeded.
-  - **EC-PLAN-17 (Migration write, backup, removal, or lock failure):** a target write fails
-    observably, the source backup renaming fails, the concurrent snapshot or specs.lock commit
-    fails, or the final source deletion fails observably during a combined migration-ingestion run;
-    the skill rolls back by deleting any target roadmap files and new snapshot files created during
-    the run, **restoring any in-place amended snapshot files to their original state, restoring the
-    original source files from their temporary backup state, and leaving specs.lock unchanged**,
-    writing/deleting nothing else and reports the failure. No partial layout, desynchronized lock
-    state, or corrupted snapshot hash is left behind by the failure handling, protecting the
-    workspace from immediate divergence or delta replay (BR-PLAN-32).
+  - **EC-PLAN-17 (Migration failure):** a target write or file modification fails observably during
+    a run; the skill attempts to clear any newly created target files from the current workspace
+    session and stops. Any incomplete or desynchronized state on disk resulting from an unhandled or
+    interrupted process crash is intentionally left to be resolved as layout divergence at the next
+    execution (BR-PLAN-32).
   - **EC-PLAN-18 (Threshold borderline):** a projected scope of exactly 3 Epics and exactly 50
     issues does not exceed the threshold; no migration is proposed (the comparison is strict,
     BR-PLAN-30).
@@ -757,12 +734,10 @@
       accompanying the update path is successfully ingested and its version advanced per
       BR-PLAN-20.**
 - [ ] **AC-PLAN-30 — Migration atomicity Scenario:** Given a combined migration-ingestion run whose
-      target write, source backup renaming, snapshot write, specs.lock update, or source deletion
-      fails observably, when the run ends, then all created target roadmap and new snapshot files
-      are rolled back (deleted), **any in-place amended snapshot files are reverted, the source
-      layout is fully restored from its backup state, specs.lock remains unchanged**, and the
-      workspace remains completely intact and valid without any state or hash desynchronization
-      (BR-PLAN-32, EC-PLAN-17).
+      target write or source deletion fails observably, when the run ends, then newly created target
+      files are cleared where possible. Residual files or ambiguous states on disk from unexpected
+      or interrupted crashes are handled as layout divergence upon the next run (BR-PLAN-32,
+      EC-PLAN-17).
 - [ ] **AC-PLAN-31 — Explicit-layout Scenario:** Given `roadmap.layout: single` or `multi` (not
       `auto`) and a projected scope crossing the threshold, when `/smart-plan` runs, then no switch
       is proposed and the configured layout is authoritative (BR-PLAN-29).
