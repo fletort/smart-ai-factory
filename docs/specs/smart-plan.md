@@ -106,7 +106,8 @@
       AwaitingConfirmation --> Migrating : user types 'yes' or 'yes layout' [when migration is accepted]
       AwaitingConfirmation --> Reconciliation : user specifies adjustments
       Migrating --> Written : target written, then source removed (atomic, marker cleared, BR-PLAN-32)
-      Migrating --> Reconciliation : write/removal failure, rollback to source layout
+      Migrating --> MigrationHalted : observable write/removal failure; attempt full local rollback (BR-PLAN-32), then halt
+      MigrationHalted --> [*] : keep marker unless rollback is confirmed complete; rediscovery only in a new invocation after confirmed recovery
       Written --> [*]
   ```
 
