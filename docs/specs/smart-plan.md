@@ -329,25 +329,38 @@
     (`Source Type`, `Pointer`, `Spec Version`), the optional `📊 Status` line, `<!-- [DELETED] -->`
     markers, the Epic identifiers and their order, the Global Vision and every Epic Purpose. Only
     the **file partitioning** changes: the standalone `roadmap.md` is split into a `README.md` index
-    and one `epic-X.md` per Epic. The migration is a pure re-partitioning: it consumes no snapshot,
-    advances no `Spec Version` and creates no delta (BR-PLAN-14/17).
+    and one `epic-X.md` per Epic. **While the migration structural change itself does not generate a
+    specification delta or consume snapshots, any active File-Mode delta being applied during the
+    same run still advances its respective snapshot and version pin normally per BR-PLAN-20/23.**
   - **BR-PLAN-32 (Migration publication — best-effort atomicity & configuration stability):** the
-    migration is written as one best-effort all-or-nothing set, on the same model as BR-PLAN-23: the
-    **target** files are written first and the **source** files are removed only after every target
-    write has succeeded. On an **observably failed** target write **or an observably failed source
-    removal**, the skill rolls back **the entire transaction by removing any created target files**
-    and leaves the source layout intact (EC-PLAN-17); a process crash (power loss, kill signal)
-    between the two steps may still leave both layouts on disk, which the next run resolves through
-    the layout-divergence stop (BR-PLAN-06), never by a silent migration. The configuration key
-    `roadmap.layout` is **never** changed by a migration: it stays `auto`, and the on-disk layout is
-    what the resolver reads.
+    migration is written as one best-effort all-or-nothing set, on the same model as BR-PLAN-23.
+    Before creating any target directory or file, durably create a `roadmap.md.migrating` marker
+    beside the source `roadmap.md` (at the root or inside the active `roadmap/vX.Y/` directory). If
+    marker creation or its durability cannot be confirmed, stop without creating any target. After
+    version selection (BR-PLAN-03), **before BR-PLAN-05 layout resolution**, discovery in every
+    configured layout must check this marker. Its mere existence, regardless of its contents or
+    whether the source or target `README.md` exists, triggers the layout-divergence stop
+    (BR-PLAN-06, EC-PLAN-03): ask the user to recover the interrupted migration before any writes;
+    never silently clear the marker or resume the migration. The **target** files are written first
+    and the **source** files are removed only after every target write has succeeded. On an
+    **observably failed** target write **or an observably failed source removal**, the skill rolls
+    back **the entire transaction by removing any created target files** and leaves the source
+    layout intact (EC-PLAN-17). Clear the marker **last**, only after target publication and source
+    removal are durably complete, or rollback has durably restored the intact source-only layout. If
+    rollback or marker cleanup cannot be completed, report the failure and stop; do not bypass a
+    remaining marker. A process crash (power loss, kill signal) may leave a partial target tree,
+    both layouts, or only the completed target, but the marker forces the next run to stop for
+    explicit recovery, even if `README.md` was never written. The configuration key `roadmap.layout`
+    is **never** changed by a migration: it stays `auto`, and the on-disk layout is what the
+    resolver reads after the marker check.
   - **BR-PLAN-33 (Layout switch vs layout divergence):** an `auto` migration (BR-PLAN-29/30) is a
     **deliberate, consented evolution of the layout**, distinct from layout divergence (BR-PLAN-06).
     The divergence stop applies when the filesystem contradicts an **explicit** configured layout,
-    or when `auto` finds **both layouts** on disk and cannot resolve a unique layout (EC-PLAN-20).
-    It does not apply when `auto` resolves to the only on-disk layout. A successfully completed
-    migration does not trigger the stop; an ambiguous state after an interrupted migration does, and
-    divergence takes precedence over any layout-switch proposal.
+    or when the migration marker exists (BR-PLAN-32), or when `auto` finds **both layouts** on disk
+    and cannot resolve a unique layout (EC-PLAN-20). It does not apply when the marker is absent and
+    `auto` resolves to the only on-disk layout. A successfully completed migration with its marker
+    cleared does not trigger the stop; an interrupted migration with its marker does, and divergence
+    takes precedence over any layout-switch proposal.
 
 - **User Stories:**
   - _As a_ developer, _I want to_ turn a validated specification into a roadmap of high-level issues
@@ -600,11 +613,12 @@
   - **EC-PLAN-19 (Migration in versioned mode):** `roadmap.versioned` is `true`; the migration is
     contained within the active version directory (`roadmap/vX.Y/`), never across version
     directories, and the cross-version isolation of the Non-Goals holds.
-  - **EC-PLAN-20 (Both layouts on disk):** the discovery finds both a standalone `roadmap.md` and a
-    `roadmap/README.md` set (for example after an interrupted migration); the layout-divergence stop
-    (BR-PLAN-06, EC-PLAN-03) takes precedence — all tool invocations halt and the user is asked
-    before anything else — and the layout switch is not offered on an already contradictory state
-    (BR-PLAN-33).
+  - **EC-PLAN-20 (Both layouts or migration marker on disk):** if discovery finds both a standalone
+    `roadmap.md` and a `roadmap/README.md` set on disk, or if the `roadmap.md.migrating` marker is
+    detected (indicating a crashed or incomplete migration), the layout-divergence stop (BR-PLAN-06,
+    EC-PLAN-03) takes absolute precedence. All tool activations halt immediately, no layout switch
+    is offered, and the system prompts the user for manual cleanup before any subsequent plan
+    generation (BR-PLAN-33).
 
 ## 4. Acceptance Criteria (QA)
 
@@ -712,9 +726,11 @@
       the source `roadmap.md` remains and the decline is traced (EC-PLAN-16).
 - [ ] **AC-PLAN-29 — Migration fidelity Scenario:** Given a completed migration, when the source and
       target layouts are compared, then every `[ISSUE-X.Y]` ID, `Depends on:` tag, `(#N)` link,
-      checkbox, `Spec Version` anchor, `📊 Status` line and `[DELETED]` marker is identical, the
-      Epic order/IDs and the Global Vision are unchanged, and no snapshot was consumed nor
-      `Spec Version` advanced (BR-PLAN-31).
+      checkbox, `Spec Version` anchor, `📊 Status` line and `[DELETED]` marker is identical, and the
+      Epic order/IDs and the Global Vision are unchanged. **The migration process itself preserves
+      existing versions without incrementing them, while any concurrent specification delta
+      accompanying the update path is successfully ingested and its version advanced per
+      BR-PLAN-20.**
 - [ ] **AC-PLAN-30 — Migration atomicity Scenario:** Given a migration whose target write **or
       source removal** fails observably, when the run ends, then **all** created target files are
       rolled back (deleted) and the source layout remains completely intact and valid (BR-PLAN-32,
@@ -723,5 +739,6 @@
       `auto`) and a projected scope crossing the threshold, when `/smart-plan` runs, then no switch
       is proposed and the configured layout is authoritative (BR-PLAN-29).
 - [ ] **AC-PLAN-32 — Divergence precedence Scenario:** Given both a `roadmap.md` and a
-      `roadmap/README.md` set on disk, when `/smart-plan` runs under `auto`, then the
-      layout-divergence stop applies and no layout switch is offered (BR-PLAN-33, EC-PLAN-20).
+      `roadmap/README.md` set on disk, or given an active `roadmap.md.migrating` marker even with a
+      partial/missing target tree, when `/smart-plan` runs under `auto`, then the layout-divergence
+      stop applies immediately and no layout switch is proposed (BR-PLAN-33, EC-PLAN-20).
