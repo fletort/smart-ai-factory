@@ -611,11 +611,14 @@
     remains the sole authoritative roadmap, the migration marker is never created, and the decline
     is traced in logs. The proposal will be re-emitted at the next update if the threshold is still
     exceeded.
-  - **EC-PLAN-17 (Migration failure):** a target write or file modification fails observably during
-    a run; the skill attempts to clear any newly created target files from the current workspace
-    session and stops. Any incomplete or desynchronized state on disk resulting from an unhandled or
-    interrupted process crash is intentionally left to be resolved as layout divergence at the next
-    execution (BR-PLAN-32).
+  - **EC-PLAN-17 (Migration failure):** a target write, file modification or source deletion fails
+    observably during a migration run; the skill rolls back the entire local run and stops: retain
+    or restore the source, remove any newly created target files, and restore all snapshot and
+    `specs.lock` state changed by the run (including `last_consumed`) to its pre-run state. Clear
+    the `roadmap.md.migrating` marker last, only after the entire local rollback is confirmed
+    complete. If rollback is incomplete or cannot be confirmed, or a crash interrupts publication,
+    source removal or rollback, leave the marker in place so the next run halts for manual migration
+    recovery before any ingestion (BR-PLAN-32, AC-PLAN-30).
   - **EC-PLAN-18 (Threshold borderline):** a projected scope of exactly 3 Epics and exactly 50
     issues does not exceed the threshold; no migration is proposed (the comparison is strict,
     BR-PLAN-30).
