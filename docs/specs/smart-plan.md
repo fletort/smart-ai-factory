@@ -62,11 +62,13 @@
       Strategy -->|versioned and single| SingleVer["📝 Generate Single Versioned File<br/>roadmap/vX.Y/roadmap.md"]
       Strategy -->|not versioned and multi| Multi["🗂️ Generate Multi Files Directory<br/>roadmap/..."]
       Strategy -->|versioned and multi| MultiVer["🗂️ Generate Multi Versioned Files <br/>roadmap/vX.Y/..."]
+      Strategy -->|layout: auto| ResolveAuto["⚙️ Resolve Auto Layout<br/>(Uses existing on-disk layout,<br/>or projects scope if clean slate)"]
 
       Single --> Discover["🔎 Discover & Read Existing Roadmap<br/>(layout divergence = ask user)"]
       SingleVer --> Discover
       Multi --> Discover
       MultiVer --> Discover
+      ResolveAuto --> Discover
 
       Discover --> LayoutEval{"Layout = auto AND<br/>projected scope over threshold?"}
       LayoutEval -->|yes| ProposeLayout["📐 Propose Layout Migration<br/>(single to multi, consented,<br/>atomic - BR-PLAN-29/30)"]
@@ -100,9 +102,9 @@
       CleanSlate --> Written : direct write, no question
       Reconciliation --> LayoutProposal : auto AND projected scope over threshold (BR-PLAN-29/30)
       LayoutProposal --> AwaitingConfirmation : migration added to the diff table
-      Reconciliation --> AwaitingConfirmation : diff table displayed
-      AwaitingConfirmation --> Written : user types yes, no layout change
-      AwaitingConfirmation --> Migrating : user types yes, migration accepted
+      Reconciliation --> AwaitingConfirmation : diff table displayed without migration
+      AwaitingConfirmation --> Written : user types 'yes' (no migration proposed) OR 'yes keep-single' (migration declined)
+      AwaitingConfirmation --> Migrating : user types 'yes' or 'yes layout' (migration accepted)
       AwaitingConfirmation --> Reconciliation : user specifies adjustments
       Migrating --> Written : target written, then source removed (atomic, BR-PLAN-32)
       Migrating --> Reconciliation : write failure, rollback to source layout
@@ -319,9 +321,12 @@
     `single`, `roadmap.layout` is `auto`, and the projected scope **strictly exceeds** the
     BR-PLAN-04 threshold (more than **3 Epics** or more than **50 issues**), the skill **proposes**
     the migration to the multi-file layout as an explicit row of the reconciliation table
-    (BR-PLAN-09). The migration is applied only after the user types `yes`; a decline keeps the
-    single-file layout for the run (EC-PLAN-16). The proposal is re-emitted at each update while the
-    threshold is still exceeded; to silence it persistently the user pins `roadmap.layout: single`.
+    (BR-PLAN-09). **The interactive prompt explicitly instructs the user to respond with 'yes' or
+    'yes layout' to accept both the update and the migration, or 'yes keep-single' to accept the
+    roadmap update but decline the layout migration (EC-PLAN-16).** The migration is applied only
+    after the user confirms acceptance; a decline keeps the single-file layout for the run
+    (EC-PLAN-16). The proposal is re-emitted at each update while the threshold is still exceeded;
+    to silence it persistently the user pins `roadmap.layout: single`.
   - **BR-PLAN-31 (Migration data preservation):** the migration rewrites the roadmap from the
     single-file layout into the multi-file layout (BR-PLAN-04) **without altering any data**. Every
     value present in the source is reproduced identically in the target: issue IDs `[ISSUE-X.Y]`,
@@ -598,10 +603,12 @@
     `Blocked / To Review` (BR-PLAN-27), the incoming delta is **not** applied and its snapshot is
     **not** advanced; the skill reports it and asks the user to clear the block first. The other
     `FEAT_ID`s of the run proceed normally.
-  - **EC-PLAN-16 (Migration declined):** the user declines the escalation proposal (BR-PLAN-30); the
-    update is applied in the current single-file layout, no `README.md` / `epic-X.md` is created,
-    the source `roadmap.md` remains the sole roadmap and the decline is traced. The proposal is
-    re-emitted at the next update while the threshold is still exceeded.
+  - **EC-PLAN-16 (Migration declined via protocol):** the user explicitly types `'yes keep-single'`
+    in response to an escalation proposal; the update is applied directly into the current
+    single-file layout. No `README.md` or `epic-X.md` files are created, the source `roadmap.md`
+    remains the sole authoritative roadmap, the migration marker is never created, and the decline
+    is traced in logs. The proposal will be re-emitted at the next update if the threshold is still
+    exceeded.
   - **EC-PLAN-17 (Migration write or removal failure):** a target write fails observably **or the
     subsequent source file removal fails observably** during a migration; the skill rolls back by
     deleting any target files it created during the run, keeps the source layout fully intact,
@@ -721,9 +728,10 @@
       single-file roadmap and a projected scope exceeding 3 Epics or 50 issues, when `/smart-plan`
       updates it, then the single-to-multi migration is proposed in the comparison table and nothing
       is written before the user types `yes` (BR-PLAN-29, BR-PLAN-30).
-- [ ] **AC-PLAN-28 — Declined migration Scenario:** Given the same context, when the user declines,
-      then the update is applied in the single-file layout, no `README.md` / `epic-X.md` is created,
-      the source `roadmap.md` remains and the decline is traced (EC-PLAN-16).
+- [ ] **AC-PLAN-28 — Declined migration Scenario:** Given a single-file roadmap exceeding the
+      threshold under `auto`, when the user inputs exactly `'yes keep-single'`, then the roadmap
+      data update is applied strictly within the single-file layout, no multi-file structural
+      artifacts are written, and the decline is formally traced (EC-PLAN-16).
 - [ ] **AC-PLAN-29 — Migration fidelity Scenario:** Given a completed migration, when the source and
       target layouts are compared, then every `[ISSUE-X.Y]` ID, `Depends on:` tag, `(#N)` link,
       checkbox, `Spec Version` anchor, `📊 Status` line and `[DELETED]` marker is identical, and the
