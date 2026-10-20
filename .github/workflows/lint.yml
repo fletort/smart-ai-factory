@@ -29,18 +29,13 @@ jobs:
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.11'
+          cache: 'poetry'
 
       - name: Install Poetry
         uses: snok/install-poetry@a783c322200f0519c7926aa6faa857c4e23e9263 # v1.4.2
         with:
           version: latest
           virtualenvs-in-project: true
-
-      - name: Cache Poetry
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
 
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -52,11 +47,24 @@ jobs:
         run: |
           poetry sync --no-interaction --no-ansi
           npm ci
+
+      - name: Cache actionlint
+        id: cache-actionlint
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ github.workspace }}/bin/actionlint
+          key: ${{ runner.os }}-actionlint-1.7.12
+
       - name: Install actionlint
+        if: steps.cache-actionlint.outputs.cache-hit != 'true'
         run: |
+          mkdir -p ${{ github.workspace }}/bin
           curl -SL -o download-actionlint.sh https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash
-          sudo bash download-actionlint.sh 1.7.12 /usr/bin
+          bash download-actionlint.sh 1.7.12 ${{ github.workspace }}/bin
           rm download-actionlint.sh
+
+      - name: Add actionlint to PATH
+        run: echo "${{ github.workspace }}/bin" >> "$GITHUB_PATH"
 
       - name: Run Lefthook lint-all
         run: |
