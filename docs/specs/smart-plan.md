@@ -2,10 +2,11 @@
 
 > **State**: _Partially implemented_ (`smart-plan` skill in `.agents/skills/smart-plan/`) —
 > **revision proposed**. **Implemented:** BR-PLAN-01 to BR-PLAN-13, EC-PLAN-01 to EC-PLAN-06,
-> AC-PLAN-01 to AC-PLAN-06. **Not developed:** BR-PLAN-14 to BR-PLAN-28, EC-PLAN-07 to EC-PLAN-15,
-> AC-PLAN-07 to AC-PLAN-26 (delta-aware ingestion for File-Mode anchors: versioned snapshots,
+> AC-PLAN-01 to AC-PLAN-06. **Not developed:** BR-PLAN-14 to BR-PLAN-33, EC-PLAN-07 to EC-PLAN-20,
+> AC-PLAN-07 to AC-PLAN-32 (delta-aware ingestion for File-Mode anchors: versioned snapshots,
 > per-Epic version pin, delta classification, idempotence, reviewed form-only amendment, Epic-state
-> routing and negative-delta handling); the runtime prompt is updated by a downstream implementation
+> routing and negative-delta handling; plus the consented `auto`-layout switch with atomic
+> migration, BR-PLAN-29 to BR-PLAN-33); the runtime prompt is updated by a downstream implementation
 > task.
 
 ## 1. Context & Objectives
@@ -18,10 +19,9 @@
   project scope definition.
 - **Business Goals:**
   - Produce a macro, parallel-ready roadmap flow at zero cost: the phase has a high-context input
-    but a small, macro-level output, so a "Flash" model with a massive context window (default agent
-    `Gemini Flash Architect`, Free Tier on Google AI Studio) processes entire specifications for
-    free. The phase is fully automated (no mandatory HITL gate for a clean slate; an existing
-    roadmap is only written after the user confirms).
+    but a small, macro-level output, so a "Flash" model with a massive context window processes
+    entire specifications for free. The phase is fully automated (no mandatory HITL gate for a clean
+    slate; an existing roadmap is only written after the user confirms).
   - Keep the output files tight and clean (**FinOps preservation**) so the Phase 2 triage can
     execute multiple runs without context crowding.
   - Keep roadmap identifiers stable over time so that downstream links (`(#N)` ticket references)
@@ -57,24 +57,28 @@
       ReadFile --> Strategy{"Detect Versioning and Config Layout"}
       ReadChat --> Strategy
 
-      Strategy -->|not versioned and single| Single["📝 Generate Single File<br/>roadmap.md"]
-      Strategy -->|versioned and single| SingleVer["📝 Generate Single Versioned File<br/>roadmap/vX.Y/roadmap.md"]
-      Strategy -->|not versioned and multi| Multi["🗂️ Generate Multi Files Directory<br/>roadmap/..."]
-      Strategy -->|versioned and multi| MultiVer["🗂️ Generate Multi Versioned Files <br/>roadmap/vX.Y/..."]
+      Strategy -->|layout: single| DiscoverSingle["🔎 Read Existing single file<br/>(Divergence stop if multi found)"]
+      Strategy -->|layout: multi| DiscoverMulti["🔎 Read Existing multi files<br/>(Divergence stop if single found)"]
+      Strategy -->|layout: auto| DiscoverAuto["🔎 Discover On-Disk State<br/>(Both layouts or marker = Divergence stop)"]
 
-      Single --> Discover["🔎 Discover & Read Existing Roadmap<br/>(layout divergence = ask user)"]
-      SingleVer --> Discover
-      Multi --> Discover
-      MultiVer --> Discover
+      DiscoverSingle --> CheckDiv{"Divergence detected?<br/>(Both layouts, marker, or mismatch)"}
+      DiscoverMulti --> CheckDiv
+      DiscoverAuto --> CheckDiv
 
-      Discover --> Process["🏗️ Build / Merge Roadmap Strategy"]
+      CheckDiv -->|yes| HaltDiv["❌ Halt: Stop & Ask User<br/>(BR-PLAN-06 / EC-PLAN-20)"]
+      CheckDiv -->|no| Process["🏗️ Build / Merge Roadmap Strategy"]
 
-      Process -->|Step 1| Vision["🎯 Extract Global Vision<br/>(2-Sentence Summary)"]
+      Process -->|Step 1| Vision["🎯 Extract Global Vision"]
       Vision -->|Step 2| Epics["📊 Map Epics"]
-      Epics -->|Step 3| Issues["🎫 Sequence High-Level Issues<br/>(With Short IDs & Deps)"]
+      Epics -->|Step 3| Issues["🎫 Sequence High-Level Issues"]
 
-      Issues -->|Clean slate| Output["✅ Write To Workspace"]
-      Issues -->|Existing roadmap| Confirm["🧾 Diff Table + User Confirmation"]
+      Issues -->|Clean slate: write directly<br/>in calculated auto layout| Output["✅ Write To Workspace"]
+      Issues -->|Existing roadmap| LayoutEval{"Config = auto AND<br/>Detected on-disk = SINGLE AND<br/>Projected scope > Threshold?"}
+
+      LayoutEval -->|yes| ProposeLayout["📐 Propose Layout Migration<br/>(single to multi, consented,<br/>atomic with marker - BR-PLAN-29/30)"]
+      LayoutEval -->|no| Confirm["🧾 Diff Table + User Confirmation"]
+      ProposeLayout --> Confirm
+
       Confirm -->|yes| Output
   ```
 
@@ -82,22 +86,30 @@
 
   ```mermaid
   stateDiagram-v2
-      [*] --> ConfigCheck
-      ConfigCheck --> Halted : .smart.ai/conf.yml missing
-      Halted --> [*]
-      ConfigCheck --> SourceDetection : config read, versioned/layout announced
-      SourceDetection --> VersionSelection : roadmap.versioned = true
-      VersionSelection --> Discovery : user confirms or gives the version
-      SourceDetection --> Discovery : roadmap.versioned = false
-      Discovery --> Divergence : filesystem contradicts config layout
-      Divergence --> Discovery : user decides migrate layout or update config
-      Discovery --> CleanSlate : no roadmap found
-      Discovery --> Reconciliation : existing roadmap read
-      CleanSlate --> Written : direct write, no question
-      Reconciliation --> AwaitingConfirmation : diff table displayed
-      AwaitingConfirmation --> Written : user types yes
-      AwaitingConfirmation --> Reconciliation : user specifies adjustments
-      Written --> [*]
+    [*] --> ConfigCheck
+    ConfigCheck --> Halted : .smart.ai/conf.yml missing
+    Halted --> [*]
+    ConfigCheck --> SourceDetection : config read, versioned/layout announced
+    SourceDetection --> VersionSelection : roadmap.versioned = true
+    VersionSelection --> Discovery : user confirms or gives the version
+    SourceDetection --> Discovery : roadmap.versioned = false
+    Discovery --> ConfigDivergence : filesystem contradicts explicit layout config
+    Discovery --> InterruptedDivergence : marker found OR auto found both layouts (EC-PLAN-20)
+    ConfigDivergence --> Discovery : user decides to migrate layout or update config
+    InterruptedDivergence --> ManualRecovery : halt with visible technical alert
+    ManualRecovery --> [*] : human manually cleans up workspace files
+    Discovery --> CleanSlate : no roadmap found
+    Discovery --> Reconciliation : existing roadmap read
+    CleanSlate --> Written : direct write, no question
+    Reconciliation --> LayoutProposal : auto AND on-disk layout is SINGLE AND projected scope over threshold (BR-PLAN-29/30)
+    LayoutProposal --> AwaitingConfirmation : migration added to the diff table
+    Reconciliation --> AwaitingConfirmation : diff table displayed without migration (already multi or under threshold)
+    AwaitingConfirmation --> Written : user types 'yes' [when NO migration is proposed] OR 'yes keep-single' [migration declined]
+    AwaitingConfirmation --> Migrating : user types 'yes' or 'yes layout' [when migration is accepted]
+    AwaitingConfirmation --> Reconciliation : user specifies adjustments
+    Migrating --> Written : target written, then source removed (atomic, marker cleared, BR-PLAN-32)
+    Migrating --> Reconciliation : write/removal failure, rollback to source layout
+    Written --> [*]
   ```
 
 - **Business Rules:**
@@ -126,13 +138,15 @@
     - `multi` (auto-split): outputs a `README.md` index and individual `epic-X.md` files, to prevent
       output token truncation and maintain readability.
     - `auto` (or not defined): chooses automatically. The multi-file layout is used if the project
-      scope exceeds 3 Epics or has more than 50 tasks.
+      scope exceeds 3 Epics or has more than 50 tasks. Under `auto` this rule is evaluated at
+      creation **and re-evaluated at every update** of an existing roadmap (BR-PLAN-29).
   - **BR-PLAN-05 (Discovery):** only the dedicated roadmap paths are read, never the workspace root:
     `roadmap.md` or `roadmap/README.md` (or the `roadmap/vX.Y/` equivalents). If the configured
     target is missing, the other layout location is checked before assuming a clean slate.
   - **BR-PLAN-06 (Layout divergence):** if the filesystem contradicts the configured layout (e.g.
     `single` but `roadmap/README.md` exists), the skill stops and asks whether to migrate the layout
-    or update the configuration.
+    or update the configuration. A consented `auto` layout switch is a distinct, non-contradiction
+    case (BR-PLAN-33).
   - **BR-PLAN-07 (Merge rules):** an Epic whose `Pointer` matches the new source is updated; an
     unknown pointer always creates a new Epic (never added to an unrelated one). Existing
     `[ISSUE-X.Y]` IDs and checkboxes are preserved, new IDs continue after the highest existing one,
@@ -295,6 +309,66 @@
     visible technical alert and write nothing**. Older roadmap versions are treated as immutable
     historical records and cannot re-consume specifications.
 
+  - **BR-PLAN-29 (Auto-layout re-evaluation on update):** in `auto` layout mode, the **projected
+    scope** (the roadmap as it would be after the current merge: the number of Epics and the total
+    number of issues) is re-evaluated at **every update** of an existing roadmap. Update-time
+    auto-layout is **escalation-only**: an existing `multi` layout is retained even when the
+    projected scope is at or below the BR-PLAN-04 threshold; no multi-to-single proposal or
+    migration is performed. For an existing `single` layout, only a single-to-multi proposal may be
+    emitted (BR-PLAN-30); nothing is migrated without consent. Creation still follows BR-PLAN-04. In
+    an explicit `single` or `multi` configuration no proposal is emitted and the configured layout
+    is authoritative (BR-PLAN-06 governs a contradiction).
+  - **BR-PLAN-30 (Escalation proposal — single to multi):** when the resolved on-disk layout is
+    `single`, `roadmap.layout` is `auto`, and the projected scope **strictly exceeds** the
+    BR-PLAN-04 threshold (more than **3 Epics** or more than **50 issues**), the skill **proposes**
+    the migration to the multi-file layout as an explicit row of the reconciliation table
+    (BR-PLAN-09). **The interactive prompt explicitly instructs the user to respond with 'yes' or
+    'yes layout' to accept both the update and the migration, or 'yes keep-single' to accept the
+    roadmap update but decline the layout migration (EC-PLAN-16).** The migration is applied only
+    after the user confirms acceptance; a decline keeps the single-file layout for the run
+    (EC-PLAN-16). The proposal is re-emitted at each update while the threshold is still exceeded;
+    to silence it persistently the user pins `roadmap.layout: single`.
+  - **BR-PLAN-31 (Migration data preservation):** the migration rewrites the roadmap from the
+    single-file layout into the multi-file layout (BR-PLAN-04) **without altering any data**. Every
+    value present in the source is reproduced identically in the target: issue IDs `[ISSUE-X.Y]`,
+    `Depends on:` tags, `(#N)` ticket links, user checkboxes (`- [ ]` / `- [x]`), `Spec Anchors`
+    (`Source Type`, `Pointer`, `Spec Version`), the optional `📊 Status` line, `<!-- [DELETED] -->`
+    markers, the Epic identifiers and their order, the Global Vision and every Epic Purpose. Only
+    the **file partitioning** changes: the standalone `roadmap.md` is split into a `README.md` index
+    and one `epic-X.md` per Epic. While the migration structural change itself does not generate a
+    specification delta or consume snapshots, any active File-Mode delta being applied during the
+    same run still advances its respective snapshot and version pin normally per BR-PLAN-20/23.
+  - **BR-PLAN-32 (Migration publication — best-effort atomicity & configuration stability):** the
+    migration is written as one best-effort all-or-nothing set, on the same model as BR-PLAN-23.
+    Before creating any target directory or file, durably create a `roadmap.md.migrating` marker
+    beside the source `roadmap.md` (at the root or inside the active `roadmap/vX.Y/` directory). If
+    marker creation or its durability cannot be confirmed, stop without creating any target. After
+    version selection (BR-PLAN-03), **before BR-PLAN-05 layout resolution**, `/smart-plan` discovery
+    in every configured layout must check this marker. **The marker-triggered divergence stop in
+    BR-PLAN-32/33 and EC-PLAN-20 applies only to `/smart-plan` runs; triage retains its
+    [layout-resolution contract](./triage-engine.md#layout-resolution).** Its mere existence,
+    regardless of its contents or whether the source or target `README.md` exists, triggers the
+    layout-divergence stop (BR-PLAN-06, EC-PLAN-03): ask the user to recover the interrupted
+    migration before any writes; never silently clear the marker or resume the migration. The
+    **target** roadmap files and any concurrent specification delta snapshot are written first. Once
+    target publication is successful, the **source** files are removed. An **observably failed**
+    write or source deletion triggers rollback of the entire local run: retain or restore the
+    source, remove any newly created target files, and restore the snapshot and `specs.lock` state
+    changed by the run (including `last_consumed`) to their pre-run state (EC-PLAN-17). Clear the
+    marker **last**, only after successful target publication **and source removal**, or after the
+    entire local rollback is confirmed complete. If rollback is incomplete or cannot be confirmed,
+    or a crash interrupts publication, source removal or rollback, leave the marker in place so the
+    next run stops for migration recovery before any ingestion. The configuration key
+    `roadmap.layout` is **never** changed by a migration: it stays `auto`.
+  - **BR-PLAN-33 (Layout switch vs layout divergence):** an `auto` migration (BR-PLAN-29/30) is a
+    **deliberate, consented evolution of the layout**, distinct from layout divergence (BR-PLAN-06).
+    The divergence stop applies when the filesystem contradicts an **explicit** configured layout,
+    or when the migration marker exists (BR-PLAN-32), or when `auto` finds **both layouts** on disk
+    and cannot resolve a unique layout (EC-PLAN-20). It does not apply when the marker is absent and
+    `auto` resolves to the only on-disk layout. A successfully completed migration with its marker
+    cleared does not trigger the stop; an interrupted migration with its marker does, and divergence
+    takes precedence over any layout-switch proposal.
+
 - **User Stories:**
   - _As a_ developer, _I want to_ turn a validated specification into a roadmap of high-level issues
     _so that_ the triage can create the detailed tickets automatically.
@@ -309,6 +383,8 @@
   - _As a_ maintainer, _I want_ a typo-only edit to refresh the snapshot under review instead of
     forking a new version _so that_ cosmetic churn never disturbs the roadmap or the pinned version.
   - _As a_ FinOps owner, _I want_ a lightweight roadmap _so that_ downstream triage runs stay cheap.
+  - _As a_ maintainer, _I want_ an `auto` roadmap to escalate to the multi-file layout when it grows
+    _so that_ downstream triage runs stay cheap and the output is never truncated.
 
 ## 3. Technical Specifications (How)
 
@@ -326,40 +402,60 @@
   additive Spec Anchor field (`Spec Version: vNN`), which the triage parser may treat as unknown
   metadata until it is updated.
 
+  The `auto`-layout re-evaluation (BR-PLAN-29/30) is likewise evaluated **between Discovery and
+  Build/Merge**, from the **projected scope**. A consented migration re-partitions the roadmap files
+  (BR-PLAN-31/32) without changing the roadmap _format_, so the triage `auto` resolution — which
+  already reads the only matching on-disk layout — is unaffected (see
+  [triage engine](./triage-engine.md#layout-resolution)).
+
   ```mermaid
   sequenceDiagram
-      autonumber
-      actor User
-      participant Skill as smart-plan skill
-      participant Cfg as .smart.ai/conf.yml
-      participant FS as Roadmap files
-      participant Spec as Specification file
+    autonumber
+    actor User
+    participant Skill as smart-plan skill
+    participant Cfg as .smart.ai/conf.yml
+    participant FS as Roadmap files
+    participant Spec as Specification file
 
-      User->>Skill: /smart-plan (spec file or chat context)
-      Skill->>Cfg: Read (only this file)
-      alt Config missing
-          Skill-->>User: ❌**[smart-plan] Workspace not configured.**
-      end
-      Skill-->>User: [smart-ai] Roadmap Configuration detected (versioned, layout)
-      opt File Mode
-          Skill->>Spec: Read the target specification
-      end
-      opt Versioned roadmap
-          Skill-->>User: Propose the last version or a new one
-          User->>Skill: Version
-      end
-      Skill->>FS: Read the dedicated roadmap paths only
-      alt Layout divergence
-          Skill-->>User: Migrate the layout or update the configuration?
-          User->>Skill: Decision
-      end
-      alt Clean slate
-          Skill->>FS: Write directly
-      else Existing roadmap
-          Skill-->>User: Comparison table + confirmation phrase
-          User->>Skill: yes
-          Skill->>FS: Write the merged roadmap
-      end
+    User->>Skill: /smart-plan (spec file or chat context)
+    Skill->>Cfg: Read (only this file)
+    alt Config missing
+        Skill-->>User: ❌**[smart-plan] Workspace not configured.**
+    end
+    Skill-->>User: [smart-ai] Roadmap Configuration detected (versioned, layout)
+    opt File Mode
+        Skill->>Spec: Read the target specification
+    end
+    opt Versioned roadmap
+        Skill-->>User: Propose the last version or a new one
+        User->>Skill: Version
+    end
+    Skill->>FS: Read the dedicated roadmap paths only
+
+    alt Interrupted Migration / Both Layouts Found (EC-PLAN-20)
+        Skill-->>User: Technical alert: Halt for manual recovery
+    else Layout divergence in explicit configuration (EC-PLAN-03)
+        Skill-->>User: Migrate the layout or update the configuration?
+        User->>Skill: Decision
+    end
+
+    alt Clean slate
+        Skill->>FS: Write directly in calculated layout
+    else Existing roadmap
+        Skill-->>User: Comparison table (with migration proposal if auto + single + over threshold)
+
+        alt Migration is proposed
+            User->>Skill: 'yes layout' (or 'yes') to accept migration OR 'yes keep-single' to decline
+            alt Option A: Migration accepted ('yes layout' / 'yes')
+                Skill->>FS: Write target files (multi), remove source files, and clear marker
+            else Option B: Migration declined ('yes keep-single')
+                Skill->>FS: Write merged roadmap data strictly within single-file layout
+            end
+        else No migration proposed (under threshold or explicit layout)
+            User->>Skill: 'yes'
+            Skill->>FS: Write the merged roadmap in its current layout
+        end
+    end
   ```
 
 - **Data Model & API Contracts:**
@@ -378,6 +474,10 @@
       | false     | `multi`  | `roadmap/README.md`, `roadmap/epic-X.md`           |
       | true      | `single` | `roadmap/vX.Y/roadmap.md`                          |
       | true      | `multi`  | `roadmap/vX.Y/README.md`, `roadmap/vX.Y/epic-X.md` |
+
+      Under `auto`, the row that is executed follows the **resolved on-disk layout**; a consented
+      migration (BR-PLAN-30/31) may change that layout between two runs without changing the
+      `roadmap.layout` key.
 
     - Issue identifiers: epic-qualified `[ISSUE-X.Y]` (X = epic id, Y starts at 1 in a new Epic).
       New IDs continue strictly after the highest ID of the epic; a new Epic takes IDs strictly
@@ -512,6 +612,32 @@
     `Blocked / To Review` (BR-PLAN-27), the incoming delta is **not** applied and its snapshot is
     **not** advanced; the skill reports it and asks the user to clear the block first. The other
     `FEAT_ID`s of the run proceed normally.
+  - **EC-PLAN-16 (Migration declined via protocol):** the user explicitly types `'yes keep-single'`
+    in response to an escalation proposal; the update is applied directly into the current
+    single-file layout. No `README.md` or `epic-X.md` files are created, the source `roadmap.md`
+    remains the sole authoritative roadmap, the migration marker is never created, and the decline
+    is traced in logs. The proposal will be re-emitted at the next update if the threshold is still
+    exceeded.
+  - **EC-PLAN-17 (Migration failure):** a target write, file modification or source deletion fails
+    observably during a migration run; the skill rolls back the entire local run and stops: retain
+    or restore the source, remove any newly created target files, and restore all snapshot and
+    `specs.lock` state changed by the run (including `last_consumed`) to its pre-run state. Clear
+    the `roadmap.md.migrating` marker last, only after the entire local rollback is confirmed
+    complete. If rollback is incomplete or cannot be confirmed, or a crash interrupts publication,
+    source removal or rollback, leave the marker in place so the next run halts for manual migration
+    recovery before any ingestion (BR-PLAN-32, AC-PLAN-30).
+  - **EC-PLAN-18 (Threshold borderline):** a projected scope of exactly 3 Epics and exactly 50
+    issues does not exceed the threshold; no migration is proposed (the comparison is strict,
+    BR-PLAN-30).
+  - **EC-PLAN-19 (Migration in versioned mode):** `roadmap.versioned` is `true`; the migration is
+    contained within the active version directory (`roadmap/vX.Y/`), never across version
+    directories, and the cross-version isolation of the Non-Goals holds.
+  - **EC-PLAN-20 (Both layouts or migration marker on disk):** if discovery finds both a standalone
+    `roadmap.md` and a `roadmap/README.md` set on disk, or if the `roadmap.md.migrating` marker is
+    detected (indicating a crashed or incomplete migration), the layout-divergence stop (BR-PLAN-06,
+    EC-PLAN-03) takes absolute precedence. All tool activations halt immediately, no layout switch
+    is offered, and the system prompts the user for manual cleanup before any subsequent plan
+    generation (BR-PLAN-33).
 
 ## 4. Acceptance Criteria (QA)
 
@@ -610,3 +736,34 @@
       when routed, then the system detects **no active owner** for this layer, bypasses ownership
       inspection, and falls back to the `absent` row of the matrix to spawn a brand-new independent
       Epic in the current roadmap version without modifying past versions.
+- [ ] **AC-PLAN-27 — Escalation proposal Scenario:** Given `roadmap.layout: auto`, an existing
+      single-file roadmap and a projected scope exceeding 3 Epics or 50 issues, when `/smart-plan`
+      updates it, then the single-to-multi migration is proposed in the comparison table and nothing
+      is written before the user types `yes` (BR-PLAN-29, BR-PLAN-30).
+- [ ] **AC-PLAN-28 — Declined migration Scenario:** Given a single-file roadmap exceeding the
+      threshold under `auto`, when the user inputs exactly `'yes keep-single'`, then the roadmap
+      data update is applied strictly within the single-file layout, no multi-file structural
+      artifacts are written, and the decline is formally traced (EC-PLAN-16).
+- [ ] **AC-PLAN-29 — Migration fidelity Scenario:** Given a completed migration, when the source and
+      target layouts are compared, then every `[ISSUE-X.Y]` ID, `Depends on:` tag, `(#N)` link,
+      checkbox, `Spec Version` anchor, `📊 Status` line and `[DELETED]` marker is identical, and the
+      Epic order/IDs and the Global Vision are unchanged. **The migration process itself preserves
+      existing versions without incrementing them, while any concurrent specification delta
+      accompanying the update path is successfully ingested and its version advanced per
+      BR-PLAN-20.**
+- [ ] **AC-PLAN-30 — Migration atomicity Scenario:** Given a combined migration-ingestion run whose
+      target write or source deletion fails observably, when the run ends, then the skill rolls back
+      the entire local run and stops: the source is retained or restored, newly created target files
+      are removed, and all snapshot and `specs.lock` state changed by the run (including
+      `last_consumed`) is restored to its pre-run state. The `roadmap.md.migrating` marker is
+      cleared last, only after the entire local rollback is confirmed complete. If rollback is
+      incomplete or cannot be confirmed, or a crash interrupts publication, source removal or
+      rollback, the marker remains and the next run halts for manual migration recovery before any
+      ingestion (BR-PLAN-32, EC-PLAN-17).
+- [ ] **AC-PLAN-31 — Explicit-layout Scenario:** Given `roadmap.layout: single` or `multi` (not
+      `auto`) and a projected scope crossing the threshold, when `/smart-plan` runs, then no switch
+      is proposed and the configured layout is authoritative (BR-PLAN-29).
+- [ ] **AC-PLAN-32 — Divergence precedence Scenario:** Given both a `roadmap.md` and a
+      `roadmap/README.md` set on disk, or given an active `roadmap.md.migrating` marker even with a
+      partial/missing target tree, when `/smart-plan` runs under `auto`, then the layout-divergence
+      stop applies immediately and no layout switch is proposed (BR-PLAN-33, EC-PLAN-20).
