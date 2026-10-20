@@ -410,45 +410,52 @@
 
   ```mermaid
   sequenceDiagram
-      autonumber
-      actor User
-      participant Skill as smart-plan skill
-      participant Cfg as .smart.ai/conf.yml
-      participant FS as Roadmap files
-      participant Spec as Specification file
+    autonumber
+    actor User
+    participant Skill as smart-plan skill
+    participant Cfg as .smart.ai/conf.yml
+    participant FS as Roadmap files
+    participant Spec as Specification file
 
-      User->>Skill: /smart-plan (spec file or chat context)
-      Skill->>Cfg: Read (only this file)
-      alt Config missing
-          Skill-->>User: ❌**[smart-plan] Workspace not configured.**
-      end
-      Skill-->>User: [smart-ai] Roadmap Configuration detected (versioned, layout)
-      opt File Mode
-          Skill->>Spec: Read the target specification
-      end
-      opt Versioned roadmap
-          Skill-->>User: Propose the last version or a new one
-          User->>Skill: Version
-      end
-      Skill->>FS: Read the dedicated roadmap paths only
-      alt Layout divergence
-          Skill-->>User: Migrate the layout or update the configuration?
-          User->>Skill: Decision
-      end
-      alt Clean slate
-          Skill->>FS: Write directly
-      else Existing roadmap
-          opt auto layout AND projected scope over threshold
-              Skill-->>User: Propose the single-to-multi layout migration (in the diff table)
-          end
-          Skill-->>User: Comparison table + confirmation phrase
-          User->>Skill: yes
-          alt Migration accepted
-              Skill->>FS: Write target files, then remove source (atomic, rollback on failure)
-          else
-              Skill->>FS: Write the merged roadmap
-          end
-      end
+    User->>Skill: /smart-plan (spec file or chat context)
+    Skill->>Cfg: Read (only this file)
+    alt Config missing
+        Skill-->>User: ❌**[smart-plan] Workspace not configured.**
+    end
+    Skill-->>User: [smart-ai] Roadmap Configuration detected (versioned, layout)
+    opt File Mode
+        Skill->>Spec: Read the target specification
+    end
+    opt Versioned roadmap
+        Skill-->>User: Propose the last version or a new one
+        User->>Skill: Version
+    end
+    Skill->>FS: Read the dedicated roadmap paths only
+
+    alt Interrupted Migration / Both Layouts Found (EC-PLAN-20)
+        Skill-->>User: Technical alert: Halt for manual recovery
+    else Layout divergence in explicit configuration (EC-PLAN-03)
+        Skill-->>User: Migrate the layout or update the configuration?
+        User->>Skill: Decision
+    end
+
+    alt Clean slate
+        Skill->>FS: Write directly in calculated layout
+    else Existing roadmap
+        Skill-->>User: Comparison table (with migration proposal if auto + single + over threshold)
+
+        alt Migration is proposed
+            User->>Skill: 'yes layout' (or 'yes') to accept migration OR 'yes keep-single' to decline
+            alt Option A: Migration accepted ('yes layout' / 'yes')
+                Skill->>FS: Write target files (multi), remove source files, and clear marker
+            else Option B: Migration declined ('yes keep-single')
+                Skill->>FS: Write merged roadmap data strictly within single-file layout
+            end
+        else No migration proposed (under threshold or explicit layout)
+            User->>Skill: 'yes'
+            Skill->>FS: Write the merged roadmap in its current layout
+        end
+    end
   ```
 
 - **Data Model & API Contracts:**
